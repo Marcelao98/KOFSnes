@@ -1,0 +1,115 @@
+/* Temas: cada um só troca as variáveis. data-tema fica no <html>. */
+:root, [data-tema="cafe"] {
+  --fundo: #1a110b; --painel: #2b1d14; --painel2: #3b2a1e; --texto: #f3e5d0;
+  --fraco: #b89c80; --destaque: #c08552; --borda: #6f4e37; --sel: #6f4e37;
+  --tela-borda: #6f4e37; --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none;
+  --raio: 8px; --brilho: 0 8px 30px #0008;
+}
+[data-tema="escuro"] {
+  --fundo: #0e0e10; --painel: #18181b; --painel2: #26262b; --texto: #e8e8ea;
+  --fraco: #9a9aa3; --destaque: #8ab4f8; --borda: #33333a; --sel: #2f3b52;
+  --tela-borda: #26262b;
+}
+[data-tema="claro"] {
+  --fundo: #ece7e0; --painel: #fbf9f6; --painel2: #ffffff; --texto: #2a2420;
+  --fraco: #7a6f66; --destaque: #8b5a2b; --borda: #d4cbbf; --sel: #ead9c6;
+  --tela-borda: #d4cbbf; --brilho: 0 6px 24px #0002;
+}
+/* ZSNES: janelas azuis em degradê, letra de terminal, menus em caixa alta */
+[data-tema="zsnes"] {
+  --fundo: #000; --painel: #1c2470; --painel2: #2c3a9c; --texto: #ffffff;
+  --fraco: #9fb0ff; --destaque: #ffe14d; --borda: #8fa0ff; --sel: #4458d8;
+  --tela-borda: #2c3a9c; --fonte: "Lucida Console", "Courier New", monospace;
+  --caixa: uppercase; --raio: 0; --brilho: none;
+}
+[data-tema="zsnes"] .janela, [data-tema="zsnes"] .sub {
+  background: linear-gradient(#3646b8, #141a5a);
+}
+[data-tema="zsnes"] .titulo-j { background: linear-gradient(90deg, #6a7cff, #2c3a9c); }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--fundo); color: var(--texto); font: 14px var(--fonte);
+  display: flex; flex-direction: column; overflow: hidden; user-select: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+
+#menu { display: flex; background: var(--painel); border-bottom: 1px solid var(--borda); padding: 0 4px; z-index: 5; }
+#menu .m { position: relative; }
+#menu .m > button {
+  background: none; border: 0; padding: 7px 12px; text-transform: var(--caixa);
+}
+#menu .m > button:hover, #menu .m.aberto > button { background: var(--sel); }
+.sub {
+  display: none; position: absolute; top: 100%; left: 0; min-width: 230px;
+  background: var(--painel2); border: 1px solid var(--borda); border-radius: 0 0 var(--raio) var(--raio);
+  box-shadow: var(--brilho); padding: 4px 0;
+}
+.m.aberto .sub { display: block; }
+.sub button {
+  display: flex; justify-content: space-between; width: 100%; text-align: left;
+  background: none; border: 0; padding: 7px 14px; text-transform: var(--caixa);
+}
+.sub button:hover { background: var(--sel); }
+.sub button.ativo::after { content: "✓"; color: var(--destaque); }
+.sub kbd { font: 12px var(--fonte); color: var(--fraco); margin-left: 20px; }
+.sub hr { border: 0; border-top: 1px solid var(--borda); margin: 4px 0; }
+
+#palco { flex: 1; display: grid; place-items: center; position: relative; overflow: hidden; }
+#tela {
+  image-rendering: pixelated; image-rendering: crisp-edges; background: #000;
+  border: 3px solid var(--tela-borda); border-radius: var(--raio); box-shadow: var(--brilho);
+}
+body.vazio #tela { visibility: hidden; }
+
+.janela {
+  position: absolute; background: var(--painel2); border: 1px solid var(--borda);
+  border-radius: var(--raio); box-shadow: var(--brilho); padding: 18px 22px; text-align: center;
+}
+.janela h1 { margin: 0; font-size: 44px; letter-spacing: 1px; }
+.janela h1 span { color: var(--destaque); }
+.sub-t { color: var(--fraco); margin: 4px 0 18px; }
+.grande {
+  display: block; width: 280px; margin: 8px auto; padding: 11px; border-radius: var(--raio);
+  background: var(--destaque); color: var(--painel); border: 0; font-weight: 700; text-transform: var(--caixa);
+}
+.grande.sec { background: none; color: var(--texto); border: 1px solid var(--borda); }
+.dica { color: var(--fraco); font-size: 13px; }
+.titulo-j {
+  margin: -18px -22px 12px; padding: 8px 14px; text-align: left; font-weight: 700;
+  border-bottom: 1px solid var(--borda); text-transform: var(--caixa); display: flex; justify-content: space-between;
+}
+.x { background: none; border: 0; font-size: 18px; line-height: 1; padding: 0 4px; }
+
+#lista { width: min(560px, 92vw); height: min(520px, 80vh); display: flex; flex-direction: column; text-align: left; }
+#filtro {
+  width: 100%; padding: 8px 10px; font: inherit; color: var(--texto); background: var(--painel);
+  border: 1px solid var(--borda); border-radius: var(--raio); outline: none;
+}
+#filtro:focus { border-color: var(--destaque); }
+#roms { list-style: none; margin: 10px 0 0; padding: 0; overflow-y: auto; flex: 1; }
+#roms li {
+  padding: 6px 10px; border-radius: var(--raio); cursor: pointer; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; display: flex; justify-content: space-between; gap: 12px;
+}
+#roms li small { color: var(--fraco); }
+#roms li:hover, #roms li.sel { background: var(--sel); }
+#roms li.sel { outline: 1px solid var(--destaque); }
+
+#ajuda table { border-collapse: collapse; margin-top: 4px; }
+#ajuda th, #ajuda td { padding: 5px 12px; border-bottom: 1px solid var(--borda); text-align: left; }
+#ajuda th { color: var(--destaque); text-transform: var(--caixa); }
+
+#aviso {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%); padding: 8px 16px;
+  background: var(--painel2); border: 1px solid var(--destaque); border-radius: var(--raio);
+  box-shadow: var(--brilho); pointer-events: none;
+}
+body.arrastando #palco { outline: 3px dashed var(--destaque); outline-offset: -12px; }
+
+#status {
+  display: flex; justify-content: space-between; padding: 4px 12px; font-size: 12px;
+  background: var(--painel); border-top: 1px solid var(--borda); color: var(--fraco); text-transform: var(--caixa);
+}

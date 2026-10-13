@@ -1,0 +1,6 @@
+import snes
+
+// Entrada da versão web: o núcleo (snes/) compilado pra JavaScript.
+// O main não faz nada; a página (app.js) cria o Snes e roda os quadros.
+main() {
+}

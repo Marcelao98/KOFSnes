@@ -36,6 +36,8 @@
 | **Windows** (x64) | `KOFnes-instalador-windows.exe` · **12 MB** (15 MB instalado) | dois cliques → instala (sem pedir administrador) → ícone na área de trabalho |
 | **Windows** (x64), portátil | `KOFnes-windows-x64.zip` · 13 MB | extrair → dois cliques em **`KOFnes.exe`** |
 | **Linux** (x64) | `KOFnes-linux-x64.tar.xz` · 23 MB | extrair → `./KOFnes/KOFnes` |
+| **Windows**, **sem Java** | `KOFnes-sem-java-windows.zip` · **0,4 MB** | extrair → dois cliques em **`KOFnes.exe`** (abre numa janela do Edge) |
+| **Qualquer sistema**, navegador | `KOFnes.html` · 0,3 MB | abrir no Chrome/Edge |
 | **Linux** (x64), **só Kof** | `KOFnes-so-kof-linux-x64` · **0,3 MB** | `./KOFnes-so-kof-linux-x64 jogo.sfc` (veja o [tradeoff](#-duas-versões-com-java--só-kof)) |
 
 **Não precisa instalar Java**: ele vai junto, numa versão podada só com o que
@@ -58,6 +60,24 @@ Saves de bateria vão pra `nome-da-rom.srm`, do lado da ROM (automático a cada
 | Y · X | **A** · **S** | | Reiniciar | **F1** |
 | L · R | **Q** · **W** | | Turbo 4× | **Tab** (segurar) |
 | Start · Select | **Enter** · **Shift** | | Escala 2×/3×/4× | menu **Tela** |
+
+## 🌐 Sem Java: o núcleo em Kof compilado pra JavaScript
+
+`web/compilar.sh` compila o mesmo `snes/` com `kof build --target js` e monta
+**um arquivo só**, `KOFnes.html` (329 KB), mais um `KOFnes.exe` de 67 KB que
+abre essa página numa janela de app do Edge (que já vem no Windows 10/11).
+Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
+
+- **4 temas**: Café queimado, Escuro, Claro e ZSNES (menu **Tema**; fica salvo).
+- **Lista de ROMs dentro da janela**, estilo ZSNES: escolha a pasta uma vez
+  (**Arquivo → Escolher pasta de ROMs**), depois **Ctrl+L**, digite pra filtrar
+  e Enter. Também abre `.sfc`, `.smc` e `.zip`, ou é só arrastar a ROM.
+- Saves de bateria automáticos, controle USB/Xbox, tela cheia (F11), mudo (M).
+
+Pra compilar, o alvo JS do Kof 0.6.3 precisou de 4 correções no compilador
+(`web/kof-js-correcoes.patch`, aplicar no Kof4j): sem elas o núcleo nem
+compila, ou compila errado em silêncio (e roda a 0,3 fps). Detalhes nos
+[relatórios](docs/relatorio-kof.md).
 
 ## ⚖️ Duas versões: com Java × só Kof
 
@@ -169,6 +189,7 @@ empacotar/testar-interface.sh linux      rom.zip   # teste de interface do pacot
 empacotar/testar-interface.sh windows    rom.zip   # o mesmo com o .exe, no Wine
 empacotar/testar-interface.sh instalador rom.zip   # instala em silêncio no Wine e testa
 nativo/compilar.sh          # versão só-Kof: dist/KOFnes-so-kof-linux-x64
+web/compilar.sh             # sem Java: dist/web/KOFnes.html + KOFnes.exe
 ```
 
 O teste de interface faz o que um usuário faz: abre o programa, clica em
@@ -186,6 +207,7 @@ KOFnes/
 ├── snes/              o console: Cpu, Spc, Dsp, Apu, Ppu, Snes, Cartridge, Gsu
 ├── app/               janela, controle, som, tema cappuccino (versão com Java)
 ├── nativo/            versão só-Kof: janela/som pela SDL2 via extern
+├── web/               sem Java: núcleo Kof → JavaScript, interface, temas, KOFnes.exe
 ├── tools/             testes de CPU/SPC e o modo headless
 ├── empacotar/         lançadores, instalador, poda do Java, script dos pacotes
 └── docs/              imagens, relatório de bugs da Kof e reproduções

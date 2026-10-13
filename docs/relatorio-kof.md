@@ -26,7 +26,7 @@ Também chamou atenção:
 - **Mensagens de erro boas.** O `PARSE085` para `fn` diz exatamente o que fazer.
 
 Os itens 1 a 11 estão na **fronteira com o Java**; os 12 a 15 são do alvo
-nativo. Cada um tem uma
+nativo, e os 16 a 19, do alvo JavaScript. Cada um tem uma
 reprodução de 5 a 20 linhas em [`kof-repros/`](kof-repros/), que roda com
 `kof run main.kf`.
 
@@ -194,6 +194,34 @@ o `extern` com a SDL2 e a libc deu certo de primeira. No caminho:
 
 ---
 
+## O alvo JavaScript (achados da versão sem Java)
+
+Compilar o núcleo com `--target js` expôs 4 problemas. Corrigi os quatro no
+compilador (`web/kof-js-correcoes.patch`, 222 linhas, todas em `js/`). Com
+eles, a saída fica idêntica à do JVM e o jogo roda a 60 fps no navegador.
+
+16. **`switch` que o compilador não consegue traduzir (`COMP002`).** Dois
+    formatos travam o `JsSwitchParser`: o primeiro `case` com a comparação já
+    fundida num salto (`case 0` vira `CJump(EQ)` direto), e `case` cujo corpo
+    termina em `if (...) { return }` seguido de `return`, que não tem
+    `Jump(end)`. Aí o corpo engolia os `case` seguintes.
+17. **`switch` dentro de `if`, com todos os `case` terminando em `return`,
+    compila ERRADO, em silêncio.** O fim do `switch` consumia o rótulo do
+    `if` de fora, e o resto do método ia parar dentro do `if`. No emulador, o
+    `read()` do chip de som devolvia `undefined` pra todo endereço fora de
+    $F0–$FF, o chip de som executava 55 milhões de instruções por quadro e
+    o jogo rodava a **0,3 fps**. É o mais grave dos quatro: não dá erro
+    nenhum.
+18. **Todo deslocamento de bits cria dois `BigInt`.** `x >> 4` vira
+    `x >> Number(BigInt.asIntN(32, BigInt(4)))`, e num emulador são milhões
+    por quadro. Agora o contador só passa por BigInt se for mesmo `Long`. Não
+    medi o ganho isolado, porque o bug 17 escondia tudo.
+19. **`Int[]` vira `Array` de JavaScript em vez de `Int32Array`.** Trocando,
+    junto com o acesso sem conferir limites no modo rápido, foi de 60 pra 91
+    fps no quadro mais pesado.
+
+---
+
 ## Resumo
 
 | # | Problema | Gravidade | Quando aparece |
@@ -213,6 +241,10 @@ o `extern` com a SDL2 e a libc deu certo de primeira. No caminho:
 | 13 | `args` e `/proc` vazios no nativo | média | rodando |
 | 14 | `new File` quebra o `ld` no nativo | média | ligando |
 | 15 | `Buffer(U8)` como tipo de campo | média | compilando |
+| 16 | JS: `switch` com arm fundido / `if`+`return` no corpo | média | compilando |
+| 17 | JS: `switch` dentro de `if` compila errado | **alta** | rodando (silencioso) |
+| 18 | JS: shift via `BigInt` | média (desempenho) | rodando |
+| 19 | JS: `Int[]` como `Array` em vez de `Int32Array` | média (desempenho) | rodando |
 
 Os sérios parecem vir de **poucos pontos pequenos** do compilador: tipos
 de array na escolha de overload, construtores do JDK escolhidos só pela

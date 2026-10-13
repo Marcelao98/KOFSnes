@@ -1,0 +1,222 @@
+diff --git a/kof-compiler/src/main/java/dev/kof/compiler/js/JsControlFlowParser.java b/kof-compiler/src/main/java/dev/kof/compiler/js/JsControlFlowParser.java
+index ea67597f..e3fed624 100644
+--- a/kof-compiler/src/main/java/dev/kof/compiler/js/JsControlFlowParser.java
++++ b/kof-compiler/src/main/java/dev/kof/compiler/js/JsControlFlowParser.java
+@@ -61,6 +61,13 @@ List<JsIr.JsStatement> parseStatements(MethodCtx ctx, int[] pos,
+                 return out;
+             }
+             if (op instanceof KofLabel kl) {
++                boolean parada = false;
++                for (java.util.Set<LabelId> st : ctx.switchStops) {
++                    if (st.contains(kl.label())) { parada = true; break; }
++                }
++                if (parada) {
++                    return out;
++                }
+                 if (endLabels.contains(kl.label())) {
+                     pos[0]++;
+                     exits.add(kl.label());
+diff --git a/kof-compiler/src/main/java/dev/kof/compiler/js/JsEmitter.java b/kof-compiler/src/main/java/dev/kof/compiler/js/JsEmitter.java
+index fafc3ca5..89b66208 100644
+--- a/kof-compiler/src/main/java/dev/kof/compiler/js/JsEmitter.java
++++ b/kof-compiler/src/main/java/dev/kof/compiler/js/JsEmitter.java
+@@ -294,6 +294,7 @@ public final class JsEmitter {
+             return "(" + parts + ")";
+         }
+         if (e instanceof JsIr.JsArray a) {
++            if ("#i32".equals(a.fill())) return "new Int32Array(" + expr(a.size()) + ")";
+             return "new Array(" + expr(a.size()) + ").fill(" + a.fill() + ")";
+         }
+         if (e instanceof JsIr.JsNestedArray n) {
+diff --git a/kof-compiler/src/main/java/dev/kof/compiler/js/JsExpressionParser.java b/kof-compiler/src/main/java/dev/kof/compiler/js/JsExpressionParser.java
+index d1e46a5e..7ee7903c 100644
+--- a/kof-compiler/src/main/java/dev/kof/compiler/js/JsExpressionParser.java
++++ b/kof-compiler/src/main/java/dev/kof/compiler/js/JsExpressionParser.java
+@@ -261,7 +261,12 @@ void consumeExpressionOp(MethodCtx ctx, int[] pos, List<Object> stack,
+             }
+             case KofNewArray na -> {
+                 JsIr.JsExpression size = pop(stack);
+-                stack.add(new JsIr.JsArray(size, JsTypeMapper.arrayFill(na.elementType())));
++                // Int[] vira Int32Array: o V8 trata como array monomórfico de
++                // inteiros (bem mais rápido que Array de Number) e o store já
++                // faz o wrap de 32 bits do JVM
++                String fill = (na.elementType() instanceof dev.kof.compiler.Type.PrimitiveType pt
++                        && "int".equals(pt.name())) ? "#i32" : JsTypeMapper.arrayFill(na.elementType());
++                stack.add(new JsIr.JsArray(size, fill));
+             }
+             case KofNewMultiArray ma -> {
+                 // multidimensional (bug 71): pop das n dims (a 1ª pushed é a externa)
+diff --git a/kof-compiler/src/main/java/dev/kof/compiler/js/JsIfThrowElse.java b/kof-compiler/src/main/java/dev/kof/compiler/js/JsIfThrowElse.java
+index f82bbd8a..a6e9e886 100644
+--- a/kof-compiler/src/main/java/dev/kof/compiler/js/JsIfThrowElse.java
++++ b/kof-compiler/src/main/java/dev/kof/compiler/js/JsIfThrowElse.java
+@@ -47,6 +47,11 @@ public final class JsIfThrowElse {
+                 return out;
+             }
+             if (op instanceof KofLabel kl) {
++                // o próximo arm de um switch envolvente não é deste else: o
++                // switch consome o rótulo dele
++                for (java.util.Set<dev.kof.compiler.LabelId> st : ctx.switchStops) {
++                    if (st.contains(kl.label())) return out;
++                }
+                 if (ctx.isLoopLabel(kl.label())) return out;
+                 // O endLabel de um try ENVOLVENTE não é o fim do else: consumi-lo
+                 // deixa o KofCatchStart solto no statement level (COMP002). Deixa
+diff --git a/kof-compiler/src/main/java/dev/kof/compiler/js/JsLongEmitter.java b/kof-compiler/src/main/java/dev/kof/compiler/js/JsLongEmitter.java
+index 173435e6..911b75dc 100644
+--- a/kof-compiler/src/main/java/dev/kof/compiler/js/JsLongEmitter.java
++++ b/kof-compiler/src/main/java/dev/kof/compiler/js/JsLongEmitter.java
+@@ -111,6 +111,29 @@ final class JsLongEmitter {
+                         List.of(new JsIr.JsNumber("32"), longOperand(e)))));
+     }
+ 
++    /** Contador de shift INT: o caminho BigInt do toNumber32 aloca dois
++     *  BigInt por shift (num emulador, milhões por quadro: ~100x mais lento).
++     *  Literal Number vai direto; expressão sem efeito colateral só passa por
++     *  BigInt se for mesmo BigInt (contador Long); o resto segue o caminho
++     *  antigo. O JS já mascara o contador em 0x1f, como o JVM. */
++    static JsIr.JsExpression intShiftCount(JsIr.JsExpression e) {
++        if (e instanceof JsIr.JsNumber n && !n.text().endsWith("n")) return e;
++        if (semEfeito(e)) {
++            return new JsIr.JsConditional(
++                    new JsIr.JsBinary(new JsIr.JsUnary("typeof", e), "===", new JsIr.JsString("bigint")),
++                    toNumber32(e), e);
++        }
++        return toNumber32(e);
++    }
++
++    private static boolean semEfeito(JsIr.JsExpression e) {
++        if (e instanceof JsIr.JsNumber || e instanceof JsIr.JsIdentifier || e instanceof JsIr.JsThis) return true;
++        if (e instanceof JsIr.JsMember m) return semEfeito(m.target());
++        if (e instanceof JsIr.JsUnary u) return !u.operator().contains("+") && !u.operator().contains("-") && semEfeito(u.operand());
++        if (e instanceof JsIr.JsBinary b) return semEfeito(b.left()) && semEfeito(b.right());
++        return false;
++    }
++
+     static JsIr.JsExpression int32(JsIr.JsExpression e) {
+         return new JsIr.JsBinary(e, "|", new JsIr.JsNumber("0"));
+     }
+diff --git a/kof-compiler/src/main/java/dev/kof/compiler/js/JsOperatorEmitter.java b/kof-compiler/src/main/java/dev/kof/compiler/js/JsOperatorEmitter.java
+index dd9fa267..a87cbbee 100644
+--- a/kof-compiler/src/main/java/dev/kof/compiler/js/JsOperatorEmitter.java
++++ b/kof-compiler/src/main/java/dev/kof/compiler/js/JsOperatorEmitter.java
+@@ -66,9 +66,9 @@ final class JsOperatorEmitter {
+             // §167: `int << long` tem tipo int (JLS 15.19) mas o RHS pode
+             // chegar como BigInt (literal Long ou var Long) → TypeError no JS.
+             // Normaliza o contador p/ Number 32-bit (o JS já mascara em 0x1f).
+-            case SHL -> new JsIr.JsBinary(JsLongEmitter.int32(left), "<<", JsLongEmitter.toNumber32(right));
+-            case SHR -> new JsIr.JsBinary(JsLongEmitter.int32(left), ">>", JsLongEmitter.toNumber32(right));
+-            case USHR -> new JsIr.JsBinary(JsLongEmitter.int32(left), ">>>", JsLongEmitter.toNumber32(right));
++            case SHL -> new JsIr.JsBinary(JsLongEmitter.int32(left), "<<", JsLongEmitter.intShiftCount(right));
++            case SHR -> new JsIr.JsBinary(JsLongEmitter.int32(left), ">>", JsLongEmitter.intShiftCount(right));
++            case USHR -> new JsIr.JsBinary(JsLongEmitter.int32(left), ">>>", JsLongEmitter.intShiftCount(right));
+         };
+     }
+ 
+diff --git a/kof-compiler/src/main/java/dev/kof/compiler/js/JsSwitchParser.java b/kof-compiler/src/main/java/dev/kof/compiler/js/JsSwitchParser.java
+index 91b87c21..76348ab6 100644
+--- a/kof-compiler/src/main/java/dev/kof/compiler/js/JsSwitchParser.java
++++ b/kof-compiler/src/main/java/dev/kof/compiler/js/JsSwitchParser.java
+@@ -68,8 +68,18 @@ JsIr.JsStatement parseSwitchStatement(MethodCtx ctx, int[] pos) {
+             boolean stringEq = false;
+             boolean identityEq = false;
+             boolean primitiveEq = false;
++            KofConditionalJump fused = null;
+             while (true) {
+                 KofOperation op = ctx.ops.get(pos[0]);
++                // a comparação do arm já veio fundida num salto condicional de
++                // dois operandos (CJump(EQ) sobre subject e caseValue): o salto
++                // vai pro corpo quando igual e pro próximo arm quando não
++                if (op instanceof KofConditionalJump cjf && cjf.comparison() == KofComparison.EQ
++                        && stack.size() == 2) {
++                    fused = cjf;
++                    pos[0]++;
++                    break;
++                }
+                 if (op instanceof KofBinary kb && kb.op() == KofBinaryOp.SUB && stack.size() == 2) {
+                     pos[0]++;
+                     break;
+@@ -127,6 +137,20 @@ JsIr.JsStatement parseSwitchStatement(MethodCtx ctx, int[] pos) {
+             }
+             JsIr.JsExpression caseValue = p.expr.pop(stack);
+             p.expr.pop(stack);
++            if (fused != null) {
++                caseValues.add(caseValue);
++                bodyLabels.add(fused.trueLabel());
++                defaultLabel = fused.falseLabel();
++                endLabel = fused.falseLabel();
++                if (pos[0] < ctx.ops.size() && ctx.ops.get(pos[0]) instanceof KofLabel
++                        && pos[0] + 1 < ctx.ops.size()
++                        && ctx.ops.get(pos[0] + 1) instanceof KofLoadLocal next
++                        && "#switch".equals(ctx.rawLocalNames.get(next.index()))) {
++                    pos[0]++;
++                    continue;
++                }
++                break;
++            }
+             if (!(ctx.ops.get(pos[0]) instanceof KofLoadLiteral zero
+                     && zero.value() instanceof Integer i && i == 0)) {
+                 throw new IllegalStateException("KofJS: switch case expected 0");
+@@ -163,8 +187,19 @@ JsIr.JsStatement parseSwitchStatement(MethodCtx ctx, int[] pos) {
+                 throw new IllegalStateException("KofJS: switch body label missing");
+             }
+             pos[0]++;
++            // um corpo que termina em `return` não tem Jump(end): sem parar no
++            // rótulo do próximo corpo (ou do default), o parse engolia os
++            // arms seguintes e o "body label missing" estourava
++            Set<LabelId> proximos = new HashSet<>(bodyLabels.subList(fullCases.size() + 1, bodyLabels.size()));
++            if (defaultLabel != null) proximos.add(defaultLabel);
+             List<LabelId> exits = new ArrayList<>();
+-            List<JsIr.JsStatement> body = p.flow.parseStatements(ctx, pos, Set.of(), exits);
++            ctx.switchStops.push(proximos);
++            List<JsIr.JsStatement> body;
++            try {
++                body = p.flow.parseStatements(ctx, pos, Set.of(), exits);
++            } finally {
++                ctx.switchStops.pop();
++            }
+             if (endLabel == null && !exits.isEmpty()) {
+                 endLabel = exits.get(exits.size() - 1);
+             }
+@@ -176,8 +211,12 @@ JsIr.JsStatement parseSwitchStatement(MethodCtx ctx, int[] pos) {
+             pos[0]++;
+             defaultCase = p.flow.parseStatements(ctx, pos, Set.of(), new ArrayList<>());
+         }
+-        if (pos[0] < ctx.ops.size() && ctx.ops.get(pos[0]) instanceof KofLabel) {
+-            // Label(end) — end of the switch
++        if (pos[0] < ctx.ops.size() && ctx.ops.get(pos[0]) instanceof KofLabel endL
++                && !ctx.isEnclosingIfFalse(endL.label()) && !paraSwitch(ctx, endL.label())) {
++            // Label(end) — end of the switch. Quando todos os arms terminam em
++            // return não existe Label(end) próprio: o rótulo seguinte é do if
++            // (ou do switch) de fora, e consumi-lo puxava o resto do método
++            // pra dentro do then do if envolvente.
+             pos[0]++;
+         }
+         JsIr.JsExpression subject = new JsIr.JsIdentifier(subjectName);
+@@ -364,4 +403,11 @@ JsIr.JsStatement parsePatternSwitch(MethodCtx ctx, int[] pos) {
+         String n = Type.canonicalPrimitiveName(p.name());
+         return "long".equals(n) || "float".equals(n) || "double".equals(n);
+     }
++
++    private static boolean paraSwitch(MethodCtx ctx, LabelId l) {
++        for (Set<LabelId> st : ctx.switchStops) {
++            if (st.contains(l)) return true;
++        }
++        return false;
++    }
+ }
+diff --git a/kof-compiler/src/main/java/dev/kof/compiler/js/MethodCtx.java b/kof-compiler/src/main/java/dev/kof/compiler/js/MethodCtx.java
+index 1ca04dcc..e4cbb768 100644
+--- a/kof-compiler/src/main/java/dev/kof/compiler/js/MethodCtx.java
++++ b/kof-compiler/src/main/java/dev/kof/compiler/js/MethodCtx.java
+@@ -28,6 +28,10 @@ public final class MethodCtx {
+     final Set<String> usedNames = new HashSet<>();
+     final List<String> tempDecls = new ArrayList<>();
+     final List<LoopCtx> loops = new ArrayList<>();
++    /** Rótulos dos próximos arms de um switch envolvente: nenhum parse aninhado
++     *  (then/else de if que termina em return) passa deles; eles não são
++     *  consumidos, o dono (o switch) consome. */
++    final java.util.ArrayDeque<java.util.Set<LabelId>> switchStops = new java.util.ArrayDeque<>();
+     /**
+      * §267: `if` de STATEMENT (marcados no lowering por KofStatementIf) são
+      * identicos em IR a if-expressões ([cond], CJump, Label, ramo, Jump, Label,

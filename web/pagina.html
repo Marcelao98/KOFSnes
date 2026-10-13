@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="cafe">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KOFnes</title>
+<link rel="icon" href="{{ICONE}}">
+<style>
+{{CSS}}
+</style>
+</head>
+<body>
+<nav id="menu">
+  <div class="m"><button>Arquivo</button><div class="sub">
+    <button data-acao="abrir">Abrir ROM…<kbd>Ctrl+O</kbd></button>
+    <button data-acao="pasta">Escolher pasta de ROMs…</button>
+    <button data-acao="lista">Lista de ROMs<kbd>Ctrl+L</kbd></button>
+    <hr>
+    <button data-acao="reiniciar">Reiniciar<kbd>F1</kbd></button>
+  </div></div>
+  <div class="m"><button>Emulação</button><div class="sub">
+    <button data-acao="pausar">Pausar / continuar<kbd>P</kbd></button>
+    <button data-acao="mudo">Som ligado / mudo<kbd>M</kbd></button>
+  </div></div>
+  <div class="m"><button>Tela</button><div class="sub">
+    <button data-escala="2">Escala 2×</button>
+    <button data-escala="3">Escala 3×</button>
+    <button data-escala="4">Escala 4×</button>
+    <button data-escala="0">Encaixar na janela</button>
+    <hr>
+    <button data-acao="cheia">Tela cheia<kbd>F11</kbd></button>
+  </div></div>
+  <div class="m"><button>Tema</button><div class="sub">
+    <button data-tema="cafe">☕ Café queimado</button>
+    <button data-tema="escuro">🌙 Escuro</button>
+    <button data-tema="claro">☀️ Claro</button>
+    <button data-tema="zsnes">🕹️ ZSNES</button>
+  </div></div>
+  <div class="m"><button>Ajuda</button><div class="sub">
+    <button data-acao="controles">Controles</button>
+  </div></div>
+</nav>
+
+<main id="palco">
+  <canvas id="tela" width="256" height="224"></canvas>
+
+  <section id="inicio" class="janela">
+    <h1>KOF<span>nes</span></h1>
+    <p class="sub-t">Super Nintendo escrito em Kof ☕</p>
+    <button class="grande" data-acao="abrir">Abrir ROM</button>
+    <button class="grande sec" data-acao="pasta">Escolher pasta de ROMs</button>
+    <p class="dica">ou arraste um <b>.sfc</b>, <b>.smc</b> ou <b>.zip</b> pra cá</p>
+  </section>
+
+  <section id="lista" class="janela" hidden>
+    <div class="titulo-j">Carregar jogo <button class="x" data-acao="fechar-lista">×</button></div>
+    <input id="filtro" placeholder="digite pra procurar…" autocomplete="off" spellcheck="false">
+    <ul id="roms"></ul>
+    <p id="lista-vazia" class="dica">Nenhuma pasta escolhida. Use <b>Arquivo → Escolher pasta de ROMs</b>.</p>
+  </section>
+
+  <section id="ajuda" class="janela" hidden>
+    <div class="titulo-j">Controles <button class="x" data-acao="fechar-ajuda">×</button></div>
+    <table>
+      <tr><th>SNES</th><th>Teclado</th><th>Emulador</th><th>Teclado</th></tr>
+      <tr><td>Direcional</td><td>setas</td><td>Abrir ROM</td><td>Ctrl+O</td></tr>
+      <tr><td>B · A</td><td>Z · X</td><td>Lista de ROMs</td><td>Ctrl+L</td></tr>
+      <tr><td>Y · X</td><td>A · S</td><td>Pausa</td><td>P / Esc</td></tr>
+      <tr><td>L · R</td><td>Q · W</td><td>Reiniciar</td><td>F1</td></tr>
+      <tr><td>Start · Select</td><td>Enter · Shift</td><td>Turbo</td><td>Tab (segurar)</td></tr>
+      <tr><td colspan="2">Controle USB/Xbox também funciona</td><td>Tela cheia</td><td>F11</td></tr>
+    </table>
+  </section>
+
+  <div id="aviso" hidden></div>
+</main>
+
+<footer id="status">
+  <span id="st-jogo">nenhum jogo</span>
+  <span id="st-fps"></span>
+</footer>
+<input type="file" id="arquivo" accept=".sfc,.smc,.zip,.fig,.swc" hidden>
+<script>
+{{NUCLEO}}
+</script>
+<script>
+{{APP}}
+</script>
+</body>
+</html>

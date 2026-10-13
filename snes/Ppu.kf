@@ -5,6 +5,7 @@ package snes
 // sub) com prioridade por camada; depois entram janelas, color math e
 // brilho. Saída: framebuffer ARGB 256x240.
 class Ppu {
+    Int[] bppTab
     Int[] vram
     Int[] cgram
     Int[] oam
@@ -90,6 +91,13 @@ class Ppu {
     Int[] sprIdx
 
     public constructor() {
+        this.bppTab = new Int[28]
+        var bt = "2222442044008400820042004000"
+        var q = 0
+        while (q < 28) {
+            this.bppTab[q] = (bt.charAt(q) as Int) - 48
+            q++
+        }
         this.vram = new Int[32768]
         this.cgram = new Int[256]
         this.oam = new Int[544]
@@ -566,34 +574,11 @@ class Ppu {
     }
 
     // ---------------- BGs ----------------
+    // bits por pixel do BG n em cada modo (0 = BG não existe no modo);
+    // tabela [modo * 4 + n], montada no construtor
     Int bppOf(Int mode, Int n) {
-        switch (mode) {
-            case 0: return 2
-            case 1:
-                if (n == 2) { return 2 }
-                if (n == 3) { return 0 }
-                return 4
-            case 2:
-                if (n >= 2) { return 0 }
-                return 4
-            case 3:
-                if (n == 0) { return 8 }
-                if (n == 1) { return 4 }
-                return 0
-            case 4:
-                if (n == 0) { return 8 }
-                if (n == 1) { return 2 }
-                return 0
-            case 5:
-                if (n == 0) { return 4 }
-                if (n == 1) { return 2 }
-                return 0
-            case 6:
-                if (n == 0) { return 4 }
-                return 0
-            default:
-                return 0
-        }
+        if (mode < 0 || mode > 6 || n < 0 || n > 3) { return 0 }
+        return bppTab[mode * 4 + n]
     }
 
     // decodifica a linha fy de um tile 8x8 em tileCache[0..7]
