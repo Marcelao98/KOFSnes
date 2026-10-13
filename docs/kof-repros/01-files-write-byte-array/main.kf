@@ -1,0 +1,11 @@
+import java.io.File;
+import java.nio.file.Files;
+
+main() {
+    var b = new Byte[3]
+    b[0] = 75 as Byte
+    b[1] = 79 as Byte
+    b[2] = 70 as Byte
+    Files.write(new File("saida.bin").toPath(), b)
+    println("ok")
+}

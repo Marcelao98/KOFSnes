@@ -1,0 +1,8 @@
+package app
+
+class Conta {
+    public constructor() { }
+    Int dividir(Int a, Int b) {
+        return a / b
+    }
+}

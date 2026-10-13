@@ -1,0 +1,8 @@
+main() {
+    var x = 1
+    switch (x) {
+        case 0 -> { println("zero") }
+        case 1 -> { println("um") }
+        default -> { println("outro") }
+    }
+}

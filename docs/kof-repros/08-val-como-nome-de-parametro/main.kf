@@ -1,0 +1,9 @@
+class A {
+    write(Int addr, Int val) {
+        println(val)
+    }
+}
+
+main() {
+    A().write(1, 2)
+}

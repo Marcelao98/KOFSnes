@@ -1,0 +1,6 @@
+import java.awt.Rectangle;
+
+main() {
+    var r = new Rectangle(1, 2, 30, 40)
+    println(r.height)
+}

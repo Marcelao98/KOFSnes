@@ -1,0 +1,9 @@
+import java.lang.System;
+
+main() {
+    var a = new Int[4]
+    var b = new Int[4]
+    a[0] = 7
+    System.arraycopy(a, 0, b, 0, 4)
+    println(b[0])
+}

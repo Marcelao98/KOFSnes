@@ -1,0 +1,9 @@
+import java.io.File;
+import java.nio.file.Files;
+
+main() {
+    var lines = Files.readAllLines(new File("main.kf").toPath())
+    for (var s in lines) {
+        println(s)
+    }
+}

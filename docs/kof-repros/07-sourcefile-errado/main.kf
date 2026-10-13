@@ -1,0 +1,5 @@
+import app
+
+main() {
+    println(Conta().dividir(1, 0))
+}

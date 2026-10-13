@@ -1,0 +1,19 @@
+class Caixa {
+    String s
+    public constructor(String s) { this.s = s }
+}
+
+class Janela {
+    public constructor() { }
+    abrir(String path) {
+        println(Caixa(nome(path)).s)
+        println(new StringBuilder(nome(path)).toString())
+    }
+    String nome(String s) {
+        return s + ".srm"
+    }
+}
+
+main() {
+    Janela().abrir("jogo")
+}

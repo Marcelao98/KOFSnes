@@ -1,0 +1,7 @@
+import java.io.FileInputStream;
+import java.util.zip.ZipInputStream;
+
+main() {
+    var z = new ZipInputStream(new FileInputStream("main.kf"))
+    println(z.getNextEntry())
+}
