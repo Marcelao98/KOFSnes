@@ -4,7 +4,10 @@
 #   2. clica em Arquivo > Abrir ROM... e confere que o diálogo apareceu
 #   3. escolhe a ROM no diálogo e confere que o jogo começou a desenhar
 #   4. espera o título, aperta Enter (Start) e confere que a tela mudou
-#   5. confere que nenhuma exceção foi parar no log
+#   5. pausa, reinicia, turbo, Tela > Escala 2x (a janela tem que mudar de
+#      tamanho), Ajuda > Controles e Arquivo > Sair (o programa tem que fechar)
+#   6. confere que nenhuma exceção foi parar no log: com o Java podado, uma
+#      classe que faltar aparece aqui como NoClassDefFoundError
 #
 # Uso: testar-interface.sh linux|windows|instalador <rom.sfc|rom.zip>
 #   instalador: instala o KOFnes-instalador-windows.exe em silêncio no Wine
@@ -63,12 +66,10 @@ if [ "$ALVO" = "windows" ]; then
         "$WINE" wineboot -i >/dev/null 2>&1
     fi
     cp "$ROM" "$TMP/KOFnes/rom-teste.${ROM##*.}"
-    if [ -n "${JVM_EXTRA:-}" ]; then
-        # modo de medição: chama o java direto, com opções extras da JVM
-        (cd "$TMP/KOFnes" && "$WINE" runtime/bin/javaw.exe $JVM_EXTRA -jar kofnes.jar > kofnes.log 2>&1 &)
-    else
-        (cd "$TMP/KOFnes" && "$WINE" KOFnes.exe >/dev/null 2>&1 &)
-    fi
+    # modo de medição: RUNTIME=<pasta> troca o Java do pacote (ex.: pelo
+    # inteiro) e JVM_EXTRA passa opções pra JVM pelo próprio KOFnes.exe
+    if [ -n "${RUNTIME:-}" ]; then rm -rf "$TMP/KOFnes/runtime"; cp -r "$RUNTIME" "$TMP/KOFnes/runtime"; fi
+    (cd "$TMP/KOFnes" && KOFNES_JAVA_OPCOES="${JVM_EXTRA:-}" WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-}" "$WINE" KOFnes.exe >/dev/null 2>&1 &)
     LOG="$TMP/KOFnes/kofnes.log"
     ESPERA=30
 else
@@ -128,6 +129,25 @@ sleep 4
 foto "$TMP/2-depois-do-start.png"
 D=$(dif "$TMP/1-titulo.png" "$TMP/2-depois-do-start.png")
 if maior "$D" 0.10; then ok "Enter (Start) chegou ao jogo (mudou $D da tela)"; else falha "Enter não mudou a tela ($D)"; fi
+
+# o resto do uso normal: pausa, reset, turbo, menus e sair
+for k in p p F1; do xdotool key $k; sleep 1; done
+xdotool keydown Tab; sleep 2; xdotool keyup Tab; sleep 1
+ANTES=$(xdotool getwindowgeometry "$JAN" | grep Geometry)
+menu() {  # menu <deslocamento x do menu> <número do item, 1 = primeiro>
+    xdotool mousemove $((X + $1)) $MY click 1; sleep 1.5
+    foto "$TMP/menu-$1.png"
+    xdotool mousemove $((X + $1 + 20)) $((MY + 1 + ITEM_H * $2)) click 1; sleep 2
+}
+TELA_X=125; AJUDA_X=165; ITEM_H=20
+[ "$ALVO" = "windows" ] && { TELA_X=138; AJUDA_X=178; ITEM_H=18; }
+menu $TELA_X 1
+DEPOIS=$(xdotool getwindowgeometry "$JAN" | grep Geometry)
+if [ "$ANTES" != "$DEPOIS" ]; then ok "Tela > Escala 2x mudou a janela (${ANTES#*: } -> ${DEPOIS#*: })"; else falha "Tela > Escala 2x não mudou a janela (${ANTES#*: })"; fi
+menu $AJUDA_X 1
+menu 25 4
+sleep 3
+if [ -z "$(xdotool search --name "KOFnes" 2>/dev/null)" ]; then ok "Arquivo > Sair fechou o programa"; else falha "Arquivo > Sair não fechou o programa"; fi
 
 if grep -q -e "Exception" -e "Error:" "$LOG" 2>/dev/null; then
     falha "exceção no log:"; grep -m3 -e "Exception" -e "Error:" "$LOG" | sed 's/^/        /'

@@ -23,7 +23,11 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
         erro(L"Não achei a pasta 'runtime' do lado do KOFnes.exe.\nExtraia o .zip inteiro antes de abrir.");
         return 1;
     }
-    swprintf(linha, 32768, L"\"%ls\" -Xss16m -Dfile.encoding=UTF-8 -Dsun.java2d.d3d=false -jar \"%ls\" %ls", java, jar, cmd ? cmd : L"");
+    // KOFNES_JAVA_OPCOES: opções extras da JVM (usado pra medir as classes
+    // que o Java carrega, na hora de podar o pacote)
+    const wchar_t *extra = _wgetenv(L"KOFNES_JAVA_OPCOES");
+    swprintf(linha, 32768, L"\"%ls\" -Xss16m -Dfile.encoding=UTF-8 -Dsun.java2d.d3d=false %ls -jar \"%ls\" %ls",
+             java, extra ? extra : L"", jar, cmd ? cmd : L"");
 
     SECURITY_ATTRIBUTES sa = { sizeof(sa), NULL, TRUE };
     HANDLE log = CreateFileW(logp, GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);

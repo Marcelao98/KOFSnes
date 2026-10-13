@@ -65,7 +65,7 @@ for alvo, tag in (("windows", "win_amd64"), ("linux", "manylinux_2_17_x86_64")):
             os.chmod(p, 0o755)
 PY
 
-echo "== enxugando o Java do Windows (91 MB -> ~48 MB em disco)"
+echo "== enxugando o Java do Windows (91 MB -> ~15 MB instalado)"
 # O jdk4py traz o Java inteiro (36 módulos, sem jmods). Extraímos as classes do
 # lib/modules, ficamos só com java.base/desktop/datatransfer/prefs/xml, podamos
 # as classes que o KOFnes nunca usa e rodamos o jlink pro alvo windows-amd64:
@@ -76,8 +76,10 @@ echo "== enxugando o Java do Windows (91 MB -> ~48 MB em disco)"
 #   PodaModulo.java     tira do module-info os pacotes que ficaram vazios
 #   TiraHashes.java     tira as impressões digitais antigas do java.base
 # Depois de mexer no app/, refaça a medição (testar-interface.sh com
-# JVM_EXTRA='-Xlog:class+load=info:file=classes.txt' GUARDAR=<dir>).
+# RUNTIME=<obra>/jre-windows JVM_EXTRA='-Xlog:class+load=info:file=classes.txt' GUARDAR=<dir>).
 ENX="$OBRA/jre-windows-enxuto"
+# PROFUNDIDADE=0: só as classes carregadas (veja podar_por_uso.py)
+export PROFUNDIDADE="${PROFUNDIDADE:-0}"
 MODS="java.base java.desktop java.datatransfer java.prefs java.xml"
 if [ ! -d "$ENX" ]; then
     T="$OBRA/jlwin"; rm -rf "$T"; mkdir -p "$T/jmods"
@@ -86,7 +88,7 @@ if [ ! -d "$ENX" ]; then
     rm -f "$T/ext/java.base/jdk/internal/module/SystemModules\$"*.class
     jdeps -verbose:class -filter:none --multi-release 25 --module-path "$T/ext" \
         $(for m in $MODS; do echo "$T/ext/$m"; done) 2>/dev/null | awk '/->/ {print $1, $3}' > "$T/deps.txt"
-    for m in $MODS; do java --describe-module "$m" | { grep '^provides' || true; } | sed 's/.* with //' | tr ' ' '\n'; done \
+    for m in $MODS; do java --describe-module "$m" | { grep '^provides' || true; } | sed 's/^provides //; s/ with / /' | tr ' ' '\n'; done \
         | grep -v '^$' | sort -u > "$T/provedores.txt"
     python3 "$AQUI/podar_por_uso.py" "$T/ext" "$T/deps.txt" "$AQUI/classes-usadas.txt" "$T/provedores.txt" > "$T/vazios.txt"
     for m in $MODS; do
@@ -94,9 +96,9 @@ if [ ! -d "$ENX" ]; then
         [ -n "$V" ] && java "$AQUI/PodaModulo.java" "$T/ext/$m" $V
         jmod create --class-path "$T/ext/$m" --target-platform windows-amd64 "$T/jmods/$m.jmod"
     done
-    # sem compressão interna: o LZMA do instalador compacta muito melhor
+    # compressão interna máxima: o que conta é o tamanho instalado
     jlink --module-path "$T/jmods" --add-modules java.base,java.desktop \
-        --disable-plugin generate-jli-classes --compress=zip-0 --strip-debug \
+        --disable-plugin generate-jli-classes --compress=zip-9 --strip-debug \
         --no-header-files --no-man-pages --output "$T/img"
     cp -r "$OBRA/jre-windows" "$ENX"
     cp "$T/img/lib/modules" "$ENX/lib/modules"
@@ -105,7 +107,16 @@ if [ ! -d "$ENX" ]; then
     (cd "$ENX/bin" && for f in *.exe; do [ "$f" = java.exe ] || [ "$f" = javaw.exe ] || rm -f "$f"; done
      rm -f attach.dll jdwp.dll dt_shmem.dll dt_socket.dll management.dll management_agent.dll \
         management_ext.dll instrument.dll rmi.dll sunmscapi.dll j2pkcs11.dll j2gss.dll j2pcsc.dll \
-        w2k_lsa_auth.dll extnet.dll sspi_bridge.dll jaas.dll)
+        w2k_lsa_auth.dll extnet.dll sspi_bridge.dll jaas.dll splashscreen.dll jawt.dll)
+    rm -rf "$ENX/include" "$ENX/lib/security/public_suffix_list.dat" "$ENX/lib/security/cacerts" "$ENX/lib/jrt-fs.jar"
+    # o runtime universal do C (ucrtbase + api-ms-*) já vem no Windows 10/11
+    rm -f "$ENX/bin/ucrtbase.dll" "$ENX/bin/"api-ms-win-*.dll
+    # as DLLs do Java comprimidas com UPX (descomprimem sozinhas ao carregar),
+    # menos o awt.dll, que comprimido não carrega;
+    # as do runtime do Visual C++ ficam como estão
+    (cd "$ENX/bin" && upx -q --best --lzma server/jvm.dll fontmanager.dll freetype.dll \
+        mlib_image.dll lcms.dll javajpeg.dll java.dll net.dll nio.dll zip.dll jimage.dll \
+        verify.dll prefs.dll >/dev/null)
     rm -rf "$T"
 fi
 

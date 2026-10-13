@@ -12,6 +12,7 @@ com.sun.media.sound.PortMixerProvider$PortMixerInfo
 java.awt.AWTEvent
 java.awt.AWTEvent$1
 java.awt.AWTEventMulticaster
+java.awt.AWTException
 java.awt.AWTKeyStroke
 java.awt.ActiveEvent
 java.awt.AlphaComposite
@@ -25,6 +26,8 @@ java.awt.Color
 java.awt.Component
 java.awt.Component$1
 java.awt.Component$AWTTreeLock
+java.awt.Component$BltBufferStrategy
+java.awt.Component$BltSubRegionBufferStrategy
 java.awt.Component$DummyRequestFocusController
 java.awt.Component$FlipBufferStrategy
 java.awt.Component$FlipSubRegionBufferStrategy
@@ -832,6 +835,8 @@ java.util.Hashtable
 java.util.Hashtable$Entry
 java.util.HexFormat
 java.util.IdentityHashMap
+java.util.IdentityHashMap$IdentityHashMapIterator
+java.util.IdentityHashMap$KeyIterator
 java.util.IdentityHashMap$KeySet
 java.util.ImmutableCollections
 java.util.ImmutableCollections$AbstractImmutableCollection
@@ -1157,6 +1162,8 @@ jdk.internal.constant.DirectMethodHandleDescImpl
 jdk.internal.constant.DirectMethodHandleDescImpl$1
 jdk.internal.constant.MethodTypeDescImpl
 jdk.internal.constant.PrimitiveClassDescImpl
+jdk.internal.event.Event
+jdk.internal.event.ThreadSleepEvent
 jdk.internal.foreign.AbstractMemorySegmentImpl
 jdk.internal.foreign.ArenaImpl
 jdk.internal.foreign.GlobalSession
@@ -1243,18 +1250,25 @@ jdk.internal.loader.URLClassPath$1
 jdk.internal.loader.URLClassPath$JarLoader
 jdk.internal.loader.URLClassPath$JarLoader$1
 jdk.internal.loader.URLClassPath$Loader
+jdk.internal.logger.AbstractLoggerWrapper
 jdk.internal.logger.BootstrapLogger
 jdk.internal.logger.BootstrapLogger$BootstrapExecutors
 jdk.internal.logger.BootstrapLogger$DetectBackend
 jdk.internal.logger.BootstrapLogger$LoggingBackend
+jdk.internal.logger.BootstrapLogger$RedirectedLoggers
 jdk.internal.logger.DefaultLoggerFinder
 jdk.internal.logger.DefaultLoggerFinder$SharedLoggers
 jdk.internal.logger.LazyLoggers
 jdk.internal.logger.LazyLoggers$1
+jdk.internal.logger.LazyLoggers$JdkLazyLogger
+jdk.internal.logger.LazyLoggers$LazyLoggerAccessor
 jdk.internal.logger.LazyLoggers$LazyLoggerFactories
+jdk.internal.logger.LazyLoggers$LazyLoggerWrapper
+jdk.internal.logger.LazyLoggers$LoggerAccessor
 jdk.internal.logger.LoggerFinderLoader
 jdk.internal.logger.LoggerFinderLoader$TemporaryLoggerFinder
 jdk.internal.logger.SimpleConsoleLogger
+jdk.internal.logger.SurrogateLogger
 jdk.internal.math.FloatToDecimal
 jdk.internal.math.MathUtils
 jdk.internal.math.ToDecimal
@@ -1284,6 +1298,8 @@ jdk.internal.module.ModuleBootstrap
 jdk.internal.module.ModuleBootstrap$Counters
 jdk.internal.module.ModuleBootstrap$IllegalNativeAccess
 jdk.internal.module.ModuleHashes
+jdk.internal.module.ModuleHashes$Builder
+jdk.internal.module.ModuleHashes$HashSupplier
 jdk.internal.module.ModuleLoaderMap
 jdk.internal.module.ModuleLoaderMap$Mapper
 jdk.internal.module.ModuleLoaderMap$Modules
@@ -1297,11 +1313,13 @@ jdk.internal.module.ServicesCatalog
 jdk.internal.module.ServicesCatalog$ServiceProvider
 jdk.internal.module.SystemModuleFinders
 jdk.internal.module.SystemModuleFinders$1
+jdk.internal.module.SystemModuleFinders$2
 jdk.internal.module.SystemModuleFinders$SystemImage
 jdk.internal.module.SystemModuleFinders$SystemModuleFinder
 jdk.internal.module.SystemModuleFinders$SystemModuleReader
 jdk.internal.module.SystemModules
 jdk.internal.module.SystemModules$all
+jdk.internal.module.SystemModules$default
 jdk.internal.module.SystemModulesMap
 jdk.internal.perf.Perf
 jdk.internal.perf.PerfCounter
@@ -1461,6 +1479,7 @@ sun.awt.im.InputMethodWindow
 sun.awt.image.BufImgSurfaceData
 sun.awt.image.BufImgSurfaceData$ICMColorData
 sun.awt.image.BufImgSurfaceManager
+sun.awt.image.BufImgVolatileSurfaceManager
 sun.awt.image.BufferedImageDevice
 sun.awt.image.BufferedImageGraphicsConfig
 sun.awt.image.IntegerComponentRaster
@@ -1911,3 +1930,5 @@ sun.util.logging.PlatformLogger$Bridge
 sun.util.logging.PlatformLogger$ConfigurableBridge
 sun.util.logging.PlatformLogger$ConfigurableBridge$LoggerConfiguration
 sun.util.logging.PlatformLogger$Level
+sun.util.logging.internal.LoggingProviderImpl
+sun.util.logging.internal.LoggingProviderImpl$LogManagerAccess
