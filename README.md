@@ -5,20 +5,31 @@ uma linguagem lançada mês passado (versão 0.6.3, beta). Tema cappuccino porqu
 
 ![tela inicial](docs/tela-inicial.png)
 
-## Rodando
+## Baixar e jogar
 
-Precisa do Kof instalado (`kof` no PATH). O Kof 0.6.3 pede **Java 25** pra
-compilar e rodar.
+Pacotes prontos, com o Java já embutido (não precisa instalar nada):
+
+- **Windows:** `KOFnes-windows-x64.zip` → extrair → dois cliques em `KOFnes.exe`
+- **Linux:** `KOFnes-linux-x64.tar.gz` → extrair → `./KOFnes/KOFnes`
+
+Abre `.sfc`, `.smc` ou `.zip` com a ROM dentro (Ctrl+O, ou arrastando a ROM em
+cima do `KOFnes.exe`). Se o jogo tem bateria, o save vai pra `jogo.srm` do lado
+da ROM. Na primeira vez o Windows pode avisar "o Windows protegeu o computador"
+porque o `.exe` não é assinado: "Mais informações" → "Executar assim mesmo".
+
+Pra gerar os pacotes de novo: `empacotar/empacotar.sh` (precisa de Kof, JDK 25,
+Python com Pillow, gcc e mingw-w64; o Java embutido vem do pacote `jdk4py` do
+PyPI). Sai tudo em `dist/`.
+
+## Rodando a partir do código
+
+Com o Kof instalado (`kof` no PATH; o Kof 0.6.3 pede **Java 25**):
 
 ```bash
 ./kofnes.sh                # abre a janela; Ctrl+O escolhe a ROM
 ./kofnes.sh jogo.sfc       # já abre o jogo
 kofnes.bat jogo.sfc        # no Windows
 ```
-
-ROMs `.sfc`/`.smc` (com ou sem o cabeçalho de 512 bytes de copiadora).
-Se o jogo tem bateria, o save vai pra `jogo.srm` do lado da ROM (a cada
-~30 s e ao sair pelo menu).
 
 ### Controles
 
@@ -121,3 +132,9 @@ o emulador roda a ~160–270 fps sem janela. Coisas que apareceram:
   (`sramPath(x)`) às vezes é resolvido como função do `Main` e explode com
   `NoSuchMethodError` — contornado com `this.sramPath(x)`.
 - `System.arraycopy` não aceita `Int[]` como `Object` no typechecker.
+- Bug: `new ZipInputStream(new FileInputStream(p))` grava no bytecode o
+  construtor com o tipo exato do argumento (`FileInputStream`) em vez do
+  declarado (`InputStream`) → `NoSuchMethodError`. Contornado com
+  `as InputStream`.
+- Campos públicos de classes Java (`rect.height`) não resolvem; use os
+  getters.

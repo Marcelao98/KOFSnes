@@ -1,0 +1,42 @@
+KOFnes - emulador de Super Nintendo escrito em Kof
+===================================================
+
+COMO USAR
+  Windows: dê dois cliques em KOFnes.exe
+  Linux:   rode ./KOFnes  (ou dois cliques, se o gerenciador de arquivos deixar)
+
+  Ctrl+O abre uma ROM (.sfc, .smc ou .zip com a ROM dentro).
+  Também dá pra arrastar a ROM em cima do KOFnes.exe.
+
+  Não precisa instalar nada: o Java já vem dentro da pasta "runtime".
+  Não separe os arquivos: o executável procura o runtime e o kofnes.jar
+  do lado dele.
+
+CONTROLES
+  Direcional ....... setas
+  B / A ............ Z / X
+  Y / X ............ A / S
+  L / R ............ Q / W
+  Start / Select ... Enter / Shift
+  Turbo (4x) ....... Tab (segurar)
+  Pausa ............ P ou Esc
+  Reiniciar ........ F1
+  Abrir ROM ........ Ctrl+O
+  Escala da tela ... menu Tela (2x / 3x / 4x)
+
+SAVES
+  Jogos com bateria salvam em "nome-da-rom.srm", do lado da ROM
+  (automático a cada ~30 s e ao sair pelo menu Arquivo > Sair).
+
+O QUE NÃO RODA
+  Jogos com chips extras no cartucho além do Super FX: SA-1 (Super Mario
+  RPG, Kirby Super Star), DSP-1 (Super Mario Kart, Pilotwings), Cx4
+  (Mega Man X2/X3), S-DD1, SPC7110.
+
+SE DER ERRO
+  O Windows pode mostrar "o Windows protegeu o computador" na primeira vez
+  (o .exe não é assinado): clique em "Mais informações" > "Executar assim
+  mesmo".
+  Se fechar sozinho, olhe o arquivo kofnes.log na pasta do programa.
+
+ROMs não acompanham o programa. Use cópias dos seus próprios cartuchos.
