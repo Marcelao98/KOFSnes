@@ -1,0 +1,13 @@
+// alvo JS: todo deslocamento de Int cria dois BigInt:
+//   x >> 4  vira  x >> Number(BigInt.asIntN(32, BigInt(4)))
+//   kof build main.kf --target js --output o && grep -c BigInt o/Default.mjs
+main() {
+    var x = 0x1234
+    var s = 0
+    var i = 0
+    while (i < 1000000) {
+        s = (s + ((x >> (i & 7)) & 0xFF)) & 0xFFFFFF
+        i++
+    }
+    println(s)
+}

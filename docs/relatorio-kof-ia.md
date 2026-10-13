@@ -627,4 +627,4 @@ holding a `malloc` address, plus the raw `buffer.peek8/32/64(addr)` and
 - **K19 (perf)** — JS: every Int shift count goes through `Number(BigInt.asIntN(32, BigInt(n)))` (`JsOperatorEmitter` SHL/SHR/USHR → `JsLongEmitter.toNumber32`). Fix: literal counts as-is; side-effect-free counts as `typeof n === "bigint" ? … : n`. Isolated gain not measured (K18 dominated).
 - **K20 (perf)** — JS: `new Int[n]` emits `new Array(n).fill(0)`; `Int32Array` keeps the JVM 32-bit wrap on store and is monomorphic for V8. With `kofArrayGet/Set` fast paths: 60 → 91 fps on the heaviest frame.
 - Patch with all four: `web/kof-js-correcoes.patch` (applies to Kof4j `4db805c3`). Verified: emulator screen/audio fingerprints identical to the JVM target.
-
+- **Re-verified on 0.6.4 (`aaab7523`)**: all 19 items still reproduce. The KOFnes JS patch applies cleanly to 0.6.4 and fixes K18 and K20 on their repros; K17 only partly (repro `16-js-switch-case-zero` still ends in `switch body label missing`). Issue drafts in the `bug_report.yml` format: `docs/issues/`.

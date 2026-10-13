@@ -1,0 +1,19 @@
+// alvo JS: switch dentro de if, todos os case terminando em return, e código
+// depois do if. Compila sem erro, mas o código depois do if vai parar DENTRO
+// do if: ler(100) devolve undefined.
+//   kof run main.kf                                  -> 7 9 100
+//   kof build main.kf --target js --output o && node o/Default.mjs
+Int ler(Int a) {
+    if (a >= 1 && a <= 2) {
+        switch (a) {
+            case 1: return 7
+            case 2: return 9
+            default: return 0
+        }
+    }
+    return a
+}
+
+main() {
+    println(ler(1) + " " + ler(2) + " " + ler(100))
+}

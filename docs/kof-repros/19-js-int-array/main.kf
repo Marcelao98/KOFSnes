@@ -1,0 +1,7 @@
+// alvo JS: new Int[n] vira new Array(n).fill(0), não Int32Array
+//   kof build main.kf --target js --output o && grep -o "new [A-Za-z0-9]*Array([0-9]*)" o/Default.mjs
+main() {
+    var a = new Int[65536]
+    a[1] = 0xFF000000
+    println(a[1])
+}
