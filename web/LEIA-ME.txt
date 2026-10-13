@@ -8,7 +8,8 @@ Ctrl+O abre uma ROM (.sfc, .smc ou .zip), ou arraste a ROM pra janela.
 Arquivo > Escolher pasta de ROMs: a lista aparece dentro do emulador (Ctrl+L).
 Tema: Café queimado, Escuro, Claro e ZSNES.
 
-Setas = direcional · Z/X = B/A · A/S = Y/X · Q/W = L/R
+Emulação > Configurar teclas: escolha a tecla de cada botão.
+Padrão: setas = direcional · Z/X = B/A · A/S = Y/X · Q/W = L/R
 Enter = Start · Shift = Select · P = pausa · F1 = reiniciar · Tab = turbo
 F11 = tela cheia · M = mudo. Controle USB/Xbox também funciona.
 

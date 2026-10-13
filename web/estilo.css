@@ -113,3 +113,15 @@ body.arrastando #palco { outline: 3px dashed var(--destaque); outline-offset: -1
   display: flex; justify-content: space-between; padding: 4px 12px; font-size: 12px;
   background: var(--painel); border-top: 1px solid var(--borda); color: var(--fraco); text-transform: var(--caixa);
 }
+
+/* Configurar teclas */
+#teclas { width: min(420px, 92vw); text-align: left; }
+#grade-teclas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin: 6px 0 12px; }
+.linha-tecla { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tecla {
+  min-width: 96px; padding: 5px 10px; border-radius: var(--raio); text-align: center;
+  background: var(--painel); border: 1px solid var(--borda); font-family: var(--fonte);
+}
+.tecla:hover { border-color: var(--destaque); }
+.tecla.esperando { border-color: var(--destaque); color: var(--destaque); animation: piscar 1s infinite; }
+@keyframes piscar { 50% { opacity: .55; } }

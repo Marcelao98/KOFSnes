@@ -21,6 +21,8 @@
   <div class="m"><button>Emulação</button><div class="sub">
     <button data-acao="pausar">Pausar / continuar<kbd>P</kbd></button>
     <button data-acao="mudo">Som ligado / mudo<kbd>M</kbd></button>
+    <hr>
+    <button data-acao="teclas">Configurar teclas…</button>
   </div></div>
   <div class="m"><button>Tela</button><div class="sub">
     <button data-escala="2">Escala 2×</button>
@@ -61,15 +63,15 @@
 
   <section id="ajuda" class="janela" hidden>
     <div class="titulo-j">Controles <button class="x" data-acao="fechar-ajuda">×</button></div>
-    <table>
-      <tr><th>SNES</th><th>Teclado</th><th>Emulador</th><th>Teclado</th></tr>
-      <tr><td>Direcional</td><td>setas</td><td>Abrir ROM</td><td>Ctrl+O</td></tr>
-      <tr><td>B · A</td><td>Z · X</td><td>Lista de ROMs</td><td>Ctrl+L</td></tr>
-      <tr><td>Y · X</td><td>A · S</td><td>Pausa</td><td>P / Esc</td></tr>
-      <tr><td>L · R</td><td>Q · W</td><td>Reiniciar</td><td>F1</td></tr>
-      <tr><td>Start · Select</td><td>Enter · Shift</td><td>Turbo</td><td>Tab (segurar)</td></tr>
-      <tr><td colspan="2">Controle USB/Xbox também funciona</td><td>Tela cheia</td><td>F11</td></tr>
-    </table>
+    <table id="tab-ajuda"></table>
+    <p class="dica">Pra mudar as teclas: <b>Emulação → Configurar teclas…</b></p>
+  </section>
+
+  <section id="teclas" class="janela" hidden>
+    <div class="titulo-j">Configurar teclas <button class="x" data-acao="fechar-teclas">×</button></div>
+    <p class="dica" id="teclas-dica">Clique num botão e aperte a tecla que quiser.</p>
+    <div id="grade-teclas"></div>
+    <button class="grande sec" data-acao="teclas-padrao">Restaurar padrão</button>
   </section>
 
   <div id="aviso" hidden></div>

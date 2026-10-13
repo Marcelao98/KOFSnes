@@ -69,11 +69,87 @@ function empurrarSom() {
 }
 
 // ---------------- controles ----------------
-const TECLAS = {
-  KeyZ: 0x8000, KeyA: 0x4000, ShiftLeft: 0x2000, ShiftRight: 0x2000, Enter: 0x1000,
-  ArrowUp: 0x0800, ArrowDown: 0x0400, ArrowLeft: 0x0200, ArrowRight: 0x0100,
-  KeyX: 0x0080, KeyS: 0x0040, KeyQ: 0x0020, KeyW: 0x0010,
-};
+// botões do SNES: nome, bit no registrador do controle e tecla padrão
+const BOTOES_SNES = [
+  ['Cima', 0x0800, 'ArrowUp'], ['Baixo', 0x0400, 'ArrowDown'],
+  ['Esquerda', 0x0200, 'ArrowLeft'], ['Direita', 0x0100, 'ArrowRight'],
+  ['B', 0x8000, 'KeyZ'], ['A', 0x0080, 'KeyX'], ['Y', 0x4000, 'KeyA'], ['X', 0x0040, 'KeyS'],
+  ['L', 0x0020, 'KeyQ'], ['R', 0x0010, 'KeyW'], ['Start', 0x1000, 'Enter'], ['Select', 0x2000, 'ShiftLeft'],
+];
+// atalhos do emulador: não podem virar botão do jogo
+const RESERVADAS = ['Escape', 'Tab', 'F1', 'F11', 'KeyP', 'KeyM'];
+let mapa = {};   // nome do botão -> código da tecla (KeyboardEvent.code)
+let TECLAS = {}; // código da tecla -> bit
+function carregarMapa() {
+  let salvo = null;
+  try { salvo = JSON.parse(ler('teclas') || 'null'); } catch (e) { salvo = null; }
+  mapa = {};
+  for (const [nome, , padrao] of BOTOES_SNES) mapa[nome] = (salvo && salvo[nome]) || padrao;
+  montarTeclas();
+}
+function montarTeclas() {
+  TECLAS = {};
+  for (const [nome, bit] of BOTOES_SNES) if (mapa[nome]) TECLAS[mapa[nome]] = bit;
+}
+function nomeTecla(c) {
+  if (!c) return '—';
+  const setas = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
+  if (setas[c]) return setas[c];
+  if (/^Key[A-Z]$/.test(c)) return c.slice(3);
+  if (/^Digit\d$/.test(c)) return c.slice(5);
+  if (/^Numpad/.test(c)) return 'Num ' + c.slice(6);
+  const nomes = { Space: 'Espaço', ShiftLeft: 'Shift esq.', ShiftRight: 'Shift dir.', ControlLeft: 'Ctrl esq.',
+    ControlRight: 'Ctrl dir.', AltLeft: 'Alt', AltRight: 'AltGr', Backspace: 'Backspace', Enter: 'Enter',
+    Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']',
+    Minus: '-', Equal: '=', Backslash: '\\', IntlBackslash: '\\' };
+  return nomes[c] || c;
+}
+// janela "Configurar teclas": clica num botão, aperta a tecla
+let capturando = null;
+function montarGrade() {
+  const g = $('#grade-teclas'); g.innerHTML = '';
+  for (const [nome] of BOTOES_SNES) {
+    const linha = document.createElement('div'); linha.className = 'linha-tecla';
+    const rot = document.createElement('span'); rot.textContent = nome;
+    const b = document.createElement('button');
+    b.className = 'tecla' + (capturando === nome ? ' esperando' : '');
+    b.textContent = capturando === nome ? 'aperte uma tecla…' : nomeTecla(mapa[nome]);
+    b.onclick = (e) => { e.stopPropagation(); capturando = nome; montarGrade(); };
+    linha.append(rot, b); g.appendChild(linha);
+  }
+  $('#teclas-dica').textContent = capturando
+    ? `Aperte a tecla para ${capturando} (Esc cancela).`
+    : 'Clique num botão e aperte a tecla que quiser.';
+}
+function capturar(e) {
+  e.preventDefault();
+  if (e.code === 'Escape') { capturando = null; montarGrade(); return; }
+  if (RESERVADAS.includes(e.code)) { avisar(nomeTecla(e.code) + ' é atalho do emulador; escolha outra', 2500); return; }
+  // se a tecla já era de outro botão, os dois trocam
+  const dono = Object.keys(mapa).find((n) => mapa[n] === e.code && n !== capturando);
+  if (dono) mapa[dono] = mapa[capturando];
+  mapa[capturando] = e.code;
+  capturando = null; teclado = 0;
+  guardar('teclas', JSON.stringify(mapa)); montarTeclas(); montarGrade(); montarAjuda();
+}
+function montarAjuda() {
+  const t = (n) => nomeTecla(mapa[n]);
+  const linhas = [
+    ['Direcional', `${t('Cima')} ${t('Baixo')} ${t('Esquerda')} ${t('Direita')}`, 'Abrir ROM', 'Ctrl+O'],
+    ['B · A', `${t('B')} · ${t('A')}`, 'Lista de ROMs', 'Ctrl+L'],
+    ['Y · X', `${t('Y')} · ${t('X')}`, 'Pausa', 'P / Esc'],
+    ['L · R', `${t('L')} · ${t('R')}`, 'Reiniciar', 'F1'],
+    ['Start · Select', `${t('Start')} · ${t('Select')}`, 'Turbo', 'Tab (segurar)'],
+    ['Controle USB/Xbox', 'também funciona', 'Tela cheia', 'F11'],
+  ];
+  const tab = $('#tab-ajuda');
+  tab.innerHTML = '<tr><th>SNES</th><th>Teclado</th><th>Emulador</th><th>Teclado</th></tr>';
+  for (const l of linhas) {
+    const tr = document.createElement('tr');
+    for (const c of l) { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); }
+    tab.appendChild(tr);
+  }
+}
 // controle "standard" (Xbox/USB): A,B,X,Y na posição do SNES
 const BOTOES = [[0, 0x8000], [1, 0x0080], [2, 0x4000], [3, 0x0040], [4, 0x0020], [5, 0x0010],
   [8, 0x2000], [9, 0x1000], [12, 0x0800], [13, 0x0400], [14, 0x0200], [15, 0x0100]];
@@ -92,6 +168,7 @@ function estado() {
 }
 addEventListener('keydown', (e) => {
   ligarSom();
+  if (capturando) { capturar(e); return; }
   if ($('#lista').hidden === false && listaTecla(e)) return;
   if (e.ctrlKey && e.code === 'KeyO') { e.preventDefault(); acao('abrir'); return; }
   if (e.ctrlKey && e.code === 'KeyL') { e.preventDefault(); acao('lista'); return; }
@@ -304,7 +381,13 @@ async function acao(a) {
     case 'pausar': if (snes) { pausado = !pausado; avisar(pausado ? 'pausado' : 'continuando'); } break;
     case 'mudo': mudo = !mudo; guardar('mudo', mudo ? '1' : '0'); avisar(mudo ? 'som desligado' : 'som ligado'); break;
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
-    case 'controles': $('#lista').hidden = true; $('#ajuda').hidden = false; break;
+    case 'controles': $('#lista').hidden = true; $('#teclas').hidden = true; montarAjuda(); $('#ajuda').hidden = false; break;
+    case 'teclas': $('#lista').hidden = true; $('#ajuda').hidden = true; capturando = null; montarGrade(); $('#teclas').hidden = false; break;
+    case 'fechar-teclas': capturando = null; $('#teclas').hidden = true; break;
+    case 'teclas-padrao':
+      mapa = {}; for (const [n, , padrao] of BOTOES_SNES) mapa[n] = padrao;
+      guardar('teclas', JSON.stringify(mapa)); montarTeclas(); montarGrade(); montarAjuda(); avisar('teclas padrão restauradas');
+      break;
     case 'fechar-ajuda': $('#ajuda').hidden = true; break;
   }
 }
@@ -324,8 +407,10 @@ addEventListener('click', (e) => {
 addEventListener('fullscreenchange', ajustarEscala);
 
 document.body.classList.add('vazio');
+carregarMapa();
+montarAjuda();
 tema(ler('tema') || 'cafe');
 ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"]').forEach((b) => { b.hidden = true; });
-window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome }) }; // pros testes
+window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome }), botoes: () => estado(), mapa: () => mapa }; // pros testes
 })();

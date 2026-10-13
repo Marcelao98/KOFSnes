@@ -72,7 +72,8 @@ Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
 - **Lista de ROMs dentro da janela**, estilo ZSNES: escolha a pasta uma vez
   (**Arquivo → Escolher pasta de ROMs**), depois **Ctrl+L**, digite pra filtrar
   e Enter. Também abre `.sfc`, `.smc` e `.zip`, ou é só arrastar a ROM.
-- Saves de bateria automáticos, controle USB/Xbox, tela cheia (F11), mudo (M).
+- **Teclas configuráveis** (Emulação → Configurar teclas…), saves de bateria
+  automáticos, controle USB/Xbox, tela cheia (F11), mudo (M).
 
 Pra compilar, o alvo JS do Kof 0.6.3 precisou de 4 correções no compilador
 (`web/kof-js-correcoes.patch`, aplicar no Kof4j): sem elas o núcleo nem
