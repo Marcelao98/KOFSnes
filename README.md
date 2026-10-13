@@ -10,7 +10,7 @@ uma linguagem lançada mês passado (versão 0.6.3, beta). Tema cappuccino porqu
 Pacotes prontos, com o Java já embutido (não precisa instalar nada):
 
 - **Windows:** `KOFnes-windows-x64.zip` → extrair → dois cliques em `KOFnes.exe`
-- **Linux:** `KOFnes-linux-x64.tar.gz` → extrair → `./KOFnes/KOFnes`
+- **Linux:** `KOFnes-linux-x64.tar.xz` → extrair → `./KOFnes/KOFnes`
 
 Abre `.sfc`, `.smc` ou `.zip` com a ROM dentro (Ctrl+O, ou arrastando a ROM em
 cima do `KOFnes.exe`). Se o jogo tem bateria, o save vai pra `jogo.srm` do lado

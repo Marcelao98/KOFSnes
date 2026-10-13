@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Monta os pacotes "baixa e roda" do KOFnes, com Java embutido:
 #   dist/KOFnes-windows-x64.zip   (KOFnes.exe)
-#   dist/KOFnes-linux-x64.tar.gz  (KOFnes)
+#   dist/KOFnes-linux-x64.tar.xz  (KOFnes)
 # Precisa: kof (0.6.3+) e JDK 25 (jar), python3 + Pillow, gcc e
 # x86_64-w64-mingw32-gcc/windres. O JRE vem do pacote jdk4py do PyPI.
 set -euo pipefail
@@ -82,7 +82,7 @@ gcc -O2 -o "$L/KOFnes" "$AQUI/kofnes_unix.c"
 cp "$OBRA/kofnes.jar" "$L/"
 cp -r "$OBRA/jre-linux" "$L/runtime"
 cp "$AQUI/LEIA-ME.txt" "$OBRA/icone.png" "$L/"
-rm -f "$DIST/KOFnes-linux-x64.tar.gz"
-(cd "$OBRA/linux" && tar -czf "$DIST/KOFnes-linux-x64.tar.gz" KOFnes)
+rm -f "$DIST/KOFnes-linux-x64.tar.xz"
+(cd "$OBRA/linux" && tar -cJf "$DIST/KOFnes-linux-x64.tar.xz" KOFnes)
 
 ls -la "$DIST"
