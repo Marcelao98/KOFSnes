@@ -198,9 +198,11 @@ o `extern` com a SDL2 e a libc deu certo de primeira. No caminho:
 
 ## O alvo JavaScript (achados da versão sem Java)
 
-Compilar o núcleo com `--target js` expôs 4 problemas. Corrigi os quatro no
-compilador (`web/kof-js-correcoes.patch`, 222 linhas, todas em `js/`). Com
-eles, a saída fica idêntica à do JVM e o jogo roda a 60 fps no navegador.
+Compilar o núcleo com `--target js` expôs 4 problemas. O patch
+`web/kof-js-correcoes.patch` (222 linhas, todas em `js/`) corrige o 17, o 18 e
+o 19, e o 16 só em parte: no emulador eu contornei o resto trocando um `switch`
+por uma tabela. Com isso, a saída fica idêntica à do JVM e o jogo roda a 60 fps
+no navegador.
 
 16. **`switch` que o compilador não consegue traduzir (`COMP002`).** Dois
     formatos travam o `JsSwitchParser`: o primeiro `case` com a comparação já
