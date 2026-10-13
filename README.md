@@ -101,6 +101,7 @@ pública.
 | [ROMs do PeterLemon — GSU](https://github.com/PeterLemon/SNES/tree/master/CHIP/GSU) | Super FX | 31 testes de instrução: PASS · 27 demos de desenho: certas |
 | [ROMs do undisbeliever](https://github.com/undisbeliever/snes-test-roms) | 108 testes de hardware (compilados aqui) | janelas, HDMA, VMAIN, autojoy, IPL, VRAM fora do vblank |
 | [bbbradsmith](https://github.com/bbbradsmith/SNES_stuff), [nesdoug](https://github.com/nesdoug) | demos e jogos homebrew | todos rodando |
+| **Jogo comercial, num Windows de verdade** | *Mega Man X* (13/10/2026) | **rodou liso a 61 fps, com som** 🎉 |
 
 <sub>¹ O que sobra é MVN/MVP (o SST mede essas instruções de outro jeito; a
 cputest de hardware passa) e um quirk de `(dp,X)` em modo emulação em que o
@@ -116,8 +117,8 @@ SST discorda do teste feito em hardware real — o KOFnes segue o hardware.</sub
 - Save state, gamepad USB, remapear teclas.
 - A precisão é por instrução/linha, não por ciclo/pixel: truques de meio de
   linha muito agressivos podem sair diferentes.
-- Não foi testado com jogos comerciais (não tenho ROMs). Os testes acima dizem
-  que a base está sólida, mas cada jogo tem seus caprichos.
+- Jogo comercial testado até agora: só o *Mega Man X* (rodou liso). Os testes
+  acima dizem que a base está sólida, mas cada jogo tem seus caprichos.
 
 ## 🛠️ Rodando e empacotando a partir do código
 
