@@ -1,0 +1,11 @@
+// Buffer(U8) vale como tipo de parâmetro de extern, mas não como tipo de
+// campo: PARSE023 "Expected parameter name" + PARSE018 em cascata
+class Tela {
+    Buffer(U8) px
+    public constructor() { this.px = buffer.alloc(16) }
+}
+
+main() {
+    var t = Tela()
+    println("ok")
+}

@@ -1,7 +1,6 @@
 package snes
 
 import snes.SpcBus
-import java.lang.Integer;
 
 // Sony SPC700 — a CPU do chip de som. 8 bits, 64 KB, flags NVPBHIZC.
 // step() executa uma instrução e devolve quantos ciclos (de 1,024 MHz)
@@ -46,7 +45,7 @@ class Spc {
         var t = "28453436265454682845455655652246284534362654545228454556556522382845343626445466284545565545224328453436264454552845455655552236284534362654524528454556555522C5384534362644524428454556555522343845454725645249284556674555226328453436245343432845455634542243"
         var i = 0
         while (i < 256) {
-            this.cyc[i] = Integer.parseInt(t.substring(i, i + 1), 16)
+            this.cyc[i] = numero(t.substring(i, i + 1), 16)
             i++
         }
     }
@@ -686,4 +685,27 @@ class Spc {
                 return
         }
     }
+
+    // texto -> número em Kof puro (base 10 ou 16)
+    Int numero(String t, Int base) {
+        var v = 0
+        var neg = false
+        var i = 0
+        while (i < t.length()) {
+            var c = t.charAt(i) as Int
+            var d = 0
+            if (c == 45) {
+                neg = true
+            } else {
+                if (c >= 48 && c <= 57) { d = c - 48 }
+                if (c >= 65 && c <= 70) { d = c - 55 }
+                if (c >= 97 && c <= 102) { d = c - 87 }
+                v = v * base + d
+            }
+            i++
+        }
+        if (neg) { return 0 - v }
+        return v
+    }
+
 }

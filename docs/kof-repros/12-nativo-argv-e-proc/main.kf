@@ -1,0 +1,8 @@
+// alvo nativo: `main(String[] args)` recebe args vazio, e File().readBytes()
+// de um arquivo do /proc (que diz ter tamanho 0) também volta vazio
+//   kof run main.kf um dois                       -> args=2 (JVM)
+//   kof build main.kf --target native --output o && ./o/Default/Main um dois
+main(String[] args) {
+    println("args=" + args.length)
+    println("cmdline=" + File("/proc/self/cmdline").readBytes().length)
+}

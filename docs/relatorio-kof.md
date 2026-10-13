@@ -25,7 +25,8 @@ Também chamou atenção:
   `ActionListener`) funcionaram de primeira.
 - **Mensagens de erro boas.** O `PARSE085` para `fn` diz exatamente o que fazer.
 
-Todos os bugs abaixo estão na **fronteira com o Java**. Cada um tem uma
+Os itens 1 a 11 estão na **fronteira com o Java**; os 12 a 15 são do alvo
+nativo. Cada um tem uma
 reprodução de 5 a 20 linhas em [`kof-repros/`](kof-repros/), que roda com
 `kof run main.kf`.
 
@@ -166,6 +167,33 @@ desempenho.
 
 ---
 
+## O alvo nativo (achados da versão só-Kof)
+
+Pra ter uma versão sem Java, compilei o mesmo núcleo com `--target native`
+(janela e som pela SDL2, via `extern`). **Funciona**: a mesma ROM sai igual e
+o `extern` com a SDL2 e a libc deu certo de primeira. No caminho:
+
+12. **Desempenho: o nativo é ~16× mais lento que o JVM.** Um laço simples de
+    array (`15-nativo-desempenho`) leva 2.214 ms no nativo e 142 ms no JVM. O
+    emulador cai de 350–500 quadros por segundo (JVM) pra **~22**: o jogo roda
+    a 1/3 da velocidade. O código gerado é de pilha (cada operação faz
+    `push`/`pop`, toda variável mora na memória, todo acesso a array é uma
+    chamada a `kof_array_get`), e o `--release` não muda nada. Um alocador de
+    registradores simples e acesso a array em linha devem render muito.
+13. **`main(String[] args)` recebe `args` vazio no nativo**, e
+    `File("/proc/self/cmdline").readBytes()` também volta vazio (o arquivo diz
+    ter tamanho 0). Contornei lendo o `/proc` com `fopen`/`fread` da libc via
+    `extern` (reprodução `12`).
+14. **`new File(p)` compila e o `ld` falha no nativo** (`undefined reference
+    to File_init_1`); `File(p)` sem `new` funciona. Ou ele devia recusar com
+    mensagem, ou aceitar os dois (reprodução `13`).
+15. **`Buffer(U8)` não vale como tipo de campo de classe**: dá `PARSE023
+    Expected parameter name` + `PARSE018` em cascata. Contornei com `malloc`
+    da libc e o `buffer.peek/poke` na forma crua, com o endereço num `Long`
+    (reprodução `14`).
+
+---
+
 ## Resumo
 
 | # | Problema | Gravidade | Quando aparece |
@@ -181,6 +209,10 @@ desempenho.
 | 9 | `SourceFile` errado | baixa | depurando |
 | 10 | diagnóstico de `val` | baixa | compilando |
 | 11 | diagnóstico de `case ->` com bloco | baixa | compilando |
+| 12 | nativo ~16× mais lento que o JVM | **alta** (desempenho) | rodando |
+| 13 | `args` e `/proc` vazios no nativo | média | rodando |
+| 14 | `new File` quebra o `ld` no nativo | média | ligando |
+| 15 | `Buffer(U8)` como tipo de campo | média | compilando |
 
 Os sérios parecem vir de **poucos pontos pequenos** do compilador: tipos
 de array na escolha de overload, construtores do JDK escolhidos só pela

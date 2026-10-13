@@ -33,12 +33,14 @@
 
 | Sistema | Pacote | Como abrir |
 |---|---|---|
-| **Windows** (x64) | `KOFnes-windows-x64.zip` · 31 MB | extrair → dois cliques em **`KOFnes.exe`** |
-| **Linux** (x64) | `KOFnes-linux-x64.tar.xz` · 24 MB | extrair → `./KOFnes/KOFnes` |
+| **Windows** (x64) | `KOFnes-instalador-windows.exe` · **15 MB** | dois cliques → instala (sem pedir administrador) → ícone na área de trabalho |
+| **Windows** (x64), portátil | `KOFnes-windows-x64.zip` · 22 MB | extrair → dois cliques em **`KOFnes.exe`** |
+| **Linux** (x64) | `KOFnes-linux-x64.tar.xz` · 23 MB | extrair → `./KOFnes/KOFnes` |
+| **Linux** (x64), **só Kof** | `KOFnes-so-kof-linux-x64` · **0,3 MB** | `./KOFnes-so-kof-linux-x64 jogo.sfc` (veja o [tradeoff](#-duas-versões-com-java--só-kof)) |
 
-**Não precisa instalar nada**: o Java vai junto na pasta `runtime`. Depois é só
-**Ctrl+O** e escolher a ROM (`.sfc`, `.smc` ou um `.zip` com a ROM dentro).
-Também dá pra arrastar a ROM em cima do `KOFnes.exe`.
+**Não precisa instalar Java**: ele vai junto, numa versão podada só com o que
+o KOFnes usa. Depois é só **Ctrl+O** e escolher a ROM (`.sfc`, `.smc` ou um
+`.zip` com a ROM dentro). Também dá pra arrastar a ROM em cima do `KOFnes.exe`.
 
 > Na primeira vez o Windows pode dizer *"o Windows protegeu o computador"*: o
 > `.exe` não tem assinatura digital. Clique em **Mais informações → Executar
@@ -56,6 +58,33 @@ Saves de bateria vão pra `nome-da-rom.srm`, do lado da ROM (automático a cada
 | Y · X | **A** · **S** | | Reiniciar | **F1** |
 | L · R | **Q** · **W** | | Turbo 4× | **Tab** (segurar) |
 | Start · Select | **Enter** · **Shift** | | Escala 2×/3×/4× | menu **Tela** |
+
+## ⚖️ Duas versões: com Java × só Kof
+
+O núcleo (`snes/`) é **Kof puro**, sem nenhuma linha de Java, e é o mesmo nas
+duas versões. Elas só mudam no que fica em volta:
+
+| | **Com Java** (`app/` + `empacotar/`) | **Só Kof** (`nativo/`) |
+|---|---|---|
+| Tamanho | 15 MB (instalador), 22 MB (zip) | **0,3 MB** |
+| Velocidade | **350–500 fps** sem janela; os jogos rodam a 60 fps com folga | **~22 fps**: o jogo anda a ~1/3 da velocidade |
+| Sistemas | Windows e Linux | só Linux x64 (no Windows, pelo WSL) |
+| Janela | menu, Abrir ROM, pausa, escala, `.zip` | SDL2: ROM pela linha de comando ou arrastada pra janela; só `.sfc`/`.smc` |
+| Precisa | nada (o Java vai junto) | `libsdl2-2.0-0` (`sudo apt install libsdl2-2.0-0`) |
+| Saída | idêntica bit a bit: mesma tela, mesmo som | |
+
+**Por que o só-Kof é lento?** O compilador nativo do Kof ainda é jovem: ele
+gera código de pilha (cada conta faz `push`/`pop`, toda variável fica na
+memória, todo acesso a array é uma chamada de função). Num laço simples ele é
+~16× mais lento que o mesmo programa no Java, e o `--release` não muda isso. O
+Java tem um JIT de 25 anos por trás. Quando o alvo nativo do Kof ganhar
+registradores e acesso a array em linha, a versão só-Kof fica rápida **sem mudar
+uma linha do emulador**. Está no [relatório](docs/relatorio-kof.md) (item 12).
+
+**Como o Java ficou com 15 MB:** o pacote leva só os módulos `java.base` e
+`java.desktop`, e dentro deles só as classes que o KOFnes carrega numa sessão
+de verdade (medidas com `-Xlog:class+load`), mais tudo o que elas podem chamar
+(`jdeps`). A janela usa AWT puro, sem Swing. O resto é LZMA no instalador.
 
 ## 🧩 O que tem dentro
 
@@ -133,9 +162,11 @@ kof run KOFnes.kf headless rom.sfc 600 tela.png   # 600 frames sem janela -> PNG
 kof run KOFnes.kf testar-cpu <pasta>              # SingleStepTests 65816 (convertidos pra texto)
 kof run KOFnes.kf testar-spc <pasta>              # SingleStepTests SPC700
 
-empacotar/empacotar.sh      # gera dist/KOFnes-windows-x64.zip e dist/KOFnes-linux-x64.tar.xz
-empacotar/testar-interface.sh linux   rom.zip   # teste de interface do pacote
-empacotar/testar-interface.sh windows rom.zip   # o mesmo com o .exe, no Wine
+empacotar/empacotar.sh      # gera o instalador, o zip do Windows e o .tar.xz do Linux em dist/
+empacotar/testar-interface.sh linux      rom.zip   # teste de interface do pacote
+empacotar/testar-interface.sh windows    rom.zip   # o mesmo com o .exe, no Wine
+empacotar/testar-interface.sh instalador rom.zip   # instala em silêncio no Wine e testa
+nativo/compilar.sh          # versão só-Kof: dist/KOFnes-so-kof-linux-x64
 ```
 
 O teste de interface faz o que um usuário faz: abre o programa, clica em
@@ -144,16 +175,17 @@ O teste de interface faz o que um usuário faz: abre o programa, clica em
 do pacote passou em todos os testes do motor e mesmo assim não abria ROM pelo
 menu.
 
-O `empacotar.sh` precisa de Python com Pillow, gcc e mingw-w64; o Java embutido
+O `empacotar.sh` precisa de Python com Pillow, gcc, mingw-w64 e NSIS; o Java embutido
 vem do pacote [`jdk4py`](https://pypi.org/project/jdk4py/) do PyPI.
 
 ```
 KOFnes/
 ├── KOFnes.kf          ponto de entrada (janela e subcomandos)
 ├── snes/              o console: Cpu, Spc, Dsp, Apu, Ppu, Snes, Cartridge, Gsu
-├── app/               janela, controle, som, tema cappuccino
+├── app/               janela, controle, som, tema cappuccino (versão com Java)
+├── nativo/            versão só-Kof: janela/som pela SDL2 via extern
 ├── tools/             testes de CPU/SPC e o modo headless
-├── empacotar/         lançadores (.exe e Linux), ícone, script dos pacotes
+├── empacotar/         lançadores, instalador, poda do Java, script dos pacotes
 └── docs/              imagens, relatório de bugs da Kof e reproduções
 ```
 
@@ -184,5 +216,6 @@ compilador, todos com reprodução mínima:
   OpenGameArt: *16x16 Forest Tiles* de Sharm (CC BY 4.0), *Ocean Background* de
   KnoblePersona (CC BY 3.0) e *LPC Birds* de bluecarrot16 (CC BY 4.0).
 - Java embutido nos pacotes: OpenJDK 25, via [jdk4py](https://pypi.org/project/jdk4py/).
+- Versão só-Kof: [SDL2](https://www.libsdl.org/) (zlib).
 
 ROMs não acompanham o programa. Use cópias dos seus próprios cartuchos.

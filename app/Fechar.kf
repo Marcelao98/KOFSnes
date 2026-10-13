@@ -1,0 +1,24 @@
+package app
+
+import java.awt.event.WindowListener;
+import java.awt.event.WindowEvent;
+
+// Botão X da janela: pede "sair" ao laço principal, que salva a SRAM antes.
+class Fechar implements WindowListener {
+    Controle alvo
+
+    public constructor(Controle alvo) {
+        this.alvo = alvo
+    }
+
+    windowClosing(WindowEvent e) {
+        alvo.pedido = 9
+    }
+
+    windowOpened(WindowEvent e) { }
+    windowClosed(WindowEvent e) { }
+    windowIconified(WindowEvent e) { }
+    windowDeiconified(WindowEvent e) { }
+    windowActivated(WindowEvent e) { }
+    windowDeactivated(WindowEvent e) { }
+}

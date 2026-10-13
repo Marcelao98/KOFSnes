@@ -1,0 +1,5 @@
+// alvo nativo: `new File(p)` compila, mas o ld falha
+// (undefined reference to `File_init_1`); `File(p)` sem `new` funciona
+main() {
+    println(new File("main.kf").exists())
+}

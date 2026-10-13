@@ -14,9 +14,20 @@ import java.lang.Integer;
 class Headless {
     public constructor() { }
 
+    // o núcleo (snes/) é Kof puro e recebe a ROM como Int[] (0..255)
+    Int[] paraInt(Byte[] b) {
+        var r = new Int[b.length]
+        var i = 0
+        while (i < b.length) {
+            r[i] = (b[i] as Int) & 0xFF
+            i++
+        }
+        return r
+    }
+
     run(String romPath, Int frames, String outPng, Int pressAt, Int pressMask) {
         var data = Files.readAllBytes(new File(romPath).toPath())
-        var snes = Snes(data)
+        var snes = Snes(this.paraInt(data))
         println("ROM: '" + snes.cart.title + "' mapper=" + snes.cart.mapper + " rom=" + snes.cart.rom.length + " sram=" + snes.cart.sram.length)
         snes.reset()
         var t0 = System.currentTimeMillis()

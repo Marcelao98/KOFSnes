@@ -3,7 +3,6 @@ package snes
 import snes.Spc
 import snes.SpcBus
 import snes.Dsp
-import java.lang.Integer;
 
 // A placa de som do SNES: SPC700 + 64 KB de RAM + DSP + 3 timers +
 // 4 portas de comunicação com a CPU principal.
@@ -47,7 +46,7 @@ class Apu implements SpcBus {
         var h = "CDEFBDE800C61DD0FC8FAAF48FBBF578CCF4D0FB2F19EBF4D0FC7EF4D00BE4F5CBF4D700FCD0F3AB0110EF7EF410EBBAF6DA00BAF4C4F4DD5DD0DB1F0000C0FF"
         var i = 0
         while (i < 64) {
-            this.ipl[i] = Integer.parseInt(h.substring(i * 2, i * 2 + 2), 16)
+            this.ipl[i] = numero(h.substring(i * 2, i * 2 + 2), 16)
             i++
         }
         this.spc = Spc(this)
@@ -183,4 +182,27 @@ class Apu implements SpcBus {
             tickTimer(1)
         }
     }
+
+    // texto -> número em Kof puro (base 10 ou 16)
+    Int numero(String t, Int base) {
+        var v = 0
+        var neg = false
+        var i = 0
+        while (i < t.length()) {
+            var c = t.charAt(i) as Int
+            var d = 0
+            if (c == 45) {
+                neg = true
+            } else {
+                if (c >= 48 && c <= 57) { d = c - 48 }
+                if (c >= 65 && c <= 70) { d = c - 55 }
+                if (c >= 97 && c <= 102) { d = c - 87 }
+                v = v * base + d
+            }
+            i++
+        }
+        if (neg) { return 0 - v }
+        return v
+    }
+
 }

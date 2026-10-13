@@ -1,0 +1,18 @@
+// mesmo laço no JVM e no nativo: kof run main.kf  vs  --target native
+// (o nativo gera código de pilha: cada operação faz push/pop, sem registradores)
+main() {
+    var a = new Int[65536]
+    var t0 = time.now()
+    var soma = 0
+    var r = 0
+    while (r < 2000) {
+        var i = 0
+        while (i < 65536) {
+            a[i] = (a[i] + i * 3) & 0xFFFF
+            soma = (soma + a[i]) & 0x7FFFFFFF
+            i++
+        }
+        r++
+    }
+    println("soma=" + soma + " ms=" + (time.now() - t0))
+}

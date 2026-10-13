@@ -64,7 +64,7 @@ class Snes implements CpuBus {
     Bool[] hdmaDo
     Int dmaKill
 
-    public constructor(Byte[] romData) {
+    public constructor(Int[] romData) {
         this.cart = Cartridge(romData)
         this.hasGsu = this.cart.superfx
         this.gsu = Gsu(this.cart.rom, this.cart.romMask, this.cart.gsuRam, this.cart.gsuRamMask)

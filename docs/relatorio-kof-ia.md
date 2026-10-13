@@ -48,6 +48,10 @@ matching entry was found.
 | K10 | Dense `Int` `switch` lowered to a compare chain, never `tableswitch` | Perf | — | Observed in bytecode |
 | K11 | `Throwable.printStackTrace()` emitted with `()Ljava/lang/Object;` | **High** | runtime `NoSuchMethodError`; `VerifyError` if a `try` follows | Not located |
 | K12 | Java method returning a non-`String` object array (`StackTraceElement[]`) → element type unnamed | **High** | class load `NoClassDefFoundError: ?` | Not located |
+| K13 | Native x86-64 codegen ~16× slower than JVM; `--release` is a no-op | **High** (perf) | runtime | Observed in disassembly |
+| K14 | Native: `main(String[] args)` gets an empty array; `File(<procfs>).readBytes()` is empty | Medium | runtime | Not located |
+| K15 | Native: `new File(p)` type-checks, then `ld` fails (`File_init_1` undefined) | Medium | link | Not located |
+| K16 | `Buffer(U8)` rejected as a class field type | Medium | parse `PARSE023` + `PARSE018` | Not located |
 
 ---
 
@@ -519,6 +523,76 @@ main() {
 
 ---
 
+## K13 — native x86-64 codegen is ~16× slower than JVM; `--release` is a no-op
+
+**Repro:** `kof-repros/15-nativo-desempenho/main.kf` (2000 × 64 Ki `Int[]`
+read-modify-write).
+
+| Target | Output | Time |
+|---|---|---|
+| JVM (`kof run main.kf`) | `soma=1783103488` | 142 ms |
+| Native (`kof build --target native`, same with `--release`) | `soma=1783103488` | 2214 ms |
+
+Whole-emulator measurement (same core, MonsterFarmJump, 300 frames): JVM
+≈ 0.6–0.9 s, native 13.4 s (`--release`) vs 14.0 s (without), i.e. ~22 fps,
+below the SNES's 60.
+
+**Observed in `objdump`/`gdb disassemble`** of `snes_Ppu_mapEntry` (a 9-line Kof
+method → ~240 instructions): pure stack-machine lowering. Every subexpression goes
+`push %rax` / `pop %rcx`, every local lives in `-N(%rbp)`, and constants are
+materialized through the stack (`mov $0xfc,%rax; push; pop %rcx; and %ecx,%eax`).
+Every array element access is a `call kof_array_get`/`kof_array_set` that
+re-checks null, bounds and the element width (`cmp $8/$4/$2` on `0x14(%rbx)`)
+at runtime, even when the static type is `Int[]`. In a gdb sampling of the
+emulator, ~25% of samples were inside `kof_array_get/set`.
+
+**Suggested fixes, in order of cost-benefit:**
+1. Peephole `push X; pop Y` → `mov X, Y` (removes roughly half the instructions).
+2. Inline array get/set when the element type is statically known: bounds
+   check + one `mov` with a fixed scale.
+3. Keep locals in callee-saved registers (a linear-scan allocator for
+   leaf-ish functions is enough).
+4. Make `--release` mean something (at least 1 + 2).
+
+**Regression test:** a timing ratio test is flaky. Better: assert on the
+instruction count of a known function in the emitted `.s` (e.g. `mapEntry`-like
+fixture < 80 instructions), plus the existing parity goldens.
+
+## K14 — native: `main(String[] args)` gets an empty array; procfs `readBytes()` is empty
+
+**Repro:** `kof-repros/12-nativo-argv-e-proc/main.kf`, run with `um dois`.
+
+| Target | Output |
+|---|---|
+| JVM | `args=2` / `cmdline=290` |
+| Native x86-64 | `args=0` / `cmdline=0` |
+
+Two separate issues. (a) The native `main` doesn't forward `argc/argv` (or
+the runtime doesn't build the `String[]`). (b) `File.readBytes()` probably sizes
+the buffer from `stat().st_size`, which is 0 for procfs/sysfs files and pipes.
+Reading until EOF fixes (b). **Workaround used in KOFnes:** `extern "libc.so.6"`
+`fopen`/`fread` on `/proc/self/cmdline` into a `malloc` buffer.
+
+## K15 — native: `new File(p)` type-checks, then the link fails
+
+**Repro:** `kof-repros/13-nativo-new-file/main.kf`.
+`ld: ... in function 'main': undefined reference to 'File_init_1'`.
+`File(p)` (without `new`) links and works. Either the checker should reject
+`new File(...)` with a diagnostic, or `new` should lower to the same
+constructor symbol. A raw linker error is the worst of both.
+
+## K16 — `Buffer(U8)` is rejected as a field type
+
+**Repro:** `kof-repros/14-buffer-como-campo/main.kf`.
+`Buffer(U8) px` inside a class: `PARSE023 Expected parameter name`, then
+`PARSE018 Expected member name`. The same type parses as an `extern`
+parameter, so the type parser for member declarations doesn't accept the
+parameterized `Buffer(...)` form. **Workaround used in KOFnes:** a `Long` field
+holding a `malloc` address, plus the raw `buffer.peek8/32/64(addr)` and
+`buffer.poke8/32(addr, v)` forms.
+
+---
+
 ## 11. Checked and discarded (to save triage time)
 
 | Suspicion | Verdict |
@@ -544,3 +618,7 @@ main() {
 - **K10** — no `tableswitch`/`lookupswitch` emitted for dense `Int` switches.
 - **K11** — `Throwable.printStackTrace()` emitted as `()Ljava/lang/Object;` → `NoSuchMethodError`; with a following `try` the leftover stack value → `VerifyError`.
 - **K12** — a JDK method returning `StackTraceElement[]` leaks an unnamed element type (`?`/`""`) → `NoClassDefFoundError`/`ClassFormatError`; `String[]` works.
+- **K13** — native x86-64 is a stack-machine lowering (`push`/`pop` per subexpression, locals in memory, `call kof_array_get/set` per element access): ~16× slower than JVM; `--release` changes nothing.
+- **K14** — native `main(String[] args)` receives an empty array; `File(<procfs file>).readBytes()` is empty (sized from `st_size` = 0?).
+- **K15** — native `new File(p)` passes the checker, then `ld` fails on `File_init_1`; `File(p)` works.
+- **K16** — `Buffer(U8)` as a class field type → `PARSE023` + `PARSE018`; fine as an `extern` parameter.

@@ -6,7 +6,9 @@
 #   4. espera o título, aperta Enter (Start) e confere que a tela mudou
 #   5. confere que nenhuma exceção foi parar no log
 #
-# Uso: testar-interface.sh linux|windows <rom.sfc|rom.zip>
+# Uso: testar-interface.sh linux|windows|instalador <rom.sfc|rom.zip>
+#   instalador: instala o KOFnes-instalador-windows.exe em silêncio no Wine
+#   e testa o que ele instalou
 # Precisa: Xvfb, xdotool, python3 + Pillow; pra "windows", wine64.
 # A ROM de referência usada até aqui é o Monster Farm Jump (PeterLemon/SNES):
 # título por volta de 14 s, Start leva à seleção de fase.
@@ -44,12 +46,29 @@ XPID=$!
 sleep 1
 
 echo "== KOFnes ($ALVO): teste de interface"
+if [ "$ALVO" = "instalador" ]; then
+    export WINEPREFIX="$TMP/wine" WINEDEBUG=-all
+    "$WINE" wineboot -i >/dev/null 2>&1
+    DESTINO=$("$WINE" winepath -w "$TMP/KOFnes" 2>/dev/null | tr -d '\r')
+    "$WINE" "$DIST/KOFnes-instalador-windows.exe" /S "/D=$DESTINO"
+    "$WINESERVER" -w
+    if [ -f "$TMP/KOFnes/KOFnes.exe" ] && [ -f "$TMP/KOFnes/Desinstalar.exe" ]; then ok "o instalador instalou"; else falha "o instalador não instalou"; fi
+    ALVO=windows
+    INSTALADO=1
+fi
 if [ "$ALVO" = "windows" ]; then
     export WINEPREFIX="$TMP/wine" WINEDEBUG=-all
-    (cd "$TMP" && unzip -q "$DIST/KOFnes-windows-x64.zip")
-    "$WINE" wineboot -i >/dev/null 2>&1
+    if [ -z "${INSTALADO:-}" ]; then
+        (cd "$TMP" && unzip -q "$DIST/KOFnes-windows-x64.zip")
+        "$WINE" wineboot -i >/dev/null 2>&1
+    fi
     cp "$ROM" "$TMP/KOFnes/rom-teste.${ROM##*.}"
-    (cd "$TMP/KOFnes" && "$WINE" KOFnes.exe >/dev/null 2>&1 &)
+    if [ -n "${JVM_EXTRA:-}" ]; then
+        # modo de medição: chama o java direto, com opções extras da JVM
+        (cd "$TMP/KOFnes" && "$WINE" runtime/bin/javaw.exe $JVM_EXTRA -jar kofnes.jar > kofnes.log 2>&1 &)
+    else
+        (cd "$TMP/KOFnes" && "$WINE" KOFnes.exe >/dev/null 2>&1 &)
+    fi
     LOG="$TMP/KOFnes/kofnes.log"
     ESPERA=30
 else
@@ -120,5 +139,6 @@ fi
 [ -n "$APP" ] && kill "$APP" 2>/dev/null
 kill "$XPID" 2>/dev/null
 cp "$TMP"/*.png "$DIST/" 2>/dev/null
+[ -n "${GUARDAR:-}" ] && cp -r "$TMP/KOFnes" "$GUARDAR"
 if [ "$FALHAS" -eq 0 ]; then echo "== PASSOU"; else echo "== $FALHAS FALHA(S) — fotos em $DIST/*.png"; fi
 exit "$FALHAS"

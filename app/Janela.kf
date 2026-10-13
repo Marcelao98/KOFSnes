@@ -5,7 +5,7 @@ import app.Tema
 import app.Controle
 import app.Acao
 import app.Som
-import javax.swing.JFrame;
+import app.Fechar
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -34,7 +34,7 @@ import java.lang.Thread;
 // A janela do KOFnes: tela do SNES numa "xícara" de cappuccino, menu,
 // barra de status, teclado e som. O laço principal roda aqui.
 class Janela {
-    JFrame frame
+    Frame frame
     Canvas tela
     Tema t
     Controle ctl
@@ -77,9 +77,10 @@ class Janela {
         this.img = new BufferedImage(256, 224, BufferedImage.TYPE_INT_RGB)
         var db = this.img.getRaster().getDataBuffer() as DataBufferInt
         this.pix = db.getData()
-        this.frame = new JFrame("KOFnes ☕ — Super Nintendo em Kof")
-        this.frame.setDefaultCloseOperation(3)
-        this.frame.getContentPane().setBackground(this.t.espresso)
+        // Frame do AWT puro (sem Swing): o pacote leva um Java bem menor
+        this.frame = new Frame("KOFnes ☕ — Super Nintendo em Kof")
+        this.frame.setBackground(this.t.espresso)
+        this.frame.addWindowListener(Fechar(this.ctl))
         this.tela = new Canvas()
         this.tela.setBackground(this.t.espresso)
         this.tela.setPreferredSize(new Dimension(256 * this.escala + 64, 224 * this.escala + 124))
@@ -158,7 +159,7 @@ class Janela {
                 avisar("isso não parece uma ROM de SNES (ou o zip não tem .sfc/.smc)")
                 return
             }
-            var s = Snes(data)
+            var s = Snes(this.paraInt(data))
             var srm = new File(this.sramPath(path))
             if (s.cart.hasSram() && srm.exists()) {
                 var sd = Files.readAllBytes(srm.toPath())
@@ -182,6 +183,17 @@ class Janela {
     }
 
     // .sfc/.smc direto, ou o primeiro .sfc/.smc de dentro de um .zip
+    // o núcleo (snes/) é Kof puro e recebe a ROM como Int[] (0..255)
+    Int[] paraInt(Byte[] b) {
+        var r = new Int[b.length]
+        var i = 0
+        while (i < b.length) {
+            r[i] = (b[i] as Int) & 0xFF
+            i++
+        }
+        return r
+    }
+
     Byte[] lerRom(String path) {
         if (path.toLowerCase().endsWith(".zip")) {
             var zin = new ZipInputStream(new FileInputStream(path) as InputStream)
@@ -228,9 +240,7 @@ class Janela {
     }
 
     escolherRom() {
-        // o construtor pede Frame; sem o cast a Kof 0.6.3 grava JFrame no
-        // descritor e a chamada morre com NoSuchMethodError (relatorio-kof, bug 1)
-        var fd = new FileDialog(frame as Frame, "Abrir ROM de Super Nintendo", 0)
+        var fd = new FileDialog(frame, "Abrir ROM de Super Nintendo", 0)
         fd.setVisible(true)
         var f = fd.getFile()
         if (f != null) {

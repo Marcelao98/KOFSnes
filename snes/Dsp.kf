@@ -1,7 +1,5 @@
 package snes
 
-import java.lang.Math;
-import java.lang.Integer;
 
 // S-DSP: 8 vozes de sample BRR, envelope ADSR/GAIN, interpolação
 // gaussiana, ruído, modulação de pitch e eco com filtro FIR de 8 taps.
@@ -68,22 +66,45 @@ class Dsp {
         var o = "1 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 0 0".split(" ")
         var i = 0
         while (i < 32) {
-            this.rates[i] = Integer.parseInt(r[i])
-            this.offsets[i] = Integer.parseInt(o[i])
+            this.rates[i] = numero(r[i], 10)
+            this.offsets[i] = numero(o[i], 10)
             i++
         }
         // tabela gaussiana: núcleo de largura 4 amostras, centro 1305 (0x519)
         var sig2 = 2.0 * 0.3977
-        var g2 = Math.exp(-4.0 / sig2)
+        var g2 = expKof(-4.0 / sig2)
         var k = 0
         while (k < 512) {
             var dd = (511.5 - k) / 256.0
-            var g = (Math.exp(0.0 - dd * dd / sig2) - g2) / (1.0 - g2)
+            var g = (expKof(0.0 - dd * dd / sig2) - g2) / (1.0 - g2)
             if (g < 0.0) { g = 0.0 }
             this.gauss[k] = (g * 1305.0 + 0.5) as Int
             k++
         }
         this.regs[0x6C] = 0xE0
+    }
+
+    // e^x em Kof puro (série de Taylor com redução por quadrados)
+    Double expKof(Double x) {
+        var n = 0
+        var y = x
+        while (y > 0.5 || y < -0.5) {
+            y = y / 2.0
+            n++
+        }
+        var termo = 1.0
+        var soma = 1.0
+        var k = 1
+        while (k < 20) {
+            termo = termo * y / k
+            soma = soma + termo
+            k++
+        }
+        while (n > 0) {
+            soma = soma * soma
+            n--
+        }
+        return soma
     }
 
     Int s8(Int v) {
@@ -417,4 +438,27 @@ class Dsp {
             outCount = outCount + 2
         }
     }
+
+    // texto -> número em Kof puro (base 10 ou 16)
+    Int numero(String t, Int base) {
+        var v = 0
+        var neg = false
+        var i = 0
+        while (i < t.length()) {
+            var c = t.charAt(i) as Int
+            var d = 0
+            if (c == 45) {
+                neg = true
+            } else {
+                if (c >= 48 && c <= 57) { d = c - 48 }
+                if (c >= 65 && c <= 70) { d = c - 55 }
+                if (c >= 97 && c <= 102) { d = c - 87 }
+                v = v * base + d
+            }
+            i++
+        }
+        if (neg) { return 0 - v }
+        return v
+    }
+
 }

@@ -1,0 +1,352 @@
+import snes
+
+// KOFnes só-Kof: o mesmo núcleo (snes/), compilado pro alvo nativo do Kof
+// (ELF de Linux, sem Java). Janela, teclado e som pela SDL2, via `extern`.
+//
+//   ./KOFnes jogo.sfc        (ou arraste a ROM pra dentro da janela)
+
+extern "libSDL2-2.0.so.0" SDL_Init(Int flags): Int
+extern "libSDL2-2.0.so.0" SDL_SetHint(String nome, String valor): Int
+extern "libSDL2-2.0.so.0" SDL_CreateWindow(String t, Int x, Int y, Int w, Int h, Int flags): Long
+extern "libSDL2-2.0.so.0" SDL_SetWindowTitle(Long win, String t): void
+extern "libSDL2-2.0.so.0" SDL_CreateRenderer(Long win, Int idx, Int flags): Long
+extern "libSDL2-2.0.so.0" SDL_RenderSetLogicalSize(Long ren, Int w, Int h): Int
+extern "libSDL2-2.0.so.0" SDL_SetRenderDrawColor(Long ren, Int r, Int g, Int b, Int a): Int
+extern "libSDL2-2.0.so.0" SDL_CreateTexture(Long ren, Int fmt, Int acesso, Int w, Int h): Long
+extern "libSDL2-2.0.so.0" SDL_UpdateTexture(Long tex, Long rect, Long px, Int pitch): Int
+extern "libSDL2-2.0.so.0" SDL_RenderClear(Long ren): Int
+extern "libSDL2-2.0.so.0" SDL_RenderCopy(Long ren, Long tex, Long src, Long dst): Int
+extern "libSDL2-2.0.so.0" SDL_RenderPresent(Long ren): void
+extern "libSDL2-2.0.so.0" SDL_PollEvent(Long ev): Int
+extern "libSDL2-2.0.so.0" SDL_GetKeyboardState(Long n): Long
+extern "libSDL2-2.0.so.0" SDL_GetTicks(): Int
+extern "libSDL2-2.0.so.0" SDL_Delay(Int ms): void
+extern "libSDL2-2.0.so.0" SDL_OpenAudioDevice(Long nome, Int captura, Long quero, Long obtido, Int muda): Int
+extern "libSDL2-2.0.so.0" SDL_PauseAudioDevice(Int dev, Int pausa): void
+extern "libSDL2-2.0.so.0" SDL_QueueAudio(Int dev, Long dados, Int n): Int
+extern "libSDL2-2.0.so.0" SDL_GetQueuedAudioSize(Int dev): Int
+extern "libSDL2-2.0.so.0" SDL_free(Long p): void
+extern "libSDL2-2.0.so.0" SDL_Quit(): void
+extern "libc.so.6" malloc(Long n): Long
+extern "libc.so.6" fopen(String nome, String modo): Long
+extern "libc.so.6" fwrite(Long dados, Long tam, Long n, Long f): Long
+extern "libc.so.6" fread(Long dados, Long tam, Long n, Long f): Long
+extern "libc.so.6" fclose(Long f): Int
+
+class Natty {
+    Long win
+    Long ren
+    Long tex
+    Int dev
+    Long px
+    Long ev
+    Long pcm
+    Long teclas
+    Snes s
+    String rom
+    Bool pausado
+    Bool sair
+    Int contaSave
+
+    public constructor() {
+        this.rom = ""
+        this.pausado = false
+        this.sair = false
+        this.contaSave = 0
+        this.px = malloc(256 * 224 * 4)
+        this.ev = malloc(64)
+        this.pcm = malloc(8192 * 2)
+    }
+
+    Bool abrirJanela() {
+        if (SDL_Init(0x20 | 0x10) != 0) { return false }
+        SDL_SetHint("SDL_RENDER_SCALE_QUALITY", "0")
+        this.win = SDL_CreateWindow("KOFnes ☕ (só Kof)", 0x2FFF0000, 0x2FFF0000, 768, 672, 0x20)
+        if (this.win == 0) { return false }
+        this.ren = SDL_CreateRenderer(this.win, -1, 2)
+        if (this.ren == 0) { this.ren = SDL_CreateRenderer(this.win, -1, 0) }
+        SDL_RenderSetLogicalSize(this.ren, 256, 224)
+        // ARGB8888, streaming
+        this.tex = SDL_CreateTexture(this.ren, 0x16362004, 1, 256, 224)
+        this.teclas = SDL_GetKeyboardState(0)
+        // SDL_AudioSpec: 32 kHz, S16LSB, estéreo, 1024 amostras, sem callback
+        var spec = malloc(32)
+        buffer.poke32(spec + (0), 32000)
+        buffer.poke8(spec + (4), 0x10)
+        buffer.poke8(spec + (5), 0x80)
+        buffer.poke8(spec + (6), 2)
+        buffer.poke8(spec + (8), 0)
+        buffer.poke8(spec + (9), 4)
+        this.dev = SDL_OpenAudioDevice(0, 0, spec, 0, 0)
+        if (this.dev > 0) { SDL_PauseAudioDevice(this.dev, 0) }
+        this.capa()
+        return true
+    }
+
+    // tela de espera: a xícara de café em blocos, sem fonte nenhuma
+    capa() {
+        var y = 0
+        while (y < 224) {
+            var x = 0
+            while (x < 256) {
+                var c = 0x2B1D14
+                var dx = x - 128
+                var dy = y - 120
+                if (dx * dx + dy * dy * 3 < 3600 && y > 100) { c = 0x6F4E37 }
+                if (dx * dx + dy * dy * 3 < 2500 && y > 100 && y < 112) { c = 0xD9B99B }
+                if (y > 100 && y < 104 && dx > -60 && dx < 60) { c = 0xC08552 }
+                if (dy > -8 && dy < 14 && dx > 56 && dx < 74 && (dx < 60 || dx > 69 || dy < -4 || dy > 10)) { c = 0x6F4E37 }
+                if (y > 60 && y < 96 && ((x - 112 + (y / 6) % 3) == 0 || (x - 128 + (y / 6) % 3) == 0 || (x - 144 + (y / 6) % 3) == 0)) { c = 0xD9B99B }
+                buffer.poke32(this.px + ((y * 256 + x) * 4), c | 0xFF000000)
+                x++
+            }
+            y++
+        }
+        this.mostrar()
+    }
+
+    mostrar() {
+        SDL_UpdateTexture(this.tex, 0, this.px, 256 * 4)
+        SDL_SetRenderDrawColor(this.ren, 0x2B, 0x1D, 0x14, 255)
+        SDL_RenderClear(this.ren)
+        SDL_RenderCopy(this.ren, this.tex, 0, 0)
+        SDL_RenderPresent(this.ren)
+    }
+
+    abrir(String caminho) {
+        if (!File(caminho).exists()) {
+            println("KOFnes: não achei a ROM " + caminho)
+            return
+        }
+        this.salvarSram()
+        var dados = File(caminho).readBytes()
+        if (dados.length < 0x8000) {
+            println("KOFnes: isso não parece uma ROM de SNES: " + caminho)
+            return
+        }
+        this.s = Snes(dados)
+        this.rom = caminho
+        var srm = this.nomeSram()
+        if (this.s.cart.hasSram() && File(srm).exists()) {
+            var sd = File(srm).readBytes()
+            var i = 0
+            while (i < sd.length && i < this.s.cart.sram.length) {
+                this.s.cart.sram[i] = sd[i] & 0xFF
+                i++
+            }
+        }
+        this.s.reset()
+        SDL_SetWindowTitle(this.win, "KOFnes ☕ (só Kof) — " + this.s.cart.title.trim())
+        println("KOFnes: '" + this.s.cart.title.trim() + "'")
+    }
+
+    String nomeSram() {
+        var p = this.rom.lastIndexOf(".")
+        if (p > 0) { return this.rom.substring(0, p) + ".srm" }
+        return this.rom + ".srm"
+    }
+
+    salvarSram() {
+        if (this.rom == "" || !this.s.cart.hasSram()) { return }
+        var n = this.s.cart.sram.length
+        var b = malloc(n)
+        var i = 0
+        while (i < n) {
+            buffer.poke8(b + (i), this.s.cart.sram[i])
+            i++
+        }
+        var f = fopen(this.nomeSram(), "wb")
+        if (f == 0) { return }
+        fwrite(b, 1, n, f)
+        fclose(f)
+    }
+
+    Bool tecla(Int sc) {
+        return buffer.peek8(this.teclas + sc) != 0
+    }
+
+    // teclado -> botões do SNES (mesmo mapa da versão com Java)
+    Int botoes() {
+        var b = 0
+        if (this.tecla(29)) { b = b | 0x8000 }                    // Z = B
+        if (this.tecla(4)) { b = b | 0x4000 }                     // A = Y
+        if (this.tecla(225) || this.tecla(229)) { b = b | 0x2000 } // Shift = Select
+        if (this.tecla(40) || this.tecla(88)) { b = b | 0x1000 }  // Enter = Start
+        if (this.tecla(82)) { b = b | 0x0800 }
+        if (this.tecla(81)) { b = b | 0x0400 }
+        if (this.tecla(80)) { b = b | 0x0200 }
+        if (this.tecla(79)) { b = b | 0x0100 }
+        if (this.tecla(27)) { b = b | 0x0080 }                    // X = A
+        if (this.tecla(22)) { b = b | 0x0040 }                    // S = X
+        if (this.tecla(20)) { b = b | 0x0020 }                    // Q = L
+        if (this.tecla(26)) { b = b | 0x0010 }                    // W = R
+        if ((b & 0x0C00) == 0x0C00) { b = b & 0xF3FF }
+        if ((b & 0x0300) == 0x0300) { b = b & 0xFCFF }
+        return b
+    }
+
+    eventos() {
+        while (SDL_PollEvent(this.ev) != 0) {
+            var tipo = buffer.peek32(this.ev + 0)
+            if (tipo == 0x100) { this.sair = true }
+            if (tipo == 0x300 && buffer.peek8(this.ev + 13) == 0) {
+                var sc = buffer.peek32(this.ev + 16)
+                if (sc == 41 || sc == 19) { this.pausado = !this.pausado }
+                if (sc == 58 && this.rom != "") { this.s.reset() }
+            }
+            if (tipo == 0x1000) {
+                // SDL_DROPFILE: char* em +8, a SDL pede pra liberar
+                var p = buffer.peek64(this.ev + 8)
+                var nome = ""
+                var i = 0
+                while (buffer.peek8(p + i) != 0 && i < 4096) {
+                    i++
+                }
+                var bytes = new Int[i]
+                var j = 0
+                while (j < i) {
+                    bytes[j] = buffer.peek8(p + j)
+                    j++
+                }
+                nome = utf8(bytes)
+                SDL_free(p)
+                this.abrir(nome)
+            }
+        }
+    }
+
+
+    quadro(Bool turbo) {
+        var vezes = 1
+        if (turbo) { vezes = 4 }
+        var k = 0
+        while (k < vezes) {
+            this.s.pad[0] = this.botoes()
+            this.s.runFrame()
+            k++
+        }
+        var fr = this.s.ppu.frame
+        var p = 0
+        while (p < 256 * 224) {
+            buffer.poke32(this.px + (p * 4), fr[p] | 0xFF000000)
+            p++
+        }
+        this.mostrar()
+        var dsp = this.s.apu.dsp
+        // fila de som com no máximo ~120 ms: se passar disso, descarta
+        if (this.dev > 0 && !turbo && SDL_GetQueuedAudioSize(this.dev) < 15360) {
+            var n = dsp.outCount
+            var i = 0
+            while (i < n) {
+                buffer.poke8(this.pcm + (i * 2), dsp.outBuf[i] & 0xFF)
+                buffer.poke8(this.pcm + (i * 2 + 1), (dsp.outBuf[i] >> 8) & 0xFF)
+                i++
+            }
+            SDL_QueueAudio(this.dev, this.pcm, n * 2)
+        }
+        dsp.outCount = 0
+        this.contaSave++
+        if (this.contaSave >= 1800) {
+            this.contaSave = 0
+            this.salvarSram()
+        }
+    }
+
+    rodar() {
+        // 60,0988 quadros por segundo: o próximo quadro é marcado em
+        // milésimos com fração, pra não acumular erro
+        var proximo = SDL_GetTicks() * 1.0
+        var fps = 0
+        var marco = SDL_GetTicks()
+        while (!this.sair) {
+            this.eventos()
+            if (this.rom != "" && !this.pausado) {
+                var turbo = this.tecla(43)
+                this.quadro(turbo)
+                fps++
+                if (!turbo) {
+                    proximo = proximo + 16.639
+                    var agora = SDL_GetTicks()
+                    var falta = proximo - agora
+                    if (falta > 1.0) { SDL_Delay(falta as Int) }
+                    if (falta < -100.0) { proximo = agora * 1.0 }
+                } else {
+                    proximo = SDL_GetTicks() * 1.0
+                }
+            } else {
+                SDL_Delay(16)
+            }
+            var t = SDL_GetTicks()
+            if (t - marco >= 1000) {
+                if (this.rom != "") {
+                    var estado = ""
+                    if (this.pausado) { estado = " — pausado" }
+                    SDL_SetWindowTitle(this.win, "KOFnes ☕ (só Kof) — " + this.s.cart.title.trim() + " — " + fps + " fps" + estado)
+                }
+                fps = 0
+                marco = t
+            }
+        }
+        this.salvarSram()
+        SDL_Quit()
+    }
+}
+
+String utf8(Int[] b) {
+    var r = ""
+    var i = 0
+    while (i < b.length) {
+        var c = b[i]
+        if (c >= 0xF0 && i + 3 < b.length) {
+            c = ((c & 7) << 18) | ((b[i + 1] & 0x3F) << 12) | ((b[i + 2] & 0x3F) << 6) | (b[i + 3] & 0x3F)
+            i = i + 3
+        } else if (c >= 0xE0 && i + 2 < b.length) {
+            c = ((c & 15) << 12) | ((b[i + 1] & 0x3F) << 6) | (b[i + 2] & 0x3F)
+            i = i + 2
+        } else if (c >= 0xC0 && i + 1 < b.length) {
+            c = ((c & 31) << 6) | (b[i + 1] & 0x3F)
+            i = i + 1
+        }
+        r = r + (c as Char)
+        i++
+    }
+    return r
+}
+
+// o alvo nativo não entrega argv: lemos de /proc/self/cmdline (pela libc,
+// porque o arquivo diz ter tamanho 0 e o File().readBytes() volta vazio)
+String argumento() {
+    var f = fopen("/proc/self/cmdline", "rb")
+    if (f == 0) { return "" }
+    var b = malloc(8192)
+    var n = fread(b, 1, 8191, f) as Int
+    fclose(f)
+    var i = 0
+    while (i < n && buffer.peek8(b + i) != 0) {
+        i++
+    }
+    i++
+    var ini = i
+    while (i < n && buffer.peek8(b + i) != 0) {
+        i++
+    }
+    if (ini >= n) { return "" }
+    var bytes = new Int[i - ini]
+    var j = 0
+    while (j < i - ini) {
+        bytes[j] = buffer.peek8(b + ini + j)
+        j++
+    }
+    return utf8(bytes)
+}
+
+main() {
+    var n = Natty()
+    if (!n.abrirJanela()) {
+        println("KOFnes: não consegui abrir a janela (precisa da SDL2: sudo apt install libsdl2-2.0-0)")
+        return
+    }
+    var a = argumento()
+    if (a != "") { n.abrir(a) }
+    n.rodar()
+}
