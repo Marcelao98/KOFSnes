@@ -46,6 +46,8 @@ matching entry was found.
 | K8 | `val` as an identifier yields a 10-error cascade, no reserved-word hint | Low | diagnostics | Located (`ParseContext.expectId`) |
 | K9 | `case X -> { … }` in a switch statement: misleading message | Low | diagnostics | Not located |
 | K10 | Dense `Int` `switch` lowered to a compare chain, never `tableswitch` | Perf | — | Observed in bytecode |
+| K11 | `Throwable.printStackTrace()` emitted with `()Ljava/lang/Object;` | **High** | runtime `NoSuchMethodError`; `VerifyError` if a `try` follows | Not located |
+| K12 | Java method returning a non-`String` object array (`StackTraceElement[]`) → element type unnamed | **High** | class load `NoClassDefFoundError: ?` | Not located |
 
 ---
 
@@ -449,6 +451,74 @@ suggestion only, not a correctness issue.
 
 ---
 
+## K11 — `Throwable.printStackTrace()` emitted with an `Object` return
+
+**Repro:** `10-printstacktrace`
+
+```kof
+main() {
+    var e = new RuntimeException("x")
+    e.printStackTrace()
+    try {
+        println("dentro")
+    } catch (Exception x) {
+        println("pegou")
+    }
+    println("fim")
+}
+```
+
+- **Expected:** the stack trace on stderr, then `dentro`, then `fim`.
+- **Actual (verbatim):** `kof run: could not load main class Default.Main` /
+  `java.lang.VerifyError: Inconsistent stackmap frames at branch target …
+  Reason: Current frame's stack size doesn't match stackmap.`
+
+**Trigger matrix (measured):**
+
+| Shape | Result |
+|---|---|
+| `e.printStackTrace()` alone | ❌ `NoSuchMethodError: 'java.lang.Object java.lang.RuntimeException.printStackTrace()'` |
+| `e.printStackTrace()` then a `try`/`catch` in the same method | ❌ `VerifyError` (the bogus `Object` result stays on the operand stack across the handler range) |
+| `e.printStackTrace()` after the `try` | ❌ `NoSuchMethodError` at that line |
+| `sb.setLength(0)` (other void JDK method) then a `try` | ✅ |
+| `e.getMessage()`, `e.toString()`, `e.getClass().getSimpleName()` | ✅ |
+
+**Hypothesis:** the method is not found by the JDK resolver for this receiver.
+`RuntimeException`/`Throwable` probably sit on the `isKofBuiltinJavaLang`
+path, so the call falls into the generic unresolved-call lowering, which
+assumes an `Object` return and pushes it. A void call through the resolved path
+(`setLength`) is fine. Two fixes: resolve it, and never leave an unconsumed
+value of a statement-expression on the stack (a `pop` would have avoided the
+`VerifyError`).
+
+**Workaround:** `System.err.println(e.toString())`.
+
+## K12 — Java method returning a non-`String` object array → `NoClassDefFoundError: ?`
+
+**Repro:** `11-array-java-de-objetos`
+
+```kof
+main() {
+    var e = new RuntimeException("x")
+    var pilha = e.getStackTrace()
+    println(pilha.length)
+}
+```
+
+- **Expected:** a number.
+- **Actual (verbatim):** `kof run: could not load main class Default.Main` /
+  `java.lang.NoClassDefFoundError: ?`. In a class instead of `main` it showed
+  as `java.lang.ClassFormatError: Illegal class name "" in class file A`.
+- **Contrast (measured):** `new File(".").list()` (`String[]`) works for both
+  `.length` and `[i]`.
+- **Hypothesis:** the JDK return descriptor `[Ljava/lang/StackTraceElement;` is
+  mapped to an `ArrayType` whose element `ClassType` is unknown/unnamed (`?`),
+  and that placeholder name leaks into a `checkcast`/descriptor. Same family
+  as K2 (array types at the reflection boundary).
+- **Workaround:** none good; avoid.
+
+---
+
 ## 11. Checked and discarded (to save triage time)
 
 | Suspicion | Verdict |
@@ -472,3 +542,5 @@ suggestion only, not a correctness issue.
 - **K8** — `val` identifier → 10-error cascade; extend the `PARSE085` treatment.
 - **K9** — `case X -> { }` in a statement switch → self-contradictory `PARSE073`.
 - **K10** — no `tableswitch`/`lookupswitch` emitted for dense `Int` switches.
+- **K11** — `Throwable.printStackTrace()` emitted as `()Ljava/lang/Object;` → `NoSuchMethodError`; with a following `try` the leftover stack value → `VerifyError`.
+- **K12** — a JDK method returning `StackTraceElement[]` leaks an unnamed element type (`?`/`""`) → `NoClassDefFoundError`/`ClassFormatError`; `String[]` works.

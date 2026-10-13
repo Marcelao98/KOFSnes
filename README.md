@@ -133,7 +133,15 @@ kof run KOFnes.kf testar-cpu <pasta>              # SingleStepTests 65816 (conve
 kof run KOFnes.kf testar-spc <pasta>              # SingleStepTests SPC700
 
 empacotar/empacotar.sh      # gera dist/KOFnes-windows-x64.zip e dist/KOFnes-linux-x64.tar.xz
+empacotar/testar-interface.sh linux   rom.zip   # teste de interface do pacote
+empacotar/testar-interface.sh windows rom.zip   # o mesmo com o .exe, no Wine
 ```
+
+O teste de interface faz o que um usuário faz: abre o programa, clica em
+**Arquivo → Abrir ROM**, escolhe a ROM no diálogo, espera o título, aperta
+**Start** e confere a tela em cada passo. Ele existe porque a primeira versão
+do pacote passou em todos os testes do motor e mesmo assim não abria ROM pelo
+menu.
 
 O `empacotar.sh` precisa de Python com Pillow, gcc e mingw-w64; o Java embutido
 vem do pacote [`jdk4py`](https://pypi.org/project/jdk4py/) do PyPI.

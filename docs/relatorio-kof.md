@@ -31,7 +31,7 @@ reprodução de 5 a 20 linhas em [`kof-repros/`](kof-repros/), que roda com
 
 ---
 
-## Os três sérios: compilam sem erro e quebram ao rodar
+## Os cinco sérios: compilam sem erro e quebram ao rodar
 
 ### 1. Construtor do JDK com argumento de subtipo → `NoSuchMethodError`
 
@@ -86,19 +86,51 @@ estático Java, funciona.
 
 ---
 
+### 4. `e.printStackTrace()` sai com retorno `Object`
+
+```kof
+var e = new RuntimeException("x")
+e.printStackTrace()
+```
+
+Dá `NoSuchMethodError: 'java.lang.Object java.lang.RuntimeException.printStackTrace()'`.
+Se houver um `try` depois no mesmo método, é pior: a classe inteira não
+carrega (`VerifyError: Inconsistent stackmap frames`), porque o "valor" que
+sobra na pilha bagunça os frames. Achei isso no tratador de erro do próprio
+emulador.
+
+- **Contorno:** `System.err.println(e.toString())`.
+- **Reprodução:** `10-printstacktrace`.
+
+### 5. Array de objetos que vem do Java → `NoClassDefFoundError: ?`
+
+```kof
+var pilha = new RuntimeException("x").getStackTrace()
+println(pilha.length)
+```
+
+O programa não carrega (`NoClassDefFoundError: ?`): o tipo do elemento
+(`StackTraceElement`) fica sem nome no bytecode. Com `String[]`
+(`new File(".").list()`) funciona.
+
+- **Contorno:** não achei um bom. Evitei usar.
+- **Reprodução:** `11-array-java-de-objetos`.
+
+---
+
 ## Os médios: o compilador recusa, com mensagem clara
 
 | # | Código | Mensagem | Contorno |
 |---|---|---|---|
-| 4 | `System.arraycopy(a, 0, b, 0, n)` com `Int[]` | `SEM014: expected 'Object' but got 'Int[]'` | laço manual |
-| 5 | `retangulo.height` (campo público de classe Java) | `SEM025: Cannot resolve field 'height'` | getter (`getHeight()`) |
-| 6 | `for (var s in Files.readAllLines(p))` | `SEM058: for-in only iterates over List<T>...` | laço com `size()`/`get(i)` |
+| 6 | `System.arraycopy(a, 0, b, 0, n)` com `Int[]` | `SEM014: expected 'Object' but got 'Int[]'` | laço manual |
+| 7 | `retangulo.height` (campo público de classe Java) | `SEM025: Cannot resolve field 'height'` | getter (`getHeight()`) |
+| 8 | `for (var s in Files.readAllLines(p))` | `SEM058: for-in only iterates over List<T>...` | laço com `size()`/`get(i)` |
 
 São seguros (nada quebra escondido), mas cansam no dia a dia. Os detalhes:
 
-- **No 5:** um comentário em `ExternalClasspath.java` diz que campo de
+- **No 7:** um comentário em `ExternalClasspath.java` diz que campo de
   instância externo "já é suportado", então pode ser regressão.
-- **No 6:** `for-in` sobre `new ArrayList<String>()` **funciona**; só falha
+- **No 8:** `for-in` sobre `new ArrayList<String>()` **funciona**; só falha
   quando a lista vem do retorno de um método Java. A mensagem também fala de
   `String`, o que confunde nesse caso.
 
@@ -108,15 +140,15 @@ Reproduções: `04` a `06`.
 
 ## Os leves
 
-7. **Stack trace com o arquivo errado.** Toda classe recebe o nome do arquivo
+9. **Stack trace com o arquivo errado.** Toda classe recebe o nome do arquivo
    de entrada no atributo `SourceFile`, porque é um nome só por módulo. Uma
    exceção em `app/Conta.kf:6` aparece como `main.kf:6` (reprodução `07`).
    Não quebra nada, mas manda a gente pro arquivo errado na hora de depurar.
-8. **`val` como nome de parâmetro** gera 10 erros em cascata (`PARSE023`,
+10. **`val` como nome de parâmetro** gera 10 erros em cascata (`PARSE023`,
    `PARSE016`...) sem dizer que `val` é palavra reservada. O `fn` já tem a
    mensagem certinha (`PARSE085`); estender pra `val`/`var` resolveria
    (reprodução `08`).
-9. **`case 1 -> { ... }` num switch statement** dá `expected ':' (switch
+11. **`case 1 -> { ... }` num switch statement** dá `expected ':' (switch
    statement) or '->' (switch expression)`, mesmo com o `->` ali. Uma dica
    tipo "o `->` com bloco só vale em switch expression; use `case 1:`"
    ajudaria (reprodução `09`).
@@ -141,14 +173,16 @@ desempenho.
 | 1 | construtor JDK com subtipo | **alta** | rodando |
 | 2 | `Files.write(path, Byte[])` | **alta** | ao carregar |
 | 3 | método da classe como argumento de construtor JDK | **alta** | rodando |
-| 4 | `arraycopy` com `Int[]` | média | compilando |
-| 5 | campo público de objeto Java | média | compilando |
-| 6 | `for-in` em lista vinda do Java | média | compilando |
-| 7 | `SourceFile` errado | baixa | depurando |
-| 8 | diagnóstico de `val` | baixa | compilando |
-| 9 | diagnóstico de `case ->` com bloco | baixa | compilando |
+| 4 | `printStackTrace()` com retorno `Object` | **alta** | rodando / ao carregar |
+| 5 | array de objetos vindo do Java (`StackTraceElement[]`) | **alta** | ao carregar |
+| 6 | `arraycopy` com `Int[]` | média | compilando |
+| 7 | campo público de objeto Java | média | compilando |
+| 8 | `for-in` em lista vinda do Java | média | compilando |
+| 9 | `SourceFile` errado | baixa | depurando |
+| 10 | diagnóstico de `val` | baixa | compilando |
+| 11 | diagnóstico de `case ->` com bloco | baixa | compilando |
 
-Os três sérios parecem vir de **poucos pontos pequenos** do compilador: tipos
+Os sérios parecem vir de **poucos pontos pequenos** do compilador: tipos
 de array na escolha de overload, construtores do JDK escolhidos só pela
 quantidade de argumentos, e a resolução de chamada sem `this` dentro de
 argumento de construtor. A [versão técnica deste relatório](relatorio-kof-ia.md)

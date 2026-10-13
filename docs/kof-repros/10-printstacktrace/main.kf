@@ -1,0 +1,10 @@
+main() {
+    var e = new RuntimeException("x")
+    e.printStackTrace()
+    try {
+        println("dentro")
+    } catch (Exception x) {
+        println("pegou")
+    }
+    println("fim")
+}

@@ -1,0 +1,5 @@
+main() {
+    var e = new RuntimeException("x")
+    var pilha = e.getStackTrace()
+    println(pilha.length)
+}

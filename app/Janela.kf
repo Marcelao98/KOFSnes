@@ -11,6 +11,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FileDialog;
+import java.awt.Frame;
+import java.lang.Throwable;
 import java.awt.Graphics2D;
 import java.awt.Menu;
 import java.awt.MenuBar;
@@ -49,6 +51,7 @@ class Janela {
     Long fpsT0
     String aviso
     Int avisoFrames
+    Long proximo
 
     public constructor() {
         this.t = Tema()
@@ -70,6 +73,7 @@ class Janela {
         this.titulo = ""
         this.aviso = ""
         this.avisoFrames = 0
+        this.proximo = 0 as Long
         this.img = new BufferedImage(256, 224, BufferedImage.TYPE_INT_RGB)
         var db = this.img.getRaster().getDataBuffer() as DataBufferInt
         this.pix = db.getData()
@@ -224,7 +228,9 @@ class Janela {
     }
 
     escolherRom() {
-        var fd = new FileDialog(frame, "Abrir ROM de Super Nintendo", 0)
+        // o construtor pede Frame; sem o cast a Kof 0.6.3 grava JFrame no
+        // descritor e a chamada morre com NoSuchMethodError (relatorio-kof, bug 1)
+        var fd = new FileDialog(frame as Frame, "Abrir ROM de Super Nintendo", 0)
         fd.setVisible(true)
         var f = fd.getFile()
         if (f != null) {
@@ -404,49 +410,69 @@ class Janela {
     }
 
     // ---------------- laço principal ----------------
+    // o laço principal: um quadro por volta. Se alguma coisa escapar, o erro
+    // vai pra tela e pro log, e o emulador pausa em vez de morrer calado.
     rodar() {
-        var periodo = 16639267 as Long
-        var proximo = System.nanoTime()
+        proximo = System.nanoTime()
         while (true) {
-            tratarPedidos()
-            var rodou = false
-            if (snes != null && !pausado) {
-                snes.pad[0] = ctl.estado()
-                var vezes = 1
-                if (ctl.turbo) { vezes = 4 }
-                var i = 0
-                while (i < vezes) {
-                    snes.runFrame()
-                    var dsp = snes.apu.dsp
-                    if (i == 0) {
-                        som.tocar(dsp.outBuf, dsp.outCount, ctl.turbo)
-                    }
-                    dsp.outCount = 0
-                    i++
-                }
-                frameCount = frameCount + vezes
-                rodou = true
-                if (snes.frames % 1800 == 0) { salvarSram() }
+            try {
+                passo()
+            } catch (Throwable e) {
+                falhou(e)
             }
-            desenhar()
-            var agora = System.currentTimeMillis()
-            if (agora - fpsT0 >= 1000) {
-                fps = frameCount
-                frameCount = 0
-                fpsT0 = agora
-            }
-            // sem som (ou parado), o relógio é o sono
-            if (!rodou || !som.temSom() || ctl.turbo) {
-                proximo = proximo + periodo
-                var falta = (proximo - System.nanoTime()) / 1000000
-                if (falta > 0) {
-                    Thread.sleep(falta)
-                } else if (falta < -100) {
-                    proximo = System.nanoTime()
+        }
+    }
+
+    falhou(Throwable e) {
+        // e.printStackTrace() sai com retorno Object na Kof 0.6.3
+        // (NoSuchMethodError, ou VerifyError se houver um try depois) e
+        // e.getStackTrace() devolve um array de tipo que ela não resolve:
+        // fica só a mensagem (relatorio-kof, bugs 4 e 5)
+        System.err.println("KOFnes: erro: " + e.toString())
+        pausado = true
+        avisar("erro: " + e.getClass().getSimpleName() + " — veja o kofnes.log")
+    }
+
+    passo() {
+        var periodo = 16639267 as Long
+        tratarPedidos()
+        var rodou = false
+        if (snes != null && !pausado) {
+            snes.pad[0] = ctl.estado()
+            var vezes = 1
+            if (ctl.turbo) { vezes = 4 }
+            var i = 0
+            while (i < vezes) {
+                snes.runFrame()
+                var dsp = snes.apu.dsp
+                if (i == 0) {
+                    som.tocar(dsp.outBuf, dsp.outCount, ctl.turbo)
                 }
-            } else {
+                dsp.outCount = 0
+                i++
+            }
+            frameCount = frameCount + vezes
+            rodou = true
+            if (snes.frames % 1800 == 0) { salvarSram() }
+        }
+        desenhar()
+        var agora = System.currentTimeMillis()
+        if (agora - fpsT0 >= 1000) {
+            fps = frameCount
+            frameCount = 0
+            fpsT0 = agora
+        }
+        // sem som (ou parado), o relógio é o sono
+        if (!rodou || !som.temSom() || ctl.turbo) {
+            proximo = proximo + periodo
+            var falta = (proximo - System.nanoTime()) / 1000000
+            if (falta > 0) {
+                Thread.sleep(falta)
+            } else if (falta < -100) {
                 proximo = System.nanoTime()
             }
+        } else {
+            proximo = System.nanoTime()
         }
     }
 }
