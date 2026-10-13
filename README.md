@@ -48,6 +48,7 @@ javax.sound do Java pra janela e som):
 | PPU | `snes/Ppu.kf` | modos 0-7, Mode 7 (rotação/zoom/EXTBG), 2/4/8bpp, tiles 16×16, sprites com todos os tamanhos, janelas, color math (soma/subtração/meio), cor direta, mosaico, offset-per-tile, hi-res 5/6 |
 | Barramento | `snes/Snes.kf` | mapa de memória, DMA (8 canais), HDMA (direto e indireto), contadores H/V, IRQ por H/V, NMI, joypad (auto e serial), multiplicação/divisão, FastROM, refresh de DRAM |
 | Cartucho | `snes/Cartridge.kf` | detecção de LoROM/HiROM/ExHiROM pelo cabeçalho, espelhamento, SRAM |
+| Super FX | `snes/Gsu.kf` | o chip RISC do Star Fox/Yoshi's Island: todas as instruções, pipeline com delay slot, cache de código, PLOT/RPIX em 2/4/8bpp e alturas 128/160/192/OBJ, buffer de ROM, IRQ pro SNES |
 | Janela | `app/` | tela na "xícara", menu, teclado, áudio de 32 kHz, pausa/turbo, escala 2×/3×/4× |
 
 O relógio é o master clock de 21,477 MHz: cada acesso da CPU custa 6/8/12
@@ -67,6 +68,14 @@ portas de som).
   (validada num SNES de verdade): **649/649, "Success"**.
 - **SPC700 contra os [SingleStepTests](https://github.com/SingleStepTests/spc700)**:
   **76.200/76.200**, com contagem de ciclos batendo em todos.
+- **Super FX contra as ROMs do PeterLemon** (`CHIP/GSU`): os ~30 testes de
+  instrução dão PASS e as 27 demos de plotagem (pixel, linha, polígono em
+  2/4/8bpp × 128/160/192 linhas) saem certas.
+- **108 ROMs de teste do [undisbeliever](https://github.com/undisbeliever/snes-test-roms)**
+  (compiladas aqui): janelas, HDMA (direto, indireto, pra CGRAM), remapeamento
+  de VMAIN, autojoy, IPL. Pegaram dois desvios que foram corrigidos: escrita
+  em VRAM fora do vblank é ignorada, e o HDMA cancela o DMA geral do mesmo
+  canal.
 - **ROMs de teste do [PeterLemon](https://github.com/PeterLemon/SNES)**: os
   testes de CPU e SPC700 dão PASS; as demos de PPU (BG 2/4/8bpp, HiColor
   por HDMA, Mode 7, mosaico, janelas, anéis, ondas) aparecem certas; as
@@ -85,9 +94,10 @@ kof run KOFnes.kf headless rom.sfc 600 saida.png   # 600 frames sem janela -> PN
 
 ## O que não tem
 
-- Chips de expansão de cartucho: Super FX (Star Fox, Yoshi's Island),
-  SA-1 (Super Mario RPG, Kirby Super Star), DSP-1 (Super Mario Kart,
-  Pilotwings), S-DD1, SPC7110, Cx4. Esses jogos não rodam.
+- Chips de expansão além do Super FX: SA-1 (Super Mario RPG, Kirby Super
+  Star), DSP-1 (Super Mario Kart, Pilotwings), S-DD1, SPC7110, Cx4. Esses
+  jogos não rodam. O Super FX roda com tempo aproximado (orçamento de
+  ciclos por linha), não ciclo a ciclo.
 - Entrelaçado (512×448) é desenhado como 256×224; hi-res (modos 5/6 e
   pseudo-hires) é reduzido pra 256 de largura.
 - Save state, gamepad USB e remapear teclas.

@@ -11,6 +11,9 @@ class Cartridge {
     String title
     Bool pal
     Bool fastRomHeader
+    Bool superfx
+    Int[] gsuRam
+    Int gsuRamMask
 
     public constructor(Byte[] data) {
         var size = data.length
@@ -57,11 +60,17 @@ class Cartridge {
         var country = 0
         var sramCode = 0
         var mapMode = 0
+        var romType = 0
+        var expRam = 0
         if (hdr + 0x20 <= size) {
             country = raw[hdr + 0x19]
             sramCode = raw[hdr + 0x18]
             mapMode = raw[hdr + 0x15]
+            romType = raw[hdr + 0x16]
+            expRam = raw[hdr - 3]
         }
+        // Super FX: tipo $13-$15/$1A num cartucho LoROM
+        this.superfx = this.mapper == 0 && (romType == 0x13 || romType == 0x14 || romType == 0x15 || romType == 0x1A)
         this.pal = country >= 2 && country <= 12
         this.fastRomHeader = (mapMode & 0x10) != 0
         // ROM espelhada até a próxima potência de 2
@@ -76,7 +85,27 @@ class Cartridge {
         }
         var ss = 0
         if (sramCode > 0 && sramCode <= 8) { ss = 1024 << sramCode }
-        if (ss == 0) {
+        if (this.superfx) {
+            // a RAM do GSU (até 128 KB) é também a bateria do save quando
+            // o cartucho tem uma (tipo $15/$1A)
+            var gs = 0x10000
+            if (expRam >= 5 && expRam <= 7) { gs = 1024 << expRam }
+            if (sramCode >= 5 && sramCode <= 7 && (1024 << sramCode) > gs) { gs = 1024 << sramCode }
+            if (gs < 0x10000) { gs = 0x10000 }
+            this.gsuRam = new Int[gs]
+            this.gsuRamMask = gs - 1
+            ss = 0
+            if (romType == 0x15 || romType == 0x1A) {
+                ss = -1
+            }
+        } else {
+            this.gsuRam = new Int[1]
+            this.gsuRamMask = 0
+        }
+        if (ss == -1) {
+            this.sram = this.gsuRam
+            this.sramMask = this.gsuRamMask
+        } else if (ss == 0) {
             this.sram = new Int[1]
             this.sramMask = 0
         } else {

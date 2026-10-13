@@ -1,0 +1,741 @@
+package snes
+
+// Super FX (GSU-1/GSU-2): RISC de 16 bits que vem dentro do cartucho de
+// Star Fox, Yoshi's Island, Stunt Race FX, Doom... 16 registradores, R15 é
+// o PC, prefixos ALT1/ALT2/TO/WITH/FROM, pipeline de 1 byte (a instrução
+// depois de um desvio sempre executa) e PLOT, que desenha pixel direto no
+// bitmap em formato de tile que a PPU vai mostrar.
+class Gsu {
+    Int[] r
+    Int[] rom
+    Int romMask
+    Int[] ram
+    Int ramMask
+    Int[] cache
+    Bool[] cacheValid
+    // flags (SFR)
+    Bool z
+    Bool cy
+    Bool sg
+    Bool ov
+    Bool go
+    Bool alt1
+    Bool alt2
+    Bool bflag
+    Bool irq
+    // registradores
+    Int pbr
+    Int rombr
+    Int rambr
+    Int cbr
+    Int scbr
+    Int scmr
+    Int colr
+    Int por
+    Int cfgr
+    Int clsr
+    Int bramr
+    Int sreg
+    Int dreg
+    Int pipeline
+    Bool r15mod
+    Int romBuffer
+    Int lastRam
+    Int budget
+
+    public constructor(Int[] rom, Int romMask, Int[] ram, Int ramMask) {
+        this.r = new Int[16]
+        this.rom = rom
+        this.romMask = romMask
+        this.ram = ram
+        this.ramMask = ramMask
+        this.cache = new Int[512]
+        this.cacheValid = new Bool[32]
+        this.z = false
+        this.cy = false
+        this.sg = false
+        this.ov = false
+        this.go = false
+        this.alt1 = false
+        this.alt2 = false
+        this.bflag = false
+        this.irq = false
+        this.pbr = 0
+        this.rombr = 0
+        this.rambr = 0
+        this.cbr = 0
+        this.scbr = 0
+        this.scmr = 0
+        this.colr = 0
+        this.por = 0
+        this.cfgr = 0
+        this.clsr = 0
+        this.bramr = 0
+        this.sreg = 0
+        this.dreg = 0
+        this.pipeline = 0x01
+        this.r15mod = false
+        this.romBuffer = 0
+        this.lastRam = 0
+        this.budget = 0
+    }
+
+    // ---------------- barramento do GSU ----------------
+    Int busRead(Int addr) {
+        var bank = (addr >> 16) & 0xFF
+        var off = addr & 0xFFFF
+        if (bank >= 0x70 && bank <= 0x71) {
+            return ram[(((bank & 1) << 16) | off) & ramMask]
+        }
+        if (bank < 0x40) {
+            return rom[(((bank & 0x3F) << 15) | (off & 0x7FFF)) & romMask]
+        }
+        if (bank < 0x60) {
+            return rom[(((bank & 0x1F) << 16) | off) & romMask]
+        }
+        return 0
+    }
+
+    Int ramRead(Int addr) {
+        return ram[((rambr << 16) | (addr & 0xFFFF)) & ramMask]
+    }
+
+    ramWrite(Int addr, Int v) {
+        ram[((rambr << 16) | (addr & 0xFFFF)) & ramMask] = v & 0xFF
+    }
+
+    Int readOpcode(Int addr) {
+        var off = (addr - cbr) & 0xFFFF
+        if (off < 512) {
+            var line = off >> 4
+            if (!cacheValid[line]) {
+                var base = (cbr + (line << 4)) & 0xFFFF
+                var i = 0
+                while (i < 16) {
+                    cache[(base + i) & 511] = busRead((pbr << 16) | ((base + i) & 0xFFFF))
+                    i++
+                }
+                cacheValid[line] = true
+                budget = budget - 16
+            }
+            budget = budget - 1
+            return cache[addr & 511]
+        }
+        budget = budget - 3
+        return busRead((pbr << 16) | addr)
+    }
+
+    Int peekpipe() {
+        var res = pipeline
+        pipeline = readOpcode(r[15])
+        r15mod = false
+        return res
+    }
+
+    Int pipe() {
+        var res = pipeline
+        r[15] = (r[15] + 1) & 0xFFFF
+        pipeline = readOpcode(r[15])
+        r15mod = false
+        return res
+    }
+
+    flushCache() {
+        var i = 0
+        while (i < 32) {
+            cacheValid[i] = false
+            i++
+        }
+    }
+
+    // ---------------- registradores ----------------
+    setReg(Int n, Int v) {
+        r[n] = v & 0xFFFF
+        if (n == 15) {
+            r15mod = true
+        } else if (n == 14) {
+            romBuffer = busRead((rombr << 16) | r[14])
+            budget = budget - 3
+        }
+    }
+
+    setD(Int v) {
+        setReg(dreg, v)
+    }
+
+    Int rs() {
+        return r[sreg]
+    }
+
+    nz16(Int v) {
+        sg = (v & 0x8000) != 0
+        z = (v & 0xFFFF) == 0
+    }
+
+    resetPrefix() {
+        alt1 = false
+        alt2 = false
+        bflag = false
+        sreg = 0
+        dreg = 0
+    }
+
+    Int getSfr() {
+        var v = 0
+        if (z) { v = v | 0x0002 }
+        if (cy) { v = v | 0x0004 }
+        if (sg) { v = v | 0x0008 }
+        if (ov) { v = v | 0x0010 }
+        if (go) { v = v | 0x0020 }
+        if (alt1) { v = v | 0x0100 }
+        if (alt2) { v = v | 0x0200 }
+        if (bflag) { v = v | 0x1000 }
+        if (irq) { v = v | 0x8000 }
+        return v
+    }
+
+    setSfr(Int v) {
+        z = (v & 0x0002) != 0
+        cy = (v & 0x0004) != 0
+        sg = (v & 0x0008) != 0
+        ov = (v & 0x0010) != 0
+        go = (v & 0x0020) != 0
+        alt1 = (v & 0x0100) != 0
+        alt2 = (v & 0x0200) != 0
+        bflag = (v & 0x1000) != 0
+        irq = (v & 0x8000) != 0
+    }
+
+    // ---------------- lado do SNES ($3000-$34FF) ----------------
+    Int mmioRead(Int addr) {
+        if (addr >= 0x3100 && addr < 0x3300) {
+            return cache[((addr - 0x3100) + cbr) & 511]
+        }
+        if (addr >= 0x3000 && addr < 0x3020) {
+            var n = (addr - 0x3000) >> 1
+            if ((addr & 1) == 0) { return r[n] & 0xFF }
+            return r[n] >> 8
+        }
+        switch (addr) {
+            case 0x3030: return getSfr() & 0xFF
+            case 0x3031:
+                var v = getSfr() >> 8
+                irq = false
+                return v
+            case 0x3034: return pbr
+            case 0x3036: return rombr
+            case 0x3037: return cfgr
+            case 0x3038: return scbr
+            case 0x3039: return clsr
+            case 0x303A: return scmr
+            case 0x303B: return 0x04
+            case 0x303C: return rambr
+            case 0x303E: return cbr & 0xFF
+            case 0x303F: return cbr >> 8
+            default: return 0
+        }
+    }
+
+    mmioWrite(Int addr, Int v) {
+        if (addr >= 0x3100 && addr < 0x3300) {
+            var i = ((addr - 0x3100) + cbr) & 511
+            cache[i] = v
+            if ((i & 15) == 15) { cacheValid[i >> 4] = true }
+            return
+        }
+        if (addr >= 0x3000 && addr < 0x3020) {
+            var n = (addr - 0x3000) >> 1
+            if ((addr & 1) == 0) {
+                r[n] = (r[n] & 0xFF00) | v
+            } else {
+                r[n] = (r[n] & 0xFF) | (v << 8)
+            }
+            if (n == 14) { romBuffer = busRead((rombr << 16) | r[14]) }
+            if (addr == 0x301F) {
+                go = true
+                pipeline = 0x01
+            }
+            return
+        }
+        switch (addr) {
+            case 0x3030:
+                var old = go
+                setSfr((getSfr() & 0xFF00) | v)
+                if (old && !go) {
+                    cbr = 0
+                    flushCache()
+                }
+            case 0x3031: setSfr((getSfr() & 0xFF) | (v << 8))
+            case 0x3033: bramr = v & 1
+            case 0x3034:
+                pbr = v & 0x7F
+                flushCache()
+            case 0x3037: cfgr = v
+            case 0x3038: scbr = v
+            case 0x3039: clsr = v & 1
+            case 0x303A: scmr = v
+            default:
+                var ignorado = 0
+        }
+    }
+
+    // ---------------- PLOT ----------------
+    Int bppMode() {
+        var md = scmr & 3
+        if (md == 0) { return 2 }
+        if (md == 3) { return 8 }
+        return 4
+    }
+
+    Int charAddr(Int x, Int y) {
+        var mode = ((scmr >> 2) & 1) | ((scmr >> 4) & 2)
+        if ((por & 0x10) != 0) { mode = 3 }
+        var cn = 0
+        switch (mode) {
+            case 0: cn = ((x & 0xF8) << 1) + ((y & 0xF8) >> 3)
+            case 1: cn = ((x & 0xF8) << 1) + ((x & 0xF8) >> 1) + ((y & 0xF8) >> 3)
+            case 2: cn = ((x & 0xF8) << 1) + (x & 0xF8) + ((y & 0xF8) >> 3)
+            default: cn = ((y & 0x80) << 2) + ((x & 0x80) << 1) + ((y & 0x78) << 1) + ((x & 0x78) >> 3)
+        }
+        var bpp = bppMode()
+        return (scbr << 10) + cn * (bpp << 3) + ((y & 7) << 1)
+    }
+
+    plot() {
+        var x = r[1] & 0xFF
+        var y = r[2] & 0xFF
+        var c = colr
+        var bpp = bppMode()
+        var draw = true
+        if ((por & 1) == 0) {
+            if (bpp == 2) {
+                draw = (c & 3) != 0
+            } else if (bpp == 4) {
+                draw = (c & 0x0F) != 0
+            } else if ((por & 8) != 0) {
+                draw = (c & 0x0F) != 0
+            } else {
+                draw = (c & 0xFF) != 0
+            }
+        }
+        if ((por & 2) != 0 && bpp != 8) {
+            if (((x ^ y) & 1) != 0) { c = c >> 4 }
+            c = c & 0x0F
+        }
+        if (draw) {
+            var addr = charAddr(x, y)
+            var bit = 0x80 >> (x & 7)
+            var p = 0
+            while (p < bpp) {
+                var a = addr + ((p >> 1) << 4) + (p & 1)
+                var idx = a & ramMask
+                var old = ram[idx]
+                if (((c >> p) & 1) != 0) {
+                    ram[idx] = old | bit
+                } else {
+                    ram[idx] = old & (bit ^ 0xFF)
+                }
+                p++
+            }
+            budget = budget - bpp
+        }
+        r[1] = (r[1] + 1) & 0xFFFF
+    }
+
+    Int rpix() {
+        var x = r[1] & 0xFF
+        var y = r[2] & 0xFF
+        var addr = charAddr(x, y)
+        var bpp = bppMode()
+        var sh = 7 - (x & 7)
+        var c = 0
+        var p = 0
+        while (p < bpp) {
+            var a = addr + ((p >> 1) << 4) + (p & 1)
+            c = c | (((ram[a & ramMask] >> sh) & 1) << p)
+            p++
+        }
+        return c
+    }
+
+    Int color(Int s) {
+        if ((por & 0x04) != 0) { return (colr & 0xF0) | ((s >> 4) & 0x0F) }
+        if ((por & 0x08) != 0) { return (colr & 0xF0) | (s & 0x0F) }
+        return s & 0xFF
+    }
+
+    // ---------------- execução ----------------
+    // roda até STOP ou até gastar o orçamento de ciclos
+    run(Int cycles) {
+        if (!go) { return }
+        budget = budget + cycles
+        while (go && budget > 0) {
+            var op = peekpipe()
+            execute(op)
+            if (!r15mod) { r[15] = (r[15] + 1) & 0xFFFF }
+            r15mod = false
+        }
+        if (budget > 0) { budget = 0 }
+    }
+
+    Int s8(Int v) {
+        return ((v & 0xFF) << 24) >> 24
+    }
+
+    Int s16(Int v) {
+        return ((v & 0xFFFF) << 16) >> 16
+    }
+
+    branch(Bool c) {
+        var d = s8(pipe())
+        if (c) {
+            r[15] = (r[15] + d) & 0xFFFF
+            r15mod = true
+        }
+    }
+
+    execute(Int op) {
+        var n = op & 15
+        var hi = op >> 4
+        switch (hi) {
+            case 0x0: ex0(op)
+            case 0x1:
+                if (bflag) {
+                    setReg(n, rs())
+                    resetPrefix()
+                } else {
+                    dreg = n
+                }
+            case 0x2:
+                sreg = n
+                dreg = n
+                bflag = true
+            case 0x3:
+                if (n <= 11) {
+                    if (alt1) {
+                        ramWrite(r[n], rs())
+                    } else {
+                        ramWrite(r[n], rs())
+                        ramWrite(r[n] ^ 1, rs() >> 8)
+                    }
+                    lastRam = r[n]
+                    budget = budget - 3
+                    resetPrefix()
+                } else if (n == 12) {
+                    r[12] = (r[12] - 1) & 0xFFFF
+                    nz16(r[12])
+                    if (r[12] != 0) {
+                        r[15] = r[13]
+                        r15mod = true
+                    }
+                    resetPrefix()
+                } else if (n == 13) {
+                    alt1 = true
+                    alt2 = false
+                } else if (n == 14) {
+                    alt1 = false
+                    alt2 = true
+                } else {
+                    alt1 = true
+                    alt2 = true
+                }
+            case 0x4: ex4(op)
+            case 0x5:
+                var vv = 0
+                if (alt2) { vv = n } else { vv = r[n] }
+                var c = 0
+                if (alt1 && cy) { c = 1 }
+                var s = rs()
+                var res = s + vv + c
+                ov = ((s ^ vv ^ 0xFFFF) & (vv ^ res) & 0x8000) != 0
+                cy = res >= 0x10000
+                nz16(res)
+                setD(res)
+                resetPrefix()
+            case 0x6:
+                var vv = 0
+                if (alt2 && !alt1) { vv = n } else { vv = r[n] }
+                var s = rs()
+                var res = 0
+                if (alt1 && !alt2) {
+                    var b = 0
+                    if (!cy) { b = 1 }
+                    res = s - vv - b
+                } else {
+                    res = s - vv
+                }
+                ov = ((s ^ vv) & (s ^ res) & 0x8000) != 0
+                cy = res >= 0
+                nz16(res)
+                if (!(alt1 && alt2)) { setD(res) }
+                resetPrefix()
+            case 0x7:
+                if (n == 0) {
+                    var res = (r[7] & 0xFF00) | (r[8] >> 8)
+                    sg = (res & 0x8080) != 0
+                    ov = (res & 0xC0C0) != 0
+                    cy = (res & 0xE0E0) != 0
+                    z = (res & 0xF0F0) != 0
+                    setD(res)
+                } else {
+                    var vv = 0
+                    if (alt2) { vv = n } else { vv = r[n] }
+                    var res = 0
+                    if (alt1) { res = rs() & (vv ^ 0xFFFF) } else { res = rs() & vv }
+                    nz16(res)
+                    setD(res)
+                }
+                resetPrefix()
+            case 0x8:
+                var vv = 0
+                if (alt2) { vv = n } else { vv = r[n] }
+                var res = 0
+                if (alt1) {
+                    res = (rs() & 0xFF) * (vv & 0xFF)
+                } else {
+                    res = s8(rs()) * s8(vv)
+                }
+                nz16(res)
+                setD(res)
+                budget = budget - 1
+                resetPrefix()
+            case 0x9: ex9(op)
+            case 0xA:
+                if (alt1) {
+                    var a = pipe() << 1
+                    lastRam = a
+                    var lo = ramRead(a)
+                    setReg(n, lo | (ramRead(a ^ 1) << 8))
+                    budget = budget - 4
+                } else if (alt2) {
+                    var a = pipe() << 1
+                    lastRam = a
+                    ramWrite(a, r[n])
+                    ramWrite(a ^ 1, r[n] >> 8)
+                    budget = budget - 4
+                } else {
+                    setReg(n, s8(pipe()))
+                }
+                resetPrefix()
+            case 0xB:
+                if (bflag) {
+                    var v = r[n]
+                    ov = (v & 0x80) != 0
+                    sg = (v & 0x8000) != 0
+                    z = v == 0
+                    setD(v)
+                    resetPrefix()
+                } else {
+                    sreg = n
+                }
+            case 0xC:
+                if (n == 0) {
+                    var res = rs() >> 8
+                    sg = (res & 0x80) != 0
+                    z = res == 0
+                    setD(res)
+                } else {
+                    var vv = 0
+                    if (alt2) { vv = n } else { vv = r[n] }
+                    var res = 0
+                    if (alt1) { res = rs() ^ vv } else { res = rs() | vv }
+                    nz16(res)
+                    setD(res)
+                }
+                resetPrefix()
+            case 0xD:
+                if (n < 15) {
+                    var res = (r[n] + 1) & 0xFFFF
+                    nz16(res)
+                    setReg(n, res)
+                } else {
+                    if (alt2 && !alt1) {
+                        rambr = rs() & 1
+                    } else if (alt1 && alt2) {
+                        rombr = rs() & 0x7F
+                    } else {
+                        colr = color(romBuffer)
+                    }
+                }
+                resetPrefix()
+            case 0xE:
+                if (n < 15) {
+                    var res = (r[n] - 1) & 0xFFFF
+                    nz16(res)
+                    setReg(n, res)
+                } else {
+                    var b = romBuffer
+                    if (alt1 && alt2) {
+                        setD(s8(b))
+                    } else if (alt1) {
+                        setD((rs() & 0xFF) | (b << 8))
+                    } else if (alt2) {
+                        setD((rs() & 0xFF00) | b)
+                    } else {
+                        setD(b)
+                    }
+                }
+                resetPrefix()
+            default:
+                if (alt1) {
+                    var lo = pipe()
+                    var a = lo | (pipe() << 8)
+                    lastRam = a
+                    var vlo = ramRead(a)
+                    setReg(n, vlo | (ramRead(a ^ 1) << 8))
+                    budget = budget - 4
+                } else if (alt2) {
+                    var lo = pipe()
+                    var a = lo | (pipe() << 8)
+                    lastRam = a
+                    ramWrite(a, r[n])
+                    ramWrite(a ^ 1, r[n] >> 8)
+                    budget = budget - 4
+                } else {
+                    var lo = pipe()
+                    setReg(n, lo | (pipe() << 8))
+                }
+                resetPrefix()
+        }
+    }
+
+    ex0(Int op) {
+        switch (op) {
+            case 0x00:
+                go = false
+                irq = true
+                pipeline = 0x01
+                resetPrefix()
+            case 0x01: resetPrefix()
+            case 0x02:
+                var nc = r[15] & 0xFFF0
+                if (cbr != nc) {
+                    cbr = nc
+                    flushCache()
+                }
+                resetPrefix()
+            case 0x03:
+                var s = rs()
+                cy = (s & 1) != 0
+                var res = s >> 1
+                nz16(res)
+                setD(res)
+                resetPrefix()
+            case 0x04:
+                var s = rs()
+                var c = 0
+                if (cy) { c = 1 }
+                var res = ((s << 1) | c) & 0xFFFF
+                cy = (s & 0x8000) != 0
+                nz16(res)
+                setD(res)
+                resetPrefix()
+            case 0x05: branch(true)
+            case 0x06: branch(sg == ov)
+            case 0x07: branch(sg != ov)
+            case 0x08: branch(!z)
+            case 0x09: branch(z)
+            case 0x0A: branch(!sg)
+            case 0x0B: branch(sg)
+            case 0x0C: branch(!cy)
+            case 0x0D: branch(cy)
+            case 0x0E: branch(!ov)
+            default: branch(ov)
+        }
+    }
+
+    ex4(Int op) {
+        var n = op & 15
+        if (n <= 11) {
+            lastRam = r[n]
+            if (alt1) {
+                setD(ramRead(r[n]))
+            } else {
+                var lo = ramRead(r[n])
+                setD(lo | (ramRead(r[n] ^ 1) << 8))
+            }
+            budget = budget - 4
+            resetPrefix()
+            return
+        }
+        switch (n) {
+            case 12:
+                if (alt1) {
+                    var c = rpix()
+                    sg = (c & 0x80) != 0
+                    z = c == 0
+                    setD(c)
+                } else {
+                    plot()
+                }
+            case 13:
+                var s = rs()
+                var res = ((s >> 8) | (s << 8)) & 0xFFFF
+                nz16(res)
+                setD(res)
+            case 14:
+                if (alt1) {
+                    por = rs() & 0x1F
+                } else {
+                    colr = color(rs())
+                }
+            default:
+                var res = rs() ^ 0xFFFF
+                nz16(res)
+                setD(res)
+        }
+        resetPrefix()
+    }
+
+    ex9(Int op) {
+        var n = op & 15
+        if (n == 0) {
+            ramWrite(lastRam, rs())
+            ramWrite(lastRam ^ 1, rs() >> 8)
+        } else if (n <= 4) {
+            setReg(11, r[15] + n)
+        } else if (n == 5) {
+            var res = s8(rs()) & 0xFFFF
+            nz16(res)
+            setD(res)
+        } else if (n == 6) {
+            var s = rs()
+            cy = (s & 1) != 0
+            var res = (s16(s) >> 1) & 0xFFFF
+            if (alt1 && s == 0xFFFF) { res = 0 }
+            nz16(res)
+            setD(res)
+        } else if (n == 7) {
+            var s = rs()
+            var c = 0
+            if (cy) { c = 0x8000 }
+            cy = (s & 1) != 0
+            var res = (s >> 1) | c
+            nz16(res)
+            setD(res)
+        } else if (n <= 13) {
+            if (alt1) {
+                pbr = r[n] & 0x7F
+                setReg(15, rs())
+                cbr = r[15] & 0xFFF0
+                flushCache()
+            } else {
+                setReg(15, r[n])
+            }
+        } else if (n == 14) {
+            var res = rs() & 0xFF
+            sg = (res & 0x80) != 0
+            z = res == 0
+            setD(res)
+        } else {
+            var res = s16(rs()) * s16(r[6])
+            if (alt1) { setReg(4, res) }
+            cy = ((res >> 15) & 1) != 0
+            var hiw = (res >> 16) & 0xFFFF
+            nz16(hiw)
+            setD(hiw)
+            budget = budget - 4
+        }
+        resetPrefix()
+    }
+}
