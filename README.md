@@ -33,8 +33,8 @@
 
 | Sistema | Pacote | Como abrir |
 |---|---|---|
-| **Windows** (x64) | `KOFnes-instalador-windows.exe` · **15 MB** | dois cliques → instala (sem pedir administrador) → ícone na área de trabalho |
-| **Windows** (x64), portátil | `KOFnes-windows-x64.zip` · 22 MB | extrair → dois cliques em **`KOFnes.exe`** |
+| **Windows** (x64) | `KOFnes-instalador-windows.exe` · **12 MB** (15 MB instalado) | dois cliques → instala (sem pedir administrador) → ícone na área de trabalho |
+| **Windows** (x64), portátil | `KOFnes-windows-x64.zip` · 13 MB | extrair → dois cliques em **`KOFnes.exe`** |
 | **Linux** (x64) | `KOFnes-linux-x64.tar.xz` · 23 MB | extrair → `./KOFnes/KOFnes` |
 | **Linux** (x64), **só Kof** | `KOFnes-so-kof-linux-x64` · **0,3 MB** | `./KOFnes-so-kof-linux-x64 jogo.sfc` (veja o [tradeoff](#-duas-versões-com-java--só-kof)) |
 
@@ -66,7 +66,7 @@ duas versões. Elas só mudam no que fica em volta:
 
 | | **Com Java** (`app/` + `empacotar/`) | **Só Kof** (`nativo/`) |
 |---|---|---|
-| Tamanho | 15 MB (instalador), 22 MB (zip) | **0,3 MB** |
+| Tamanho | 12 MB (instalador), 15 MB instalado | **0,3 MB** |
 | Velocidade | **350–500 fps** sem janela; os jogos rodam a 60 fps com folga | **~22 fps**: o jogo anda a ~1/3 da velocidade |
 | Sistemas | Windows e Linux | só Linux x64 (no Windows, pelo WSL) |
 | Janela | menu, Abrir ROM, pausa, escala, `.zip` | SDL2: ROM pela linha de comando ou arrastada pra janela; só `.sfc`/`.smc` |
@@ -81,10 +81,12 @@ Java tem um JIT de 25 anos por trás. Quando o alvo nativo do Kof ganhar
 registradores e acesso a array em linha, a versão só-Kof fica rápida **sem mudar
 uma linha do emulador**. Está no [relatório](docs/relatorio-kof.md) (item 12).
 
-**Como o Java ficou com 15 MB:** o pacote leva só os módulos `java.base` e
-`java.desktop`, e dentro deles só as classes que o KOFnes carrega numa sessão
-de verdade (medidas com `-Xlog:class+load`), mais tudo o que elas podem chamar
-(`jdeps`). A janela usa AWT puro, sem Swing. O resto é LZMA no instalador.
+**Como o Java ficou com 15 MB instalado:** o pacote leva só os módulos
+`java.base` e `java.desktop`, e dentro deles só as classes que o KOFnes carrega
+numa sessão de verdade (medidas com `-Xlog:class+load` pelo próprio
+`KOFnes.exe`), mais as classes de erro e os pacotes que mudam de um Windows pro
+outro (som, janela, fontes). A janela usa AWT puro, sem Swing. As DLLs do Java
+vão comprimidas com UPX e o runtime do C fica com o do Windows 10/11.
 
 ## 🧩 O que tem dentro
 

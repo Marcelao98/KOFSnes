@@ -1,7 +1,7 @@
 # Kof 0.6.3 sob carga: o que um emulador de SNES encontrou
 
-**Para:** Mel Santos e quem mantém o Kof4j
-**Versão testada:** Kof 0.6.3, commit `4db805c3` (main, 12/10/2026), alvo JVM, JDK 25
+**Para:** Mel Santos e quem mantém o Kof4j\
+**Versão testada:** Kof 0.6.3, commit `4db805c3` (main, 12/10/2026), alvos JVM e nativo x86-64, JDK 25\
 **Projeto:** [KOFnes](../README.md), um emulador de Super Nintendo escrito do zero
 em Kof (≈6.600 linhas), feito vibecodando com o Claude Code
 
