@@ -1,0 +1,664 @@
+package snes
+
+import snes.Cpu
+import snes.CpuBus
+import snes.Ppu
+import snes.Apu
+import snes.Cartridge
+
+// O console inteiro: barramento da CPU (mapa de memória e registradores
+// $4200+), DMA/HDMA, contadores H/V, NMI/IRQ, joypads e o relógio master
+// (21,477 MHz) que puxa PPU e APU junto com a CPU.
+class Snes implements CpuBus {
+    Cpu cpu
+    Ppu ppu
+    Apu apu
+    Cartridge cart
+    Int[] wram
+    Int wramAddr
+    // relógio
+    Int h
+    Int v
+    Int linesPerFrame
+    Bool frameDone
+    Int frames
+    Int apuMaster
+    // registradores da CPU
+    Int nmitimen
+    Bool nmiFlag
+    Bool irqFlag
+    Bool inVblank
+    Int htime
+    Int vtime
+    Int wrio
+    Int wrmpya
+    Int wrmpyb
+    Int wrdiv
+    Int rddiv
+    Int rdmpy
+    Bool fastRom
+    Int openBus
+    Int irqPos
+    // joypads
+    Int[] pad
+    Int[] joyRead
+    Int[] serial
+    Bool strobe
+    Int autoJoyBusy
+    // DMA
+    Int[] dmap
+    Int[] bbad
+    Int[] a1t
+    Int[] a1b
+    Int[] das
+    Int[] dasb
+    Int[] a2a
+    Int[] ntrl
+    Int[] unused
+    Int hdmaEn
+    Bool[] hdmaActive
+    Bool[] hdmaDo
+
+    public constructor(Byte[] romData) {
+        this.cart = Cartridge(romData)
+        this.wram = new Int[0x20000]
+        this.wramAddr = 0
+        this.ppu = Ppu()
+        this.apu = Apu()
+        this.h = 0
+        this.v = 0
+        this.linesPerFrame = 262
+        if (this.cart.pal) { this.linesPerFrame = 312 }
+        this.frameDone = false
+        this.frames = 0
+        this.apuMaster = 0
+        this.nmitimen = 0
+        this.nmiFlag = false
+        this.irqFlag = false
+        this.inVblank = false
+        this.htime = 0x1FF
+        this.vtime = 0x1FF
+        this.wrio = 0xFF
+        this.wrmpya = 0xFF
+        this.wrmpyb = 0
+        this.wrdiv = 0xFFFF
+        this.rddiv = 0
+        this.rdmpy = 0
+        this.fastRom = false
+        this.openBus = 0
+        this.irqPos = -1
+        this.pad = new Int[2]
+        this.joyRead = new Int[2]
+        this.serial = new Int[2]
+        this.strobe = false
+        this.autoJoyBusy = 0
+        this.dmap = new Int[8]
+        this.bbad = new Int[8]
+        this.a1t = new Int[8]
+        this.a1b = new Int[8]
+        this.das = new Int[8]
+        this.dasb = new Int[8]
+        this.a2a = new Int[8]
+        this.ntrl = new Int[8]
+        this.unused = new Int[8]
+        this.hdmaEn = 0
+        this.hdmaActive = new Bool[8]
+        this.hdmaDo = new Bool[8]
+        var i = 0
+        while (i < 8) {
+            this.dmap[i] = 0xFF
+            this.bbad[i] = 0xFF
+            i++
+        }
+        // a WRAM liga com lixo; um padrão fixo deixa tudo determinístico
+        var k = 0
+        while (k < 0x20000) {
+            this.wram[k] = 0x55
+            k++
+        }
+        this.cpu = Cpu(this)
+    }
+
+    reset() {
+        apu.reset()
+        ppu.reset()
+        h = 0
+        v = 0
+        nmitimen = 0
+        cpu.reset()
+    }
+
+    // ---------------- tempo ----------------
+    Int speed(Int addr) {
+        var bank = addr >> 16
+        var off = addr & 0xFFFF
+        if ((bank & 0x40) == 0) {
+            if (off < 0x2000) { return 8 }
+            if (off < 0x4000) { return 6 }
+            if (off < 0x4200) { return 12 }
+            if (off < 0x6000) { return 6 }
+            if (off < 0x8000) { return 8 }
+            if (fastRom && (bank & 0x80) != 0) { return 6 }
+            return 8
+        }
+        if (fastRom && bank >= 0xC0) { return 6 }
+        return 8
+    }
+
+    idle() {
+        tick(6)
+    }
+
+    tick(Int c) {
+        var old = h
+        h = h + c
+        apuMaster = apuMaster + c
+        if (irqPos >= 0 && old < irqPos && h >= irqPos) {
+            checkIrqLine()
+        }
+        if (old < 536 && h >= 536) {
+            // refresh da DRAM: a CPU para por 40 ciclos
+            h = h + 40
+            apuMaster = apuMaster + 40
+        }
+        if (old < 1104 && h >= 1104) {
+            hblank()
+        }
+        if (h >= 1364) {
+            h = h - 1364
+            newLine()
+            if (irqPos >= 0 && irqPos <= h) {
+                checkIrqLine()
+            }
+        }
+    }
+
+    Int vblankLine() {
+        if ((ppu.setini & 4) != 0) { return 240 }
+        return 225
+    }
+
+    hblank() {
+        if (v >= 1 && v < vblankLine()) {
+            ppu.renderLine(v)
+        }
+        // HDMA da linha seguinte acontece no hblank desta
+        if (v < vblankLine() - 1) {
+            hdmaRun()
+        }
+    }
+
+    newLine() {
+        v = v + 1
+        if (v == vblankLine()) {
+            inVblank = true
+            nmiFlag = true
+            ppu.vblankStart()
+            ppu.visibleLines = vblankLine() - 1
+            if ((nmitimen & 0x80) != 0) {
+                cpu.nmiPending = true
+            }
+            if ((nmitimen & 1) != 0) {
+                autoJoy()
+            }
+            frameDone = true
+            frames++
+        }
+        if (v >= linesPerFrame) {
+            v = 0
+            inVblank = false
+            nmiFlag = false
+            ppu.rangeOver = false
+            ppu.timeOver = false
+            hdmaInit()
+        }
+        updateIrqPos()
+        // o APU anda junto, uma linha por vez
+        syncApu()
+    }
+
+    syncApu() {
+        var n = (apuMaster * 1000) / 20974
+        if (n > 0) {
+            apuMaster = apuMaster - (n * 20974) / 1000
+            apu.run(n)
+        }
+    }
+
+    // ---------------- IRQ por H/V ----------------
+    updateIrqPos() {
+        var mode = (nmitimen >> 4) & 3
+        irqPos = -1
+        if (mode == 0) { return }
+        if (mode == 1) {
+            irqPos = htime * 4 + 14
+        } else if (mode == 2) {
+            if (v == vtime) { irqPos = 10 }
+        } else {
+            if (v == vtime) { irqPos = htime * 4 + 14 }
+        }
+        if (irqPos >= 1364) { irqPos = -1 }
+    }
+
+    checkIrqLine() {
+        irqFlag = true
+        cpu.irqLine = true
+    }
+
+    // ---------------- joypads ----------------
+    autoJoy() {
+        joyRead[0] = pad[0]
+        joyRead[1] = pad[1]
+        autoJoyBusy = 3
+    }
+
+    // ---------------- barramento ----------------
+    Int read(Int addr) {
+        tick(speed(addr))
+        var v2 = readRaw(addr)
+        openBus = v2
+        return v2
+    }
+
+    write(Int addr, Int vl) {
+        tick(speed(addr))
+        openBus = vl
+        writeRaw(addr, vl)
+    }
+
+    Int readRaw(Int addr) {
+        var bank = addr >> 16
+        var off = addr & 0xFFFF
+        if (bank == 0x7E || bank == 0x7F) {
+            return wram[addr & 0x1FFFF]
+        }
+        if ((bank & 0x40) == 0) {
+            if (off < 0x2000) { return wram[off] }
+            if (off < 0x8000) { return readIo(off) }
+        }
+        var m = cart.map(addr)
+        if (m >= 0) { return cart.rom[m] }
+        if (m <= -2) { return cart.sram[-2 - m] }
+        return openBus
+    }
+
+    writeRaw(Int addr, Int vl) {
+        var bank = addr >> 16
+        var off = addr & 0xFFFF
+        if (bank == 0x7E || bank == 0x7F) {
+            wram[addr & 0x1FFFF] = vl
+            return
+        }
+        if ((bank & 0x40) == 0) {
+            if (off < 0x2000) {
+                wram[off] = vl
+                return
+            }
+            if (off < 0x8000) {
+                writeIo(off, vl)
+                return
+            }
+        }
+        var m = cart.map(addr)
+        if (m <= -2) { cart.sram[-2 - m] = vl }
+    }
+
+    // B-bus ($21xx): PPU, APU, porta da WRAM
+    Int readB(Int reg) {
+        if (reg < 0x40) {
+            if (reg == 0x37) {
+                if ((wrio & 0x80) != 0) {
+                    ppu.latchCounters(h >> 2, v)
+                }
+                return openBus
+            }
+            if (reg >= 0x34) { return ppu.read(reg) }
+            return ppu.ppu1Bus
+        }
+        if (reg < 0x80) {
+            syncApu()
+            return apu.outPorts[reg & 3]
+        }
+        if (reg == 0x80) {
+            var x = wram[wramAddr]
+            wramAddr = (wramAddr + 1) & 0x1FFFF
+            return x
+        }
+        return openBus
+    }
+
+    writeB(Int reg, Int vl) {
+        if (reg < 0x40) {
+            ppu.write(reg, vl)
+            return
+        }
+        if (reg < 0x80) {
+            syncApu()
+            apu.inPorts[reg & 3] = vl
+            return
+        }
+        switch (reg) {
+            case 0x80:
+                wram[wramAddr] = vl
+                wramAddr = (wramAddr + 1) & 0x1FFFF
+            case 0x81: wramAddr = (wramAddr & 0x1FF00) | vl
+            case 0x82: wramAddr = (wramAddr & 0x100FF) | (vl << 8)
+            case 0x83: wramAddr = (wramAddr & 0x0FFFF) | ((vl & 1) << 16)
+            default:
+                var ignored = 0
+        }
+    }
+
+    Int readIo(Int off) {
+        if (off >= 0x2100 && off < 0x2200) {
+            return readB(off & 0xFF)
+        }
+        if (off == 0x4016) {
+            return readSerial(0) | (openBus & 0xFC)
+        }
+        if (off == 0x4017) {
+            return readSerial(1) | 0x1C | (openBus & 0xE0)
+        }
+        if (off >= 0x4300 && off < 0x4380) {
+            return readDma(off)
+        }
+        switch (off) {
+            case 0x4210:
+                var r = 0x02 | (openBus & 0x70)
+                if (nmiFlag) { r = r | 0x80 }
+                nmiFlag = false
+                return r
+            case 0x4211:
+                var r = openBus & 0x7F
+                if (irqFlag) { r = r | 0x80 }
+                irqFlag = false
+                cpu.irqLine = false
+                return r
+            case 0x4212:
+                var r = openBus & 0x3E
+                if (inVblank) { r = r | 0x80 }
+                if (h < 4 || h >= 1096) { r = r | 0x40 }
+                if (autoJoyBusy > 0 && inVblank && v < vblankLine() + 3) { r = r | 1 }
+                return r
+            case 0x4213: return wrio
+            case 0x4214: return rddiv & 0xFF
+            case 0x4215: return (rddiv >> 8) & 0xFF
+            case 0x4216: return rdmpy & 0xFF
+            case 0x4217: return (rdmpy >> 8) & 0xFF
+            case 0x4218: return joyRead[0] & 0xFF
+            case 0x4219: return (joyRead[0] >> 8) & 0xFF
+            case 0x421A: return joyRead[1] & 0xFF
+            case 0x421B: return (joyRead[1] >> 8) & 0xFF
+            case 0x421C: return 0
+            case 0x421D: return 0
+            case 0x421E: return 0
+            case 0x421F: return 0
+            default: return openBus
+        }
+    }
+
+    Int readSerial(Int port) {
+        if (strobe) {
+            return (pad[port] >> 15) & 1
+        }
+        var b = (serial[port] >> 15) & 1
+        serial[port] = ((serial[port] << 1) | 1) & 0xFFFF
+        return b
+    }
+
+    writeIo(Int off, Int vl) {
+        if (off >= 0x2100 && off < 0x2200) {
+            writeB(off & 0xFF, vl)
+            return
+        }
+        if (off == 0x4016) {
+            var ns = (vl & 1) != 0
+            if (strobe && !ns) {
+                serial[0] = pad[0]
+                serial[1] = pad[1]
+            }
+            strobe = ns
+            return
+        }
+        if (off >= 0x4300 && off < 0x4380) {
+            writeDma(off, vl)
+            return
+        }
+        switch (off) {
+            case 0x4200:
+                var wasNmi = (nmitimen & 0x80) != 0
+                nmitimen = vl
+                if (!wasNmi && (vl & 0x80) != 0 && nmiFlag) {
+                    cpu.nmiPending = true
+                }
+                if ((vl & 0x30) == 0) {
+                    irqFlag = false
+                    cpu.irqLine = false
+                }
+                updateIrqPos()
+            case 0x4201:
+                if ((wrio & 0x80) != 0 && (vl & 0x80) == 0) {
+                    ppu.latchCounters(h >> 2, v)
+                }
+                wrio = vl
+            case 0x4202: wrmpya = vl
+            case 0x4203:
+                wrmpyb = vl
+                rdmpy = wrmpya * wrmpyb
+                rddiv = wrmpyb
+            case 0x4204: wrdiv = (wrdiv & 0xFF00) | vl
+            case 0x4205: wrdiv = (wrdiv & 0xFF) | (vl << 8)
+            case 0x4206:
+                if (vl == 0) {
+                    rddiv = 0xFFFF
+                    rdmpy = wrdiv
+                } else {
+                    rddiv = wrdiv / vl
+                    rdmpy = wrdiv % vl
+                }
+            case 0x4207:
+                htime = (htime & 0x100) | vl
+                updateIrqPos()
+            case 0x4208:
+                htime = (htime & 0xFF) | ((vl & 1) << 8)
+                updateIrqPos()
+            case 0x4209:
+                vtime = (vtime & 0x100) | vl
+                updateIrqPos()
+            case 0x420A:
+                vtime = (vtime & 0xFF) | ((vl & 1) << 8)
+                updateIrqPos()
+            case 0x420B: dmaRun(vl)
+            case 0x420C: hdmaEn = vl
+            case 0x420D: fastRom = (vl & 1) != 0
+            default:
+                var ignored = 0
+        }
+    }
+
+    // ---------------- DMA ----------------
+    Int readDma(Int off) {
+        var c = (off >> 4) & 7
+        switch (off & 0xF) {
+            case 0x0: return dmap[c]
+            case 0x1: return bbad[c]
+            case 0x2: return a1t[c] & 0xFF
+            case 0x3: return (a1t[c] >> 8) & 0xFF
+            case 0x4: return a1b[c]
+            case 0x5: return das[c] & 0xFF
+            case 0x6: return (das[c] >> 8) & 0xFF
+            case 0x7: return dasb[c]
+            case 0x8: return a2a[c] & 0xFF
+            case 0x9: return (a2a[c] >> 8) & 0xFF
+            case 0xA: return ntrl[c]
+            default: return unused[c]
+        }
+    }
+
+    writeDma(Int off, Int vl) {
+        var c = (off >> 4) & 7
+        switch (off & 0xF) {
+            case 0x0: dmap[c] = vl
+            case 0x1: bbad[c] = vl
+            case 0x2: a1t[c] = (a1t[c] & 0xFF00) | vl
+            case 0x3: a1t[c] = (a1t[c] & 0xFF) | (vl << 8)
+            case 0x4: a1b[c] = vl
+            case 0x5: das[c] = (das[c] & 0xFF00) | vl
+            case 0x6: das[c] = (das[c] & 0xFF) | (vl << 8)
+            case 0x7: dasb[c] = vl
+            case 0x8: a2a[c] = (a2a[c] & 0xFF00) | vl
+            case 0x9: a2a[c] = (a2a[c] & 0xFF) | (vl << 8)
+            case 0xA: ntrl[c] = vl
+            default: unused[c] = vl
+        }
+    }
+
+    Int bOffset(Int mode, Int i) {
+        switch (mode) {
+            case 0: return 0
+            case 1: return i & 1
+            case 2: return 0
+            case 6: return 0
+            case 3: return (i >> 1) & 1
+            case 7: return (i >> 1) & 1
+            case 4: return i & 3
+            default: return i & 1
+        }
+    }
+
+    Int unitLen(Int mode) {
+        switch (mode) {
+            case 0: return 1
+            case 1: return 2
+            case 2: return 2
+            case 6: return 2
+            default: return 4
+        }
+    }
+
+    // A-bus não pode acessar os registradores do B-bus nem os de DMA
+    Bool aBusValid(Int addr) {
+        var bank = addr >> 16
+        var off = addr & 0xFFFF
+        if ((bank & 0x40) == 0) {
+            if (off >= 0x2100 && off < 0x2200) { return false }
+            if (off >= 0x4300 && off < 0x4380) { return false }
+        }
+        return true
+    }
+
+    transferByte(Int c, Int aAddr, Int bReg) {
+        if ((dmap[c] & 0x80) != 0) {
+            // B -> A
+            var x = readB(bReg)
+            if (aBusValid(aAddr)) { writeRaw(aAddr, x) }
+        } else {
+            var x = 0
+            if (aBusValid(aAddr)) { x = readRaw(aAddr) } else { x = openBus }
+            writeB(bReg, x)
+        }
+    }
+
+    dmaRun(Int mask) {
+        if (mask == 0) { return }
+        tick(8)
+        var c = 0
+        while (c < 8) {
+            if ((mask & (1 << c)) != 0) {
+                tick(8)
+                var mode = dmap[c] & 7
+                var step = 0
+                if ((dmap[c] & 0x08) == 0) {
+                    if ((dmap[c] & 0x10) != 0) { step = -1 } else { step = 1 }
+                }
+                var count = das[c]
+                if (count == 0) { count = 0x10000 }
+                var i = 0
+                while (count > 0) {
+                    var aAddr = (a1b[c] << 16) | a1t[c]
+                    var bReg = (bbad[c] + bOffset(mode, i)) & 0xFF
+                    transferByte(c, aAddr, bReg)
+                    tick(8)
+                    a1t[c] = (a1t[c] + step) & 0xFFFF
+                    count--
+                    i++
+                }
+                das[c] = 0
+            }
+            c++
+        }
+    }
+
+    // ---------------- HDMA ----------------
+    hdmaInit() {
+        var c = 0
+        while (c < 8) {
+            hdmaActive[c] = false
+            hdmaDo[c] = false
+            if ((hdmaEn & (1 << c)) != 0) {
+                a2a[c] = a1t[c]
+                hdmaLoad(c)
+                tick(8)
+            }
+            c++
+        }
+    }
+
+    hdmaLoad(Int c) {
+        var x = readRaw((a1b[c] << 16) | a2a[c])
+        a2a[c] = (a2a[c] + 1) & 0xFFFF
+        ntrl[c] = x
+        if ((dmap[c] & 0x40) != 0) {
+            var lo = readRaw((a1b[c] << 16) | a2a[c])
+            a2a[c] = (a2a[c] + 1) & 0xFFFF
+            var hi = readRaw((a1b[c] << 16) | a2a[c])
+            a2a[c] = (a2a[c] + 1) & 0xFFFF
+            das[c] = lo | (hi << 8)
+        }
+        hdmaActive[c] = x != 0
+        hdmaDo[c] = true
+    }
+
+    hdmaRun() {
+        if (hdmaEn == 0) { return }
+        var c = 0
+        while (c < 8) {
+            if ((hdmaEn & (1 << c)) != 0 && hdmaActive[c]) {
+                var mode = dmap[c] & 7
+                if (hdmaDo[c]) {
+                    var n = unitLen(mode)
+                    var i = 0
+                    while (i < n) {
+                        var aAddr = 0
+                        if ((dmap[c] & 0x40) != 0) {
+                            aAddr = (dasb[c] << 16) | das[c]
+                            das[c] = (das[c] + 1) & 0xFFFF
+                        } else {
+                            aAddr = (a1b[c] << 16) | a2a[c]
+                            a2a[c] = (a2a[c] + 1) & 0xFFFF
+                        }
+                        transferByte(c, aAddr, (bbad[c] + bOffset(mode, i)) & 0xFF)
+                        h = h + 8
+                        apuMaster = apuMaster + 8
+                        i++
+                    }
+                }
+                ntrl[c] = (ntrl[c] - 1) & 0xFF
+                hdmaDo[c] = (ntrl[c] & 0x80) != 0
+                if ((ntrl[c] & 0x7F) == 0) {
+                    hdmaLoad(c)
+                }
+            }
+            c++
+        }
+    }
+
+    // ---------------- execução ----------------
+    runFrame() {
+        frameDone = false
+        while (!frameDone) {
+            cpu.step()
+        }
+        if (autoJoyBusy > 0) { autoJoyBusy = 0 }
+    }
+}

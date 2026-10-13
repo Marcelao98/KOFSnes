@@ -1,0 +1,689 @@
+package snes
+
+import snes.SpcBus
+import java.lang.Integer;
+
+// Sony SPC700 — a CPU do chip de som. 8 bits, 64 KB, flags NVPBHIZC.
+// step() executa uma instrução e devolve quantos ciclos (de 1,024 MHz)
+// ela levou; a Apu usa isso pra andar timers e DSP no mesmo passo.
+class Spc {
+    SpcBus bus
+    Int a
+    Int x
+    Int y
+    Int sp
+    Int pc
+    Bool fneg
+    Bool fv
+    Bool fp
+    Bool fb
+    Bool fh
+    Bool fi
+    Bool fz
+    Bool fc
+    Bool halted
+    Int extra
+    Int[] cyc
+
+    public constructor(SpcBus bus) {
+        this.bus = bus
+        this.a = 0
+        this.x = 0
+        this.y = 0
+        this.sp = 0xEF
+        this.pc = 0xFFC0
+        this.fneg = false
+        this.fv = false
+        this.fp = false
+        this.fb = false
+        this.fh = false
+        this.fi = false
+        this.fz = false
+        this.fc = false
+        this.halted = false
+        this.extra = 0
+        this.cyc = new Int[256]
+        var t = "28453436265454682845455655652246284534362654545228454556556522382845343626445466284545565545224328453436264454552845455655552236284534362654524528454556555522C5384534362644524428454556555522343845454725645249284556674555226328453436245343432845455634542243"
+        var i = 0
+        while (i < 256) {
+            this.cyc[i] = Integer.parseInt(t.substring(i, i + 1), 16)
+            i++
+        }
+    }
+
+    reset() {
+        a = 0
+        x = 0
+        y = 0
+        sp = 0xEF
+        setPsw(0x02)
+        halted = false
+        pc = rd(0xFFFE) | (rd(0xFFFF) << 8)
+    }
+
+    Int getPsw() {
+        var p = 0
+        if (fneg) { p = p | 0x80 }
+        if (fv) { p = p | 0x40 }
+        if (fp) { p = p | 0x20 }
+        if (fb) { p = p | 0x10 }
+        if (fh) { p = p | 0x08 }
+        if (fi) { p = p | 0x04 }
+        if (fz) { p = p | 0x02 }
+        if (fc) { p = p | 0x01 }
+        return p
+    }
+
+    setPsw(Int p) {
+        fneg = (p & 0x80) != 0
+        fv = (p & 0x40) != 0
+        fp = (p & 0x20) != 0
+        fb = (p & 0x10) != 0
+        fh = (p & 0x08) != 0
+        fi = (p & 0x04) != 0
+        fz = (p & 0x02) != 0
+        fc = (p & 0x01) != 0
+    }
+
+    // ---------- memória ----------
+    Int rd(Int addr) {
+        return bus.read(addr & 0xFFFF)
+    }
+
+    wr(Int addr, Int v) {
+        bus.write(addr & 0xFFFF, v & 0xFF)
+    }
+
+    Int fetch() {
+        var v = bus.read(pc)
+        pc = (pc + 1) & 0xFFFF
+        return v
+    }
+
+    Int fetch16() {
+        var lo = fetch()
+        return lo | (fetch() << 8)
+    }
+
+    Int dp(Int o) {
+        if (fp) {
+            return 0x100 | (o & 0xFF)
+        }
+        return o & 0xFF
+    }
+
+    Int rdWordDp(Int o) {
+        var lo = rd(dp(o))
+        return lo | (rd(dp(o + 1)) << 8)
+    }
+
+    push(Int v) {
+        wr(0x100 | sp, v)
+        sp = (sp - 1) & 0xFF
+    }
+
+    Int pop() {
+        sp = (sp + 1) & 0xFF
+        return rd(0x100 | sp)
+    }
+
+    nz(Int v) {
+        fz = (v & 0xFF) == 0
+        fneg = (v & 0x80) != 0
+    }
+
+    // ---------- endereçamento ----------
+    // modos usados pelas famílias ALU (colunas 4-9) e de deslocamento
+    Int addrDp() {
+        return dp(fetch())
+    }
+
+    Int addrDpX() {
+        return dp(fetch() + x)
+    }
+
+    Int addrAbs() {
+        return fetch16()
+    }
+
+    Int addrAbsX() {
+        return (fetch16() + x) & 0xFFFF
+    }
+
+    Int addrAbsY() {
+        return (fetch16() + y) & 0xFFFF
+    }
+
+    Int addrIndX() {
+        var o = fetch() + x
+        var lo = rd(dp(o))
+        return lo | (rd(dp(o + 1)) << 8)
+    }
+
+    Int addrIndY() {
+        var o = fetch()
+        var lo = rd(dp(o))
+        return ((lo | (rd(dp(o + 1)) << 8)) + y) & 0xFFFF
+    }
+
+    // ---------- ALU ----------
+    // kind: 0 OR, 1 AND, 2 EOR, 3 CMP, 4 ADC, 5 SBC
+    Int alu(Int kind, Int l, Int r) {
+        switch (kind) {
+            case 0:
+                var v = l | r
+                nz(v)
+                return v
+            case 1:
+                var v = l & r
+                nz(v)
+                return v
+            case 2:
+                var v = l ^ r
+                nz(v)
+                return v
+            case 3:
+                var v = l - r
+                fc = v >= 0
+                nz(v)
+                return l
+            case 4:
+                return adc(l, r)
+            default:
+                return adc(l, r ^ 0xFF)
+        }
+    }
+
+    Int adc(Int l, Int r) {
+        var c = 0
+        if (fc) { c = 1 }
+        var v = l + r + c
+        fc = v > 0xFF
+        fh = ((l ^ r ^ v) & 0x10) != 0
+        fv = ((l ^ r ^ 0xFF) & (l ^ v) & 0x80) != 0
+        nz(v)
+        return v & 0xFF
+    }
+
+    // kind: 0 ASL, 1 ROL, 2 LSR, 3 ROR, 4 DEC, 5 INC
+    Int shift(Int kind, Int v) {
+        var r = 0
+        switch (kind) {
+            case 0:
+                fc = (v & 0x80) != 0
+                r = (v << 1) & 0xFF
+            case 1:
+                var c = 0
+                if (fc) { c = 1 }
+                fc = (v & 0x80) != 0
+                r = ((v << 1) | c) & 0xFF
+            case 2:
+                fc = (v & 1) != 0
+                r = v >> 1
+            case 3:
+                var c = 0
+                if (fc) { c = 0x80 }
+                fc = (v & 1) != 0
+                r = (v >> 1) | c
+            case 4:
+                r = (v - 1) & 0xFF
+            default:
+                r = (v + 1) & 0xFF
+        }
+        nz(r)
+        return r
+    }
+
+    aluGroup(Int hi, Int lo) {
+        var kind = hi >> 1
+        var odd = (hi & 1) != 0
+        if (!odd) {
+            switch (lo) {
+                case 4: a = alu(kind, a, rd(addrDp()))
+                case 5: a = alu(kind, a, rd(addrAbs()))
+                case 6: a = alu(kind, a, rd(dp(x)))
+                case 7: a = alu(kind, a, rd(addrIndX()))
+                case 8: a = alu(kind, a, fetch())
+                default:
+                    var src = rd(dp(fetch()))
+                    var da = dp(fetch())
+                    var r = alu(kind, rd(da), src)
+                    if (kind != 3) { wr(da, r) }
+            }
+        } else {
+            switch (lo) {
+                case 4: a = alu(kind, a, rd(addrDpX()))
+                case 5: a = alu(kind, a, rd(addrAbsX()))
+                case 6: a = alu(kind, a, rd(addrAbsY()))
+                case 7: a = alu(kind, a, rd(addrIndY()))
+                case 8:
+                    var imm = fetch()
+                    var da = dp(fetch())
+                    var r = alu(kind, rd(da), imm)
+                    if (kind != 3) { wr(da, r) }
+                default:
+                    var src = rd(dp(y))
+                    var da = dp(x)
+                    var r = alu(kind, rd(da), src)
+                    if (kind != 3) { wr(da, r) }
+            }
+        }
+    }
+
+    shiftGroup(Int hi, Int lo) {
+        var kind = hi >> 1
+        var odd = (hi & 1) != 0
+        if (lo == 0xB) {
+            var ad = 0
+            if (odd) { ad = addrDpX() } else { ad = addrDp() }
+            wr(ad, shift(kind, rd(ad)))
+        } else {
+            if (odd) {
+                a = shift(kind, a)
+            } else {
+                var ad = addrAbs()
+                wr(ad, shift(kind, rd(ad)))
+            }
+        }
+    }
+
+    branch(Bool cond) {
+        var off = fetch()
+        if (cond) {
+            if (off >= 0x80) { off = off - 0x100 }
+            pc = (pc + off) & 0xFFFF
+            extra = extra + 2
+        }
+    }
+
+    Int step() {
+        if (halted) {
+            return 2
+        }
+        extra = 0
+        var op = fetch()
+        var lo = op & 15
+        var hi = op >> 4
+        if (lo == 1) {
+            push(pc >> 8)
+            push(pc)
+            var v = 0xFFDE - (hi << 1)
+            pc = rd(v) | (rd(v + 1) << 8)
+        } else if (lo == 2) {
+            var ad = addrDp()
+            var bit = 1 << (hi >> 1)
+            if ((hi & 1) == 0) {
+                wr(ad, rd(ad) | bit)
+            } else {
+                wr(ad, rd(ad) & (bit ^ 0xFF))
+            }
+        } else if (lo == 3) {
+            var v = rd(addrDp())
+            var bit = (v >> (hi >> 1)) & 1
+            if ((hi & 1) == 0) {
+                branch(bit == 1)
+            } else {
+                branch(bit == 0)
+            }
+        } else if (lo >= 4 && lo <= 9 && hi < 12) {
+            aluGroup(hi, lo)
+        } else if ((lo == 0xB || lo == 0xC) && hi < 8) {
+            shiftGroup(hi, lo)
+        } else if ((lo == 0xB || lo == 0xC) && hi < 12) {
+            var kind = 4
+            if (hi >= 10) { kind = 5 }
+            shiftGroup2(kind, hi, lo)
+        } else {
+            special(op)
+        }
+        return cyc[op] + extra
+    }
+
+    shiftGroup2(Int kind, Int hi, Int lo) {
+        var odd = (hi & 1) != 0
+        if (lo == 0xB) {
+            var ad = 0
+            if (odd) { ad = addrDpX() } else { ad = addrDp() }
+            wr(ad, shift(kind, rd(ad)))
+        } else {
+            if (odd) {
+                a = shift(kind, a)
+            } else {
+                var ad = addrAbs()
+                wr(ad, shift(kind, rd(ad)))
+            }
+        }
+    }
+
+    // operações de bit em memória absoluta: m.b (13 bits de endereço + 3 de bit)
+    Int bitAddr() {
+        return fetch16()
+    }
+
+    special(Int op) {
+        switch (op) {
+            case 0x00:
+                return
+            case 0x10: branch(!fneg)
+            case 0x30: branch(fneg)
+            case 0x50: branch(!fv)
+            case 0x70: branch(fv)
+            case 0x90: branch(!fc)
+            case 0xB0: branch(fc)
+            case 0xD0: branch(!fz)
+            case 0xF0: branch(fz)
+            case 0x2F: branch(true)
+            case 0x20: fp = false
+            case 0x40: fp = true
+            case 0x60: fc = false
+            case 0x80: fc = true
+            case 0xA0: fi = true
+            case 0xC0: fi = false
+            case 0xE0:
+                fv = false
+                fh = false
+            case 0xED: fc = !fc
+            case 0x0A:
+                var w = bitAddr()
+                if (((rd(w & 0x1FFF) >> (w >> 13)) & 1) == 1) { fc = true }
+            case 0x2A:
+                var w = bitAddr()
+                if (((rd(w & 0x1FFF) >> (w >> 13)) & 1) == 0) { fc = true }
+            case 0x4A:
+                var w = bitAddr()
+                if (((rd(w & 0x1FFF) >> (w >> 13)) & 1) == 0) { fc = false }
+            case 0x6A:
+                var w = bitAddr()
+                if (((rd(w & 0x1FFF) >> (w >> 13)) & 1) == 1) { fc = false }
+            case 0x8A:
+                var w = bitAddr()
+                if (((rd(w & 0x1FFF) >> (w >> 13)) & 1) == 1) { fc = !fc }
+            case 0xAA:
+                var w = bitAddr()
+                fc = ((rd(w & 0x1FFF) >> (w >> 13)) & 1) == 1
+            case 0xCA:
+                var w = bitAddr()
+                var ad = w & 0x1FFF
+                var bit = 1 << (w >> 13)
+                var v = rd(ad)
+                if (fc) { v = v | bit } else { v = v & (bit ^ 0xFF) }
+                wr(ad, v)
+            case 0xEA:
+                var w = bitAddr()
+                var ad = w & 0x1FFF
+                wr(ad, rd(ad) ^ (1 << (w >> 13)))
+            case 0x0D: push(getPsw())
+            case 0x2D: push(a)
+            case 0x4D: push(x)
+            case 0x6D: push(y)
+            case 0x8E: setPsw(pop())
+            case 0xAE: a = pop()
+            case 0xCE: x = pop()
+            case 0xEE: y = pop()
+            case 0x0E:
+                var ad = addrAbs()
+                var v = rd(ad)
+                nz(a - v)
+                wr(ad, v | a)
+            case 0x4E:
+                var ad = addrAbs()
+                var v = rd(ad)
+                nz(a - v)
+                wr(ad, v & (a ^ 0xFF))
+            case 0x0F:
+                push(pc >> 8)
+                push(pc)
+                push(getPsw())
+                fb = true
+                fi = false
+                pc = rd(0xFFDE) | (rd(0xFFDF) << 8)
+            case 0x1A:
+                var o = fetch()
+                var v = (rdWordDp(o) - 1) & 0xFFFF
+                wr(dp(o), v)
+                wr(dp(o + 1), v >> 8)
+                fz = v == 0
+                fneg = (v & 0x8000) != 0
+            case 0x3A:
+                var o = fetch()
+                var v = (rdWordDp(o) + 1) & 0xFFFF
+                wr(dp(o), v)
+                wr(dp(o + 1), v >> 8)
+                fz = v == 0
+                fneg = (v & 0x8000) != 0
+            case 0x1C: a = shift(0, a)
+            case 0x1D:
+                x = (x - 1) & 0xFF
+                nz(x)
+            case 0x3D:
+                x = (x + 1) & 0xFF
+                nz(x)
+            case 0xDC:
+                y = (y - 1) & 0xFF
+                nz(y)
+            case 0xFC:
+                y = (y + 1) & 0xFF
+                nz(y)
+            case 0x1E: alu(3, x, rd(addrAbs()))
+            case 0x3E: alu(3, x, rd(addrDp()))
+            case 0x5E: alu(3, y, rd(addrAbs()))
+            case 0x7E: alu(3, y, rd(addrDp()))
+            case 0xC8: alu(3, x, fetch())
+            case 0xAD: alu(3, y, fetch())
+            case 0x1F:
+                var ad = (fetch16() + x) & 0xFFFF
+                pc = rd(ad) | (rd((ad + 1) & 0xFFFF) << 8)
+            case 0x5F: pc = fetch16()
+            case 0x3F:
+                var t = fetch16()
+                push(pc >> 8)
+                push(pc)
+                pc = t
+            case 0x4F:
+                var t = fetch()
+                push(pc >> 8)
+                push(pc)
+                pc = 0xFF00 | t
+            case 0x6F:
+                var lo = pop()
+                pc = lo | (pop() << 8)
+            case 0x7F:
+                setPsw(pop())
+                var lo = pop()
+                pc = lo | (pop() << 8)
+            case 0x2E:
+                var v = rd(addrDp())
+                branch(a != v)
+            case 0xDE:
+                var v = rd(addrDpX())
+                branch(a != v)
+            case 0x6E:
+                var ad = addrDp()
+                var v = (rd(ad) - 1) & 0xFF
+                wr(ad, v)
+                branch(v != 0)
+            case 0xFE:
+                y = (y - 1) & 0xFF
+                branch(y != 0)
+            case 0x5A:
+                var w = rdWordDp(fetch())
+                var ya = (y << 8) | a
+                var r = ya - w
+                fc = r >= 0
+                fz = (r & 0xFFFF) == 0
+                fneg = (r & 0x8000) != 0
+            case 0x7A:
+                var w = rdWordDp(fetch())
+                var ya = (y << 8) | a
+                var r = ya + w
+                fc = r > 0xFFFF
+                fh = ((ya ^ w ^ r) & 0x1000) != 0
+                fv = ((ya ^ w ^ 0xFFFF) & (ya ^ r) & 0x8000) != 0
+                fz = (r & 0xFFFF) == 0
+                fneg = (r & 0x8000) != 0
+                a = r & 0xFF
+                y = (r >> 8) & 0xFF
+            case 0x9A:
+                var w = rdWordDp(fetch())
+                var ya = (y << 8) | a
+                var r = ya - w
+                fc = r >= 0
+                fh = ((ya ^ w ^ r) & 0x1000) == 0
+                fv = ((ya ^ w) & (ya ^ r) & 0x8000) != 0
+                fz = (r & 0xFFFF) == 0
+                fneg = (r & 0x8000) != 0
+                a = r & 0xFF
+                y = (r >> 8) & 0xFF
+            case 0xBA:
+                var w = rdWordDp(fetch())
+                a = w & 0xFF
+                y = w >> 8
+                fz = w == 0
+                fneg = (w & 0x8000) != 0
+            case 0xDA:
+                var o = fetch()
+                wr(dp(o), a)
+                wr(dp(o + 1), y)
+            case 0x5D:
+                x = a
+                nz(x)
+            case 0x7D:
+                a = x
+                nz(a)
+            case 0x9D:
+                x = sp
+                nz(x)
+            case 0xBD: sp = x
+            case 0xDD:
+                a = y
+                nz(a)
+            case 0xFD:
+                y = a
+                nz(y)
+            case 0x8D:
+                y = fetch()
+                nz(y)
+            case 0xCD:
+                x = fetch()
+                nz(x)
+            case 0xE8:
+                a = fetch()
+                nz(a)
+            case 0x8F:
+                var imm = fetch()
+                wr(addrDp(), imm)
+            case 0xFA:
+                var v = rd(dp(fetch()))
+                wr(dp(fetch()), v)
+            case 0x9E:
+                var ya = (y << 8) | a
+                fv = y >= x
+                fh = (y & 15) >= (x & 15)
+                if (y < (x << 1)) {
+                    a = (ya / x) & 0xFF
+                    y = (ya % x) & 0xFF
+                } else {
+                    a = (255 - (ya - (x << 9)) / (256 - x)) & 0xFF
+                    y = (x + (ya - (x << 9)) % (256 - x)) & 0xFF
+                }
+                nz(a)
+            case 0xCF:
+                var r = y * a
+                a = r & 0xFF
+                y = (r >> 8) & 0xFF
+                nz(y)
+            case 0x9F:
+                a = ((a >> 4) | (a << 4)) & 0xFF
+                nz(a)
+            case 0xBE:
+                if (!fc || a > 0x99) {
+                    a = a - 0x60
+                    fc = false
+                }
+                if (!fh || (a & 15) > 9) {
+                    a = a - 6
+                }
+                a = a & 0xFF
+                nz(a)
+            case 0xDF:
+                if (fc || a > 0x99) {
+                    a = a + 0x60
+                    fc = true
+                }
+                if (fh || (a & 15) > 9) {
+                    a = a + 6
+                }
+                a = a & 0xFF
+                nz(a)
+            case 0xAF:
+                wr(dp(x), a)
+                x = (x + 1) & 0xFF
+            case 0xBF:
+                a = rd(dp(x))
+                x = (x + 1) & 0xFF
+                nz(a)
+            // MOV memória <- registrador
+            case 0xC4: wr(addrDp(), a)
+            case 0xC5: wr(addrAbs(), a)
+            case 0xC6: wr(dp(x), a)
+            case 0xC7: wr(addrIndX(), a)
+            case 0xC9: wr(addrAbs(), x)
+            case 0xCB: wr(addrDp(), y)
+            case 0xCC: wr(addrAbs(), y)
+            case 0xD4: wr(addrDpX(), a)
+            case 0xD5: wr(addrAbsX(), a)
+            case 0xD6: wr(addrAbsY(), a)
+            case 0xD7: wr(addrIndY(), a)
+            case 0xD8: wr(addrDp(), x)
+            case 0xD9: wr(dp(fetch() + y), x)
+            case 0xDB: wr(addrDpX(), y)
+            // MOV registrador <- memória
+            case 0xE4:
+                a = rd(addrDp())
+                nz(a)
+            case 0xE5:
+                a = rd(addrAbs())
+                nz(a)
+            case 0xE6:
+                a = rd(dp(x))
+                nz(a)
+            case 0xE7:
+                a = rd(addrIndX())
+                nz(a)
+            case 0xE9:
+                x = rd(addrAbs())
+                nz(x)
+            case 0xEB:
+                y = rd(addrDp())
+                nz(y)
+            case 0xEC:
+                y = rd(addrAbs())
+                nz(y)
+            case 0xF4:
+                a = rd(addrDpX())
+                nz(a)
+            case 0xF5:
+                a = rd(addrAbsX())
+                nz(a)
+            case 0xF6:
+                a = rd(addrAbsY())
+                nz(a)
+            case 0xF7:
+                a = rd(addrIndY())
+                nz(a)
+            case 0xF8:
+                x = rd(addrDp())
+                nz(x)
+            case 0xF9:
+                x = rd(dp(fetch() + y))
+                nz(x)
+            case 0xFB:
+                y = rd(addrDpX())
+                nz(y)
+            case 0xEF: halted = true
+            case 0xFF: halted = true
+            default:
+                return
+        }
+    }
+}

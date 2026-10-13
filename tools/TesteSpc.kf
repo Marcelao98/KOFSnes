@@ -1,0 +1,118 @@
+package tools
+
+import java.lang.Integer;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Arrays;
+import snes.Cpu
+import snes.CpuBus
+import snes.Spc
+import snes.SpcBus
+
+class RamBus implements SpcBus {
+    Int[] mem
+    public constructor() { this.mem = new Int[65536] }
+    Int read(Int addr) { return mem[addr] }
+    write(Int addr, Int v) { mem[addr] = v }
+}
+
+
+class TesteSpc {
+    public constructor() { }
+    run(String dir) {
+            var bus = RamBus()
+        var cpu = Spc(bus)
+        var names = new File(dir).list()
+        Arrays.sort(names)
+        var totalPass = 0
+        var totalFail = 0
+        var cycFail = 0
+        var cycReport = ""
+        for (var name in names) {
+            if (!name.endsWith(".txt")) { continue }
+            var op = Integer.parseInt(name.substring(0, 2), 16)
+            if (op == 0xEF || op == 0xFF) { continue }
+            var lines = Files.readAllLines(new File(dir + "/" + name).toPath())
+            var pass = 0
+            var fail = 0
+            var cf = 0
+            var firstErr = ""
+            var li = 0
+            while (li < lines.size()) {
+                var line = lines.get(li) as String
+                li++
+                if (line.length() == 0) { continue }
+                var t = line.split(" ")
+                cpu.pc = Integer.parseInt(t[0])
+                cpu.a = Integer.parseInt(t[1])
+                cpu.x = Integer.parseInt(t[2])
+                cpu.y = Integer.parseInt(t[3])
+                cpu.sp = Integer.parseInt(t[4])
+                cpu.setPsw(Integer.parseInt(t[5]))
+                cpu.halted = false
+                var n = Integer.parseInt(t[6])
+                var k = 7
+                var i = 0
+                while (i < n) {
+                    bus.mem[Integer.parseInt(t[k])] = Integer.parseInt(t[k + 1])
+                    k = k + 2
+                    i++
+                }
+                var used = cpu.step()
+                var ok = true
+                var err = ""
+                var got = new Int[6]
+                got[0] = cpu.pc
+                got[1] = cpu.a
+                got[2] = cpu.x
+                got[3] = cpu.y
+                got[4] = cpu.sp
+                got[5] = cpu.getPsw()
+                var regNames = "pc a x y sp psw".split(" ")
+                var j = 0
+                while (j < 6) {
+                    var ex = Integer.parseInt(t[k + j])
+                    if (got[j] != ex) {
+                        ok = false
+                        err = err + regNames[j] + " got=" + got[j] + " exp=" + ex + "; "
+                    }
+                    j++
+                }
+                k = k + 6
+                var n2 = Integer.parseInt(t[k])
+                k++
+                i = 0
+                while (i < n2) {
+                    var ad = Integer.parseInt(t[k])
+                    var vv = Integer.parseInt(t[k + 1])
+                    if (bus.mem[ad] != vv) {
+                        ok = false
+                        err = err + "mem[" + ad + "] got=" + bus.mem[ad] + " exp=" + vv + "; "
+                    }
+                    bus.mem[ad] = 0
+                    k = k + 2
+                    i++
+                }
+                var cyc = Integer.parseInt(t[k])
+                if (ok && cyc != used) {
+                    cf++
+                    if (cf == 1) { cycReport = cycReport + name + " got=" + used + " exp=" + cyc + "\n" }
+                }
+                k = 7
+                i = 0
+                while (i < n) { bus.mem[Integer.parseInt(t[k])] = 0; k = k + 2; i++ }
+                if (ok) { pass++ } else {
+                    fail++
+                    if (firstErr.length() == 0) { firstErr = line.substring(0, 50) + " => " + err }
+                }
+            }
+            cycFail = cycFail + cf
+            totalPass = totalPass + pass
+            totalFail = totalFail + fail
+            if (fail > 0) { println(name + ": " + pass + " ok, " + fail + " falhas :: " + firstErr) }
+        }
+        print(cycReport)
+        println("TOTAL ok=" + totalPass + " falhas=" + totalFail + " ciclos-divergentes=" + cycFail)
+
+    }
+}

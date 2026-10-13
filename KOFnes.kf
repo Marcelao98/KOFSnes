@@ -1,0 +1,29 @@
+import snes
+import tools
+import app
+import java.lang.Integer;
+
+// KOFnes — emulador de Super Nintendo escrito em Kof.
+main(String[] args) {
+    var cmd = ""
+    if (args.length > 0) { cmd = args[0] }
+    if (args.length == 0 || cmd.endsWith(".sfc") || cmd.endsWith(".smc") || cmd.endsWith(".SFC") || cmd.endsWith(".SMC")) {
+        var j = Janela()
+        if (args.length > 0) { j.abrir(cmd) }
+        j.rodar()
+    } else if (cmd == "testar-cpu") {
+        TesteCpu().run(args[1])
+    } else if (cmd == "testar-spc") {
+        TesteSpc().run(args[1])
+    } else if (cmd == "headless") {
+        var press = -1
+        var mask = 0
+        if (args.length > 4) {
+            press = Integer.parseInt(args[4])
+            mask = Integer.parseInt(args[5], 16)
+        }
+        Headless().run(args[1], Integer.parseInt(args[2]), args[3], press, mask)
+    } else {
+        println("comando desconhecido: " + cmd)
+    }
+}

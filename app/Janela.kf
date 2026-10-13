@@ -1,0 +1,395 @@
+package app
+
+import snes.Snes
+import app.Tema
+import app.Controle
+import app.Acao
+import app.Som
+import javax.swing.JFrame;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FileDialog;
+import java.awt.Graphics2D;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.RenderingHints;
+import java.awt.BasicStroke;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.io.File;
+import java.nio.file.Files;
+import java.io.FileOutputStream;
+import java.lang.System;
+import java.lang.Thread;
+
+// A janela do KOFnes: tela do SNES numa "xícara" de cappuccino, menu,
+// barra de status, teclado e som. O laço principal roda aqui.
+class Janela {
+    JFrame frame
+    Canvas tela
+    Tema t
+    Controle ctl
+    Som som
+    Snes snes
+    BufferedImage img
+    Int[] pix
+    String romPath
+    String titulo
+    Bool pausado
+    Int escala
+    Int fps
+    Int frameCount
+    Long fpsT0
+    String aviso
+    Int avisoFrames
+
+    public constructor() {
+        this.t = Tema()
+        this.ctl = Controle()
+        this.escala = 3
+        this.pausado = false
+        this.fps = 0
+        this.frameCount = 0
+        this.fpsT0 = System.currentTimeMillis()
+        this.romPath = ""
+        this.titulo = ""
+        this.aviso = ""
+        this.avisoFrames = 0
+        this.img = new BufferedImage(256, 224, BufferedImage.TYPE_INT_RGB)
+        var db = this.img.getRaster().getDataBuffer() as DataBufferInt
+        this.pix = db.getData()
+        this.frame = new JFrame("KOFnes ☕ — Super Nintendo em Kof")
+        this.frame.setDefaultCloseOperation(3)
+        this.frame.getContentPane().setBackground(this.t.espresso)
+        this.tela = new Canvas()
+        this.tela.setBackground(this.t.espresso)
+        this.tela.setPreferredSize(new Dimension(256 * 3 + 64, 224 * 3 + 124))
+        this.tela.addKeyListener(this.ctl)
+        this.tela.setFocusTraversalKeysEnabled(false)
+        this.frame.add(this.tela)
+        montarMenu()
+        this.frame.pack()
+        this.frame.setLocationRelativeTo(null)
+        this.frame.setVisible(true)
+        this.tela.createBufferStrategy(2)
+        this.tela.requestFocus()
+        this.som = Som()
+    }
+
+    montarMenu() {
+        var barra = new MenuBar()
+        var arq = new Menu("Arquivo")
+        item(arq, "Abrir ROM...  (Ctrl+O)", 3)
+        item(arq, "Reiniciar  (F1)", 2)
+        item(arq, "Salvar SRAM", 6)
+        item(arq, "Sair", 9)
+        var emu = new Menu("Emulação")
+        item(emu, "Pausar / continuar  (P)", 1)
+        var tel = new Menu("Tela")
+        item(tel, "Escala 2x", 12)
+        item(tel, "Escala 3x", 13)
+        item(tel, "Escala 4x", 14)
+        var ajuda = new Menu("Ajuda")
+        item(ajuda, "Controles", 20)
+        barra.add(arq)
+        barra.add(emu)
+        barra.add(tel)
+        barra.add(ajuda)
+        frame.setMenuBar(barra)
+    }
+
+    item(Menu m, String nome, Int codigo) {
+        var it = new MenuItem(nome)
+        it.addActionListener(Acao(ctl, codigo))
+        m.add(it)
+    }
+
+    avisar(String s) {
+        aviso = s
+        avisoFrames = 180
+    }
+
+    // ---------------- ROM ----------------
+    abrir(String path) {
+        try {
+            salvarSram()
+            var data = Files.readAllBytes(new File(path).toPath())
+            var s = Snes(data)
+            var srm = new File(this.sramPath(path))
+            if (s.cart.hasSram() && srm.exists()) {
+                var sd = Files.readAllBytes(srm.toPath())
+                var i = 0
+                while (i < sd.length && i < s.cart.sram.length) {
+                    s.cart.sram[i] = (sd[i] as Int) & 0xFF
+                    i++
+                }
+            }
+            s.reset()
+            snes = s
+            romPath = path
+            titulo = s.cart.title
+            if (titulo.length() == 0) { titulo = new File(path).getName() }
+            frame.setTitle("KOFnes ☕ — " + titulo)
+            pausado = false
+            avisar("☕ " + titulo)
+        } catch (Exception e) {
+            avisar("não consegui abrir: " + e.getMessage())
+        }
+    }
+
+    String sramPath(String rom) {
+        var dot = rom.lastIndexOf(".")
+        if (dot > 0) { return rom.substring(0, dot) + ".srm" }
+        return rom + ".srm"
+    }
+
+    salvarSram() {
+        if (snes == null) { return }
+        if (!snes.cart.hasSram()) { return }
+        try {
+            var n = snes.cart.sram.length
+            var b = new Byte[n]
+            var i = 0
+            while (i < n) {
+                b[i] = snes.cart.sram[i] as Byte
+                i++
+            }
+            // Files.write(path, Byte[]) cai no overload errado no Kof 0.6.3
+            var out = new FileOutputStream(this.sramPath(romPath))
+            out.write(b, 0, n)
+            out.close()
+        } catch (Exception e) {
+            avisar("erro salvando SRAM: " + e.getMessage())
+        }
+    }
+
+    escolherRom() {
+        var fd = new FileDialog(frame, "Abrir ROM de Super Nintendo", 0)
+        fd.setVisible(true)
+        var f = fd.getFile()
+        if (f != null) {
+            abrir(fd.getDirectory() + f)
+        }
+        tela.requestFocus()
+    }
+
+    mudarEscala(Int e) {
+        escala = e
+        tela.setPreferredSize(new Dimension(256 * e + 64, 224 * e + 124))
+        frame.pack()
+        tela.createBufferStrategy(2)
+    }
+
+    tratarPedidos() {
+        var p = ctl.pedido
+        if (p == 0) { return }
+        ctl.pedido = 0
+        switch (p) {
+            case 1:
+                pausado = !pausado
+                if (pausado) { avisar("pausado") } else { avisar("continuando") }
+            case 2:
+                if (snes != null) {
+                    snes.reset()
+                    avisar("reiniciado")
+                }
+            case 3: escolherRom()
+            case 6:
+                salvarSram()
+                avisar("SRAM salva")
+            case 9:
+                salvarSram()
+                System.exit(0)
+            case 12: mudarEscala(2)
+            case 13: mudarEscala(3)
+            case 14: mudarEscala(4)
+            case 20: avisar("setas · Z=B X=A A=Y S=X · Q=L W=R · Enter=Start Shift=Select · Tab=turbo")
+            default:
+                var ignorado = 0
+        }
+    }
+
+    // ---------------- desenho ----------------
+    desenhar() {
+        var bs = tela.getBufferStrategy()
+        if (bs == null) { return }
+        var g = bs.getDrawGraphics() as Graphics2D
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+        var w = tela.getWidth()
+        var h = tela.getHeight()
+        g.setColor(t.espresso)
+        g.fillRect(0, 0, w, h)
+        // cabeçalho
+        g.setFont(new Font("SansSerif", Font.BOLD, 26))
+        g.setColor(t.espuma)
+        g.drawString("KOF", 24, 40)
+        g.setColor(t.caramelo)
+        g.drawString("nes", 24 + g.getFontMetrics().stringWidth("KOF"), 40)
+        g.setFont(new Font("SansSerif", Font.PLAIN, 13))
+        g.setColor(t.latte)
+        g.drawString("Super Nintendo escrito em Kof", 24 + 120, 38)
+        // xícara: moldura arredondada da tela
+        var sw = 256 * escala
+        var sh = 224 * escala
+        var sx = (w - sw) / 2
+        var sy = 58
+        g.setColor(t.mocha)
+        g.fillRoundRect(sx - 14, sy - 14, sw + 28, sh + 28, 36, 36)
+        g.setColor(t.caramelo)
+        g.setStroke(new BasicStroke(3.0 as Float))
+        g.drawRoundRect(sx - 14, sy - 14, sw + 28, sh + 28, 36, 36)
+        g.setColor(t.torra)
+        g.fillRect(sx, sy, sw, sh)
+        if (snes != null) {
+            var src = snes.ppu.frame
+            var q = 0
+            while (q < 57344) {
+                pix[q] = src[q]
+                q++
+            }
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
+            g.drawImage(img, sx, sy, sw, sh, null)
+            if (pausado) {
+                g.setColor(new Color(0x2B1D14 | 0xA0000000, true))
+                g.fillRect(sx, sy, sw, sh)
+                g.setColor(t.espuma)
+                g.setFont(new Font("SansSerif", Font.BOLD, 40))
+                var pw = g.getFontMetrics().stringWidth("PAUSA")
+                g.drawString("PAUSA", sx + (sw - pw) / 2, sy + sh / 2)
+            }
+        } else {
+            desenharXicara(g, sx, sy, sw, sh)
+        }
+        // barra de status
+        var by = sy + sh + 24
+        g.setColor(t.torra)
+        g.fillRoundRect(16, by, w - 32, 30, 14, 14)
+        g.setFont(new Font("SansSerif", Font.PLAIN, 13))
+        var status = ""
+        if (snes == null) {
+            status = "nenhuma ROM · Ctrl+O pra abrir"
+        } else {
+            status = titulo + "  ·  " + fps + " fps"
+            if (ctl.turbo) { status = status + "  ·  TURBO" }
+            if (!som.temSom()) { status = status + "  ·  sem som" }
+        }
+        g.setColor(t.latte)
+        g.drawString(status, 28, by + 20)
+        if (avisoFrames > 0) {
+            avisoFrames--
+            var aw = g.getFontMetrics().stringWidth(aviso)
+            g.setColor(t.caramelo)
+            g.drawString(aviso, w - 28 - aw, by + 20)
+        }
+        g.dispose()
+        bs.show()
+    }
+
+    // tela inicial: uma xícara de cappuccino com coração de latte art
+    desenharXicara(Graphics2D g, Int sx, Int sy, Int sw, Int sh) {
+        var cx = sx + sw / 2
+        var cy = sy + sh / 2 - 10
+        var r = sh / 4
+        // pires
+        g.setColor(t.mocha)
+        g.fillOval(cx - r * 2, cy + r - r / 3, r * 4, r * 2 / 3 + 10)
+        // alça
+        g.setColor(t.latte)
+        g.setStroke(new BasicStroke((r / 5) as Float))
+        g.drawOval(cx + r - r / 6, cy - r / 6, r * 2 / 3, r * 2 / 3)
+        // corpo
+        g.fillRoundRect(cx - r, cy - r / 2, r * 2, r * 3 / 2, r, r)
+        g.fillRect(cx - r, cy - r / 2, r * 2, r / 2)
+        // borda e café
+        g.setColor(t.espuma)
+        g.fillOval(cx - r, cy - r / 2 - r / 4, r * 2, r / 2)
+        g.setColor(t.caramelo)
+        g.fillOval(cx - r + r / 8, cy - r / 2 - r / 4 + r / 16, r * 2 - r / 4, r / 2 - r / 8)
+        // coração de espuma
+        g.setColor(t.espuma)
+        var hs = r / 3
+        var hy = cy - r / 2 - hs / 3
+        g.fillOval(cx - hs, hy - hs / 2, hs + 2, hs * 2 / 3)
+        g.fillOval(cx - 2, hy - hs / 2, hs + 2, hs * 2 / 3)
+        var xs = new Int[3]
+        var ys = new Int[3]
+        xs[0] = cx - hs + 1
+        ys[0] = hy - hs / 8
+        xs[1] = cx + hs - 1
+        ys[1] = hy - hs / 8
+        xs[2] = cx
+        ys[2] = hy + hs / 3
+        g.fillPolygon(xs, ys, 3)
+        // vapor
+        g.setColor(t.latte)
+        g.setStroke(new BasicStroke(3.0 as Float))
+        var k = 0
+        while (k < 3) {
+            var vx = cx - r / 2 + k * r / 2
+            g.drawArc(vx - 8, cy - r * 3 / 2, 16, r / 3, 90, 180)
+            g.drawArc(vx - 8, cy - r * 3 / 2 + r / 3, 16, r / 3, 270, 180)
+            k++
+        }
+        g.setFont(new Font("SansSerif", Font.BOLD, 22))
+        var msg = "Ctrl+O pra abrir uma ROM"
+        var mw = g.getFontMetrics().stringWidth(msg)
+        g.setColor(t.espuma)
+        g.drawString(msg, cx - mw / 2, sy + sh - 40)
+        g.setFont(new Font("SansSerif", Font.PLAIN, 14))
+        var sub = ".sfc / .smc  ·  LoROM, HiROM e ExHiROM"
+        var subw = g.getFontMetrics().stringWidth(sub)
+        g.setColor(t.latte)
+        g.drawString(sub, cx - subw / 2, sy + sh - 16)
+    }
+
+    // ---------------- laço principal ----------------
+    rodar() {
+        var periodo = 16639267 as Long
+        var proximo = System.nanoTime()
+        while (true) {
+            tratarPedidos()
+            var rodou = false
+            if (snes != null && !pausado) {
+                snes.pad[0] = ctl.estado()
+                var vezes = 1
+                if (ctl.turbo) { vezes = 4 }
+                var i = 0
+                while (i < vezes) {
+                    snes.runFrame()
+                    var dsp = snes.apu.dsp
+                    if (i == 0) {
+                        som.tocar(dsp.outBuf, dsp.outCount, ctl.turbo)
+                    }
+                    dsp.outCount = 0
+                    i++
+                }
+                frameCount = frameCount + vezes
+                rodou = true
+                if (snes.frames % 1800 == 0) { salvarSram() }
+            }
+            desenhar()
+            var agora = System.currentTimeMillis()
+            if (agora - fpsT0 >= 1000) {
+                fps = frameCount
+                frameCount = 0
+                fpsT0 = agora
+            }
+            // sem som (ou parado), o relógio é o sono
+            if (!rodou || !som.temSom() || ctl.turbo) {
+                proximo = proximo + periodo
+                var falta = (proximo - System.nanoTime()) / 1000000
+                if (falta > 0) {
+                    Thread.sleep(falta)
+                } else if (falta < -100) {
+                    proximo = System.nanoTime()
+                }
+            } else {
+                proximo = System.nanoTime()
+            }
+        }
+    }
+}

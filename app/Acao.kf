@@ -1,0 +1,19 @@
+package app
+
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
+// Item de menu: só anota o pedido; quem executa é o laço principal.
+class Acao implements ActionListener {
+    Controle alvo
+    Int codigo
+
+    public constructor(Controle alvo, Int codigo) {
+        this.alvo = alvo
+        this.codigo = codigo
+    }
+
+    actionPerformed(ActionEvent e) {
+        alvo.pedido = codigo
+    }
+}

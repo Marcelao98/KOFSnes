@@ -1,0 +1,6 @@
+# ROMs, saves e saídas de teste não vão pro git
+*.sfc
+*.smc
+*.srm
+*.wav
+build/

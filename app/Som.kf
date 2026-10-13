@@ -1,0 +1,46 @@
+package app
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.SourceDataLine;
+
+// Saída de áudio a 32 kHz estéreo. Quando há placa de som, a escrita
+// bloqueante também é o relógio do emulador; sem placa, o laço dorme.
+class Som {
+    SourceDataLine linha
+    Bool ok
+    Byte[] buf
+
+    public constructor() {
+        this.ok = false
+        this.buf = new Byte[16384]
+        try {
+            var fmt = new AudioFormat(32000.0 as Float, 16, 2, true, false)
+            this.linha = AudioSystem.getSourceDataLine(fmt)
+            this.linha.open(fmt, 6400)
+            this.linha.start()
+            this.ok = true
+        } catch (Exception e) {
+            println("KOFnes: sem saida de audio (" + e.getMessage() + "), seguindo mudo")
+        }
+    }
+
+    // amostras intercaladas L,R
+    tocar(Int[] amostras, Int n, Bool turbo) {
+        if (!ok || turbo) { return }
+        var i = 0
+        var j = 0
+        while (i < n && j + 1 < buf.length) {
+            var s = amostras[i]
+            buf[j] = (s & 0xFF) as Byte
+            buf[j + 1] = ((s >> 8) & 0xFF) as Byte
+            i++
+            j = j + 2
+        }
+        linha.write(buf, 0, j)
+    }
+
+    Bool temSom() {
+        return ok
+    }
+}

@@ -1,0 +1,186 @@
+package snes
+
+import snes.Spc
+import snes.SpcBus
+import snes.Dsp
+import java.lang.Integer;
+
+// A placa de som do SNES: SPC700 + 64 KB de RAM + DSP + 3 timers +
+// 4 portas de comunicação com a CPU principal.
+class Apu implements SpcBus {
+    Int[] ram
+    Int[] ipl
+    Spc spc
+    Dsp dsp
+    Int[] inPorts
+    Int[] outPorts
+    Bool iplEnabled
+    Int dspAddr
+    // timers
+    Int[] tTarget
+    Int[] tStage
+    Int[] tOut
+    Bool[] tOn
+    Int tCycles
+    Int dspCycles
+    Int sub8
+    Int budget
+
+    public constructor() {
+        this.ram = new Int[65536]
+        this.ipl = new Int[64]
+        this.dsp = Dsp(this.ram)
+        this.inPorts = new Int[4]
+        this.outPorts = new Int[4]
+        this.iplEnabled = true
+        this.dspAddr = 0
+        this.tTarget = new Int[3]
+        this.tStage = new Int[3]
+        this.tOut = new Int[3]
+        this.tOn = new Bool[3]
+        this.tCycles = 0
+        this.dspCycles = 0
+        this.sub8 = 0
+        this.budget = 0
+        // ROM de boot do SPC700 (64 bytes): espera a CPU mandar o programa
+        // de som pelas portas $2140-$2143
+        var h = "CDEFBDE800C61DD0FC8FAAF48FBBF578CCF4D0FB2F19EBF4D0FC7EF4D00BE4F5CBF4D700FCD0F3AB0110EF7EF410EBBAF6DA00BAF4C4F4DD5DD0DB1F0000C0FF"
+        var i = 0
+        while (i < 64) {
+            this.ipl[i] = Integer.parseInt(h.substring(i * 2, i * 2 + 2), 16)
+            i++
+        }
+        this.spc = Spc(this)
+    }
+
+    reset() {
+        iplEnabled = true
+        var i = 0
+        while (i < 4) {
+            inPorts[i] = 0
+            outPorts[i] = 0
+            i++
+        }
+        i = 0
+        while (i < 3) {
+            tOn[i] = false
+            tStage[i] = 0
+            tOut[i] = 0
+            tTarget[i] = 0
+            i++
+        }
+        spc.reset()
+    }
+
+    Int read(Int addr) {
+        if (addr >= 0xF0 && addr <= 0xFF) {
+            switch (addr) {
+                case 0xF2: return dspAddr
+                case 0xF3: return dsp.read(dspAddr)
+                case 0xF4: return inPorts[0]
+                case 0xF5: return inPorts[1]
+                case 0xF6: return inPorts[2]
+                case 0xF7: return inPorts[3]
+                case 0xF8: return ram[0xF8]
+                case 0xF9: return ram[0xF9]
+                case 0xFD:
+                    var v = tOut[0]
+                    tOut[0] = 0
+                    return v
+                case 0xFE:
+                    var v = tOut[1]
+                    tOut[1] = 0
+                    return v
+                case 0xFF:
+                    var v = tOut[2]
+                    tOut[2] = 0
+                    return v
+                default: return 0
+            }
+        }
+        if (addr >= 0xFFC0 && iplEnabled) {
+            return ipl[addr - 0xFFC0]
+        }
+        return ram[addr]
+    }
+
+    write(Int addr, Int v) {
+        if (addr >= 0xF0 && addr <= 0xFF) {
+            switch (addr) {
+                case 0xF1:
+                    var i = 0
+                    while (i < 3) {
+                        var on = (v & (1 << i)) != 0
+                        if (on && !tOn[i]) {
+                            tStage[i] = 0
+                            tOut[i] = 0
+                        }
+                        tOn[i] = on
+                        i++
+                    }
+                    if ((v & 0x10) != 0) {
+                        inPorts[0] = 0
+                        inPorts[1] = 0
+                    }
+                    if ((v & 0x20) != 0) {
+                        inPorts[2] = 0
+                        inPorts[3] = 0
+                    }
+                    iplEnabled = (v & 0x80) != 0
+                case 0xF2: dspAddr = v
+                case 0xF3: dsp.write(dspAddr, v)
+                case 0xF4: outPorts[0] = v
+                case 0xF5: outPorts[1] = v
+                case 0xF6: outPorts[2] = v
+                case 0xF7: outPorts[3] = v
+                case 0xFA: tTarget[0] = v
+                case 0xFB: tTarget[1] = v
+                case 0xFC: tTarget[2] = v
+                default:
+                    var ignored = 0
+            }
+        }
+        ram[addr] = v
+    }
+
+    tickTimer(Int i) {
+        if (!tOn[i]) { return }
+        tStage[i] = tStage[i] + 1
+        var target = tTarget[i]
+        if (target == 0) { target = 256 }
+        if (tStage[i] >= target) {
+            tStage[i] = 0
+            tOut[i] = (tOut[i] + 1) & 15
+        }
+    }
+
+    // roda o SPC700 por n ciclos de 1,024 MHz (o excesso fica de crédito)
+    run(Int n) {
+        budget = budget + n
+        while (budget > 0) {
+            var c = spc.step()
+            budget = budget - c
+            tCycles = tCycles + c
+            while (tCycles >= 16) {
+                tCycles = tCycles - 16
+                tickTimer(2)
+                tStage8()
+            }
+            dspCycles = dspCycles + c
+            while (dspCycles >= 32) {
+                dspCycles = dspCycles - 32
+                dsp.sample()
+            }
+        }
+    }
+
+    // T0 e T1 andam a 8 kHz (1/8 do T2)
+    tStage8() {
+        sub8 = sub8 + 1
+        if (sub8 >= 8) {
+            sub8 = 0
+            tickTimer(0)
+            tickTimer(1)
+        }
+    }
+}

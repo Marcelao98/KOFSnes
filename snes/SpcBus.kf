@@ -1,0 +1,8 @@
+package snes
+
+// O que o SPC700 enxerga: 64 KB (RAM do áudio + registradores $F0-$FF +
+// ROM de boot). Quem implementa é a Apu.
+interface SpcBus {
+    Int read(Int addr)
+    write(Int addr, Int v)
+}

@@ -1,0 +1,111 @@
+package tools
+
+import snes.Snes
+import java.io.File;
+import java.nio.file.Files;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.FileOutputStream;
+import java.lang.System;
+
+// Roda uma ROM sem janela: N frames, depois salva a tela em PNG e o som
+// em WAV. Usado pra testar o emulador com ROMs de teste.
+class Headless {
+    public constructor() { }
+
+    run(String romPath, Int frames, String outPng, Int pressAt, Int pressMask) {
+        var data = Files.readAllBytes(new File(romPath).toPath())
+        var snes = Snes(data)
+        println("ROM: '" + snes.cart.title + "' mapper=" + snes.cart.mapper + " rom=" + snes.cart.rom.length + " sram=" + snes.cart.sram.length)
+        snes.reset()
+        var t0 = System.currentTimeMillis()
+        var pcm = new Byte[frames * 534 * 4 + 64]
+        var pcmLen = 0
+        var f = 0
+        while (f < frames) {
+            if (pressAt >= 0 && f >= pressAt && f < pressAt + 10) {
+                snes.pad[0] = pressMask
+            } else {
+                snes.pad[0] = 0
+            }
+            snes.runFrame()
+            var dsp = snes.apu.dsp
+            var i = 0
+            while (i < dsp.outCount) {
+                var s = dsp.outBuf[i]
+                if (pcmLen + 2 <= pcm.length) {
+                    pcm[pcmLen] = (s & 0xFF) as Byte
+                    pcm[pcmLen + 1] = ((s >> 8) & 0xFF) as Byte
+                    pcmLen = pcmLen + 2
+                }
+                i++
+            }
+            dsp.outCount = 0
+            f++
+        }
+        var ms = System.currentTimeMillis() - t0
+        println("frames=" + frames + " tempo=" + ms + "ms (" + ((frames * 1000) / (ms + 1)) + " fps) pc=" + snes.cpu.pbr + ":" + snes.cpu.pc + " spc_pc=" + snes.apu.spc.pc)
+        var img = new BufferedImage(256, 224, BufferedImage.TYPE_INT_RGB)
+        var y = 0
+        while (y < 224) {
+            var x = 0
+            while (x < 256) {
+                img.setRGB(x, y, snes.ppu.frame[y * 256 + x])
+                x++
+            }
+            y++
+        }
+        ImageIO.write(img, "png", new File(outPng))
+        // WAV 32 kHz estéreo 16 bits
+        var peak = 0
+        var j = 0
+        while (j + 1 < pcmLen) {
+            var s = (((pcm[j + 1] as Int) << 8) | ((pcm[j] as Int) & 0xFF))
+            if (s < 0) { s = 0 - s }
+            if (s > peak) { peak = s }
+            j = j + 2
+        }
+        println("audio: " + (pcmLen / 4) + " samples, pico=" + peak)
+        var out = new FileOutputStream(outPng + ".wav")
+        var hdr = new Byte[44]
+        writeHeader(hdr, pcmLen)
+        out.write(hdr, 0, 44)
+        out.write(pcm, 0, pcmLen)
+        out.close()
+    }
+
+    put32(Byte[] b, Int at, Int v) {
+        b[at] = (v & 0xFF) as Byte
+        b[at + 1] = ((v >> 8) & 0xFF) as Byte
+        b[at + 2] = ((v >> 16) & 0xFF) as Byte
+        b[at + 3] = ((v >> 24) & 0xFF) as Byte
+    }
+
+    writeHeader(Byte[] b, Int len) {
+        var tag = "RIFF....WAVEfmt "
+        var i = 0
+        while (i < 16) {
+            b[i] = (tag.charAt(i) as Int) as Byte
+            i++
+        }
+        put32(b, 4, 36 + len)
+        put32(b, 16, 16)
+        b[20] = 1 as Byte
+        b[21] = 0 as Byte
+        b[22] = 2 as Byte
+        b[23] = 0 as Byte
+        put32(b, 24, 32000)
+        put32(b, 28, 128000)
+        b[32] = 4 as Byte
+        b[33] = 0 as Byte
+        b[34] = 16 as Byte
+        b[35] = 0 as Byte
+        var d = "data"
+        i = 0
+        while (i < 4) {
+            b[36 + i] = (d.charAt(i) as Int) as Byte
+            i++
+        }
+        put32(b, 40, len)
+    }
+}

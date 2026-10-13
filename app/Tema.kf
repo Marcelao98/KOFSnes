@@ -1,0 +1,24 @@
+package app
+
+import java.awt.Color;
+
+// Paleta cappuccino do KOFnes.
+class Tema {
+    Color espresso
+    Color torra
+    Color mocha
+    Color caramelo
+    Color latte
+    Color espuma
+    Color canela
+
+    public constructor() {
+        this.espresso = new Color(0x2B1D14)
+        this.torra = new Color(0x3E2A1F)
+        this.mocha = new Color(0x6F4E37)
+        this.caramelo = new Color(0xC08552)
+        this.latte = new Color(0xD9B99B)
+        this.espuma = new Color(0xF3E5D0)
+        this.canela = new Color(0xA0522D)
+    }
+}

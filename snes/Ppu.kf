@@ -1,0 +1,1154 @@
+package snes
+
+// S-PPU1/S-PPU2: VRAM, CGRAM, OAM, registradores $2100-$213F e o
+// renderizador de scanline. Cada linha é montada em duas telas (main e
+// sub) com prioridade por camada; depois entram janelas, color math e
+// brilho. Saída: framebuffer ARGB 256x240.
+class Ppu {
+    Int[] vram
+    Int[] cgram
+    Int[] oam
+    Int[] frame
+    Int visibleLines
+    // registradores
+    Bool forceBlank
+    Int brightness
+    Int obsel
+    Int oamAddr
+    Int oamByte
+    Bool oamPriority
+    Int oamLatch
+    Int bgmode
+    Int mosaic
+    Int[] bgsc
+    Int[] bgnba
+    Int[] hofs
+    Int[] vofs
+    Int ofsLatch
+    Int hofsLatch
+    Int vmain
+    Int vaddr
+    Int vbuf
+    Int m7sel
+    Int m7a
+    Int m7b
+    Int m7c
+    Int m7d
+    Int m7x
+    Int m7y
+    Int m7hofs
+    Int m7vofs
+    Int m7latch
+    Int cgaddr
+    Bool cgHigh
+    Int cgLatch
+    Int w12sel
+    Int w34sel
+    Int wobjsel
+    Int wh0
+    Int wh1
+    Int wh2
+    Int wh3
+    Int wbglog
+    Int wobjlog
+    Int tm
+    Int ts
+    Int tmw
+    Int tsw
+    Int cgwsel
+    Int cgadsub
+    Int fixedR
+    Int fixedG
+    Int fixedB
+    Int setini
+    Int mpy
+    Int hLatch
+    Int vLatch
+    Bool hFlip
+    Bool vFlip
+    Bool latched
+    Bool rangeOver
+    Bool timeOver
+    Int ppu1Bus
+    Int ppu2Bus
+    // buffers de linha
+    Int[] mainZ
+    Int[] mainCol
+    Int[] mainLay
+    Int[] subZ
+    Int[] subCol
+    Int[] subLay
+    Int[] linePix
+    Int[] linePri
+    Int[] objPix
+    Int[] objPri
+    Int[] winMask
+    Int[] zTab
+    Int[] lut
+    Int[] tileCache
+    Int[] sprIdx
+
+    public constructor() {
+        this.vram = new Int[32768]
+        this.cgram = new Int[256]
+        this.oam = new Int[544]
+        this.frame = new Int[256 * 240]
+        this.visibleLines = 224
+        this.forceBlank = true
+        this.brightness = 0
+        this.obsel = 0
+        this.oamAddr = 0
+        this.oamByte = 0
+        this.oamPriority = false
+        this.oamLatch = 0
+        this.bgmode = 0
+        this.mosaic = 0
+        this.bgsc = new Int[4]
+        this.bgnba = new Int[4]
+        this.hofs = new Int[4]
+        this.vofs = new Int[4]
+        this.ofsLatch = 0
+        this.hofsLatch = 0
+        this.vmain = 0
+        this.vaddr = 0
+        this.vbuf = 0
+        this.m7sel = 0
+        this.m7a = 0
+        this.m7b = 0
+        this.m7c = 0
+        this.m7d = 0
+        this.m7x = 0
+        this.m7y = 0
+        this.m7hofs = 0
+        this.m7vofs = 0
+        this.m7latch = 0
+        this.cgaddr = 0
+        this.cgHigh = false
+        this.cgLatch = 0
+        this.w12sel = 0
+        this.w34sel = 0
+        this.wobjsel = 0
+        this.wh0 = 0
+        this.wh1 = 0
+        this.wh2 = 0
+        this.wh3 = 0
+        this.wbglog = 0
+        this.wobjlog = 0
+        this.tm = 0
+        this.ts = 0
+        this.tmw = 0
+        this.tsw = 0
+        this.cgwsel = 0
+        this.cgadsub = 0
+        this.fixedR = 0
+        this.fixedG = 0
+        this.fixedB = 0
+        this.setini = 0
+        this.mpy = 0
+        this.hLatch = 0
+        this.vLatch = 0
+        this.hFlip = false
+        this.vFlip = false
+        this.latched = false
+        this.rangeOver = false
+        this.timeOver = false
+        this.ppu1Bus = 0
+        this.ppu2Bus = 0
+        this.mainZ = new Int[256]
+        this.mainCol = new Int[256]
+        this.mainLay = new Int[256]
+        this.subZ = new Int[256]
+        this.subCol = new Int[256]
+        this.subLay = new Int[256]
+        this.linePix = new Int[512]
+        this.linePri = new Int[512]
+        this.objPix = new Int[256]
+        this.objPri = new Int[256]
+        this.winMask = new Int[6 * 256]
+        this.zTab = new Int[9 * 5 * 4]
+        this.lut = new Int[16 * 32]
+        this.tileCache = new Int[8]
+        this.sprIdx = new Int[32]
+        buildTables()
+    }
+
+    // ---------------- tabelas ----------------
+    buildTables() {
+        // ordem de prioridade (da frente pra trás) de cada modo;
+        // "S3" = sprite prioridade 3, "1H" = BG1 com bit de prioridade
+        var orders = new String[9]
+        orders[0] = "S3 1H 2H S2 1L 2L S1 3H 4H S0 3L 4L"
+        orders[1] = "S3 1H 2H S2 1L 2L S1 3H S0 3L"
+        orders[2] = "S3 1H S2 2H S1 1L S0 2L"
+        orders[3] = "S3 1H S2 2H S1 1L S0 2L"
+        orders[4] = "S3 1H S2 2H S1 1L S0 2L"
+        orders[5] = "S3 1H S2 2H S1 1L S0 2L"
+        orders[6] = "S3 1H S2 S1 1L S0"
+        orders[7] = "S3 S2 2H S1 1H 1L S0 2L"
+        orders[8] = "3H S3 1H 2H S2 1L 2L S1 S0 3L"
+        var m = 0
+        while (m < 9) {
+            var toks = orders[m].split(" ")
+            var n = toks.length
+            var i = 0
+            while (i < n) {
+                var tk = toks[i]
+                var z = n - i
+                var c0 = tk.charAt(0)
+                var c1 = tk.charAt(1)
+                if (c0 == 'S') {
+                    var pr = (c1 as Int) - ('0' as Int)
+                    zTab[(m * 5 + 4) * 4 + pr] = z
+                } else {
+                    var layer = (c0 as Int) - ('1' as Int)
+                    var pr = 0
+                    if (c1 == 'H') { pr = 1 }
+                    zTab[(m * 5 + layer) * 4 + pr] = z
+                }
+                i++
+            }
+            m++
+        }
+        // brilho: 5 bits -> 8 bits já escalado
+        var b = 0
+        while (b < 16) {
+            var c = 0
+            while (c < 32) {
+                var v8 = (c << 3) | (c >> 2)
+                lut[b * 32 + c] = (v8 * (b + 1)) / 16
+                c++
+            }
+            b++
+        }
+    }
+
+    reset() {
+        forceBlank = true
+        brightness = 0
+        tm = 0
+        ts = 0
+        bgmode = 0
+    }
+
+    // ---------------- VRAM ----------------
+    Int vremap(Int a) {
+        var mode = (vmain >> 2) & 3
+        switch (mode) {
+            case 0: return a & 0x7FFF
+            case 1: return ((a & 0xFF00) | ((a & 0xE0) >> 5) | ((a & 0x1F) << 3)) & 0x7FFF
+            case 2: return ((a & 0xFE00) | ((a & 0x1C0) >> 6) | ((a & 0x3F) << 3)) & 0x7FFF
+            default: return ((a & 0xFC00) | ((a & 0x380) >> 7) | ((a & 0x7F) << 3)) & 0x7FFF
+        }
+    }
+
+    Int vinc() {
+        switch (vmain & 3) {
+            case 0: return 1
+            case 1: return 32
+            default: return 128
+        }
+    }
+
+    // ---------------- escrita de registradores ----------------
+    write(Int reg, Int v) {
+        switch (reg) {
+            case 0x00:
+                var wasBlank = forceBlank
+                forceBlank = (v & 0x80) != 0
+                brightness = v & 0x0F
+            case 0x01: obsel = v
+            case 0x02:
+                oamAddr = (oamAddr & 0x100) | v
+                oamByte = (oamAddr << 1) & 0x3FF
+            case 0x03:
+                oamAddr = (oamAddr & 0xFF) | ((v & 1) << 8)
+                oamPriority = (v & 0x80) != 0
+                oamByte = (oamAddr << 1) & 0x3FF
+            case 0x04:
+                if (oamByte < 0x200) {
+                    if ((oamByte & 1) == 0) {
+                        oamLatch = v
+                    } else {
+                        oam[oamByte - 1] = oamLatch
+                        oam[oamByte] = v
+                    }
+                } else {
+                    oam[0x200 + (oamByte & 0x1F)] = v
+                }
+                oamByte = (oamByte + 1) & 0x3FF
+            case 0x05: bgmode = v
+            case 0x06: mosaic = v
+            case 0x07: bgsc[0] = v
+            case 0x08: bgsc[1] = v
+            case 0x09: bgsc[2] = v
+            case 0x0A: bgsc[3] = v
+            case 0x0B:
+                bgnba[0] = v & 0x0F
+                bgnba[1] = v >> 4
+            case 0x0C:
+                bgnba[2] = v & 0x0F
+                bgnba[3] = v >> 4
+            case 0x0D:
+                hofs[0] = ((v << 8) | (ofsLatch & 0xF8) | (hofsLatch & 7)) & 0x3FF
+                hofsLatch = v
+                ofsLatch = v
+                m7hofs = sext13((v << 8) | m7latch)
+                m7latch = v
+            case 0x0E:
+                vofs[0] = ((v << 8) | ofsLatch) & 0x3FF
+                ofsLatch = v
+                m7vofs = sext13((v << 8) | m7latch)
+                m7latch = v
+            case 0x0F: writeHofs(1, v)
+            case 0x10: writeVofs(1, v)
+            case 0x11: writeHofs(2, v)
+            case 0x12: writeVofs(2, v)
+            case 0x13: writeHofs(3, v)
+            case 0x14: writeVofs(3, v)
+            case 0x15: vmain = v
+            case 0x16:
+                vaddr = (vaddr & 0xFF00) | v
+                vbuf = vram[vremap(vaddr)]
+            case 0x17:
+                vaddr = (vaddr & 0xFF) | (v << 8)
+                vbuf = vram[vremap(vaddr)]
+            case 0x18:
+                var a = vremap(vaddr)
+                vram[a] = (vram[a] & 0xFF00) | v
+                if ((vmain & 0x80) == 0) { vaddr = (vaddr + vinc()) & 0xFFFF }
+            case 0x19:
+                var a = vremap(vaddr)
+                vram[a] = (vram[a] & 0xFF) | (v << 8)
+                if ((vmain & 0x80) != 0) { vaddr = (vaddr + vinc()) & 0xFFFF }
+            case 0x1A: m7sel = v
+            case 0x1B:
+                m7a = s16((v << 8) | m7latch)
+                m7latch = v
+                mpy = m7a * s8(m7b >> 8)
+            case 0x1C:
+                m7b = s16((v << 8) | m7latch)
+                m7latch = v
+                mpy = m7a * s8(m7b >> 8)
+            case 0x1D:
+                m7c = s16((v << 8) | m7latch)
+                m7latch = v
+            case 0x1E:
+                m7d = s16((v << 8) | m7latch)
+                m7latch = v
+            case 0x1F:
+                m7x = sext13((v << 8) | m7latch)
+                m7latch = v
+            case 0x20:
+                m7y = sext13((v << 8) | m7latch)
+                m7latch = v
+            case 0x21:
+                cgaddr = v
+                cgHigh = false
+            case 0x22:
+                if (!cgHigh) {
+                    cgLatch = v
+                } else {
+                    cgram[cgaddr] = ((v & 0x7F) << 8) | cgLatch
+                    cgaddr = (cgaddr + 1) & 0xFF
+                }
+                cgHigh = !cgHigh
+            case 0x23: w12sel = v
+            case 0x24: w34sel = v
+            case 0x25: wobjsel = v
+            case 0x26: wh0 = v
+            case 0x27: wh1 = v
+            case 0x28: wh2 = v
+            case 0x29: wh3 = v
+            case 0x2A: wbglog = v
+            case 0x2B: wobjlog = v
+            case 0x2C: tm = v
+            case 0x2D: ts = v
+            case 0x2E: tmw = v
+            case 0x2F: tsw = v
+            case 0x30: cgwsel = v
+            case 0x31: cgadsub = v
+            case 0x32:
+                if ((v & 0x20) != 0) { fixedR = v & 0x1F }
+                if ((v & 0x40) != 0) { fixedG = v & 0x1F }
+                if ((v & 0x80) != 0) { fixedB = v & 0x1F }
+            case 0x33: setini = v
+            default:
+                var ignored = 0
+        }
+    }
+
+    writeHofs(Int n, Int v) {
+        hofs[n] = ((v << 8) | (ofsLatch & 0xF8) | (hofsLatch & 7)) & 0x3FF
+        hofsLatch = v
+        ofsLatch = v
+    }
+
+    writeVofs(Int n, Int v) {
+        vofs[n] = ((v << 8) | ofsLatch) & 0x3FF
+        ofsLatch = v
+    }
+
+    Int s8(Int v) {
+        return ((v & 0xFF) << 24) >> 24
+    }
+
+    Int s16(Int v) {
+        return ((v & 0xFFFF) << 16) >> 16
+    }
+
+    Int sext13(Int v) {
+        return ((v & 0x1FFF) << 19) >> 19
+    }
+
+    // ---------------- leitura de registradores ----------------
+    Int read(Int reg) {
+        switch (reg) {
+            case 0x34:
+                ppu1Bus = mpy & 0xFF
+                return ppu1Bus
+            case 0x35:
+                ppu1Bus = (mpy >> 8) & 0xFF
+                return ppu1Bus
+            case 0x36:
+                ppu1Bus = (mpy >> 16) & 0xFF
+                return ppu1Bus
+            case 0x37:
+                return 0
+            case 0x38:
+                var v = 0
+                if (oamByte < 0x200) {
+                    v = oam[oamByte]
+                } else {
+                    v = oam[0x200 + (oamByte & 0x1F)]
+                }
+                oamByte = (oamByte + 1) & 0x3FF
+                ppu1Bus = v
+                return v
+            case 0x39:
+                var v = vbuf & 0xFF
+                if ((vmain & 0x80) == 0) {
+                    vbuf = vram[vremap(vaddr)]
+                    vaddr = (vaddr + vinc()) & 0xFFFF
+                }
+                ppu1Bus = v
+                return v
+            case 0x3A:
+                var v = (vbuf >> 8) & 0xFF
+                if ((vmain & 0x80) != 0) {
+                    vbuf = vram[vremap(vaddr)]
+                    vaddr = (vaddr + vinc()) & 0xFFFF
+                }
+                ppu1Bus = v
+                return v
+            case 0x3B:
+                var v = 0
+                if (!cgHigh) {
+                    v = cgram[cgaddr] & 0xFF
+                } else {
+                    v = (cgram[cgaddr] >> 8) | (ppu2Bus & 0x80)
+                    cgaddr = (cgaddr + 1) & 0xFF
+                }
+                cgHigh = !cgHigh
+                ppu2Bus = v
+                return v
+            case 0x3C:
+                var v = 0
+                if (!hFlip) { v = hLatch & 0xFF } else { v = ((hLatch >> 8) & 1) | (ppu2Bus & 0xFE) }
+                hFlip = !hFlip
+                ppu2Bus = v
+                return v
+            case 0x3D:
+                var v = 0
+                if (!vFlip) { v = vLatch & 0xFF } else { v = ((vLatch >> 8) & 1) | (ppu2Bus & 0xFE) }
+                vFlip = !vFlip
+                ppu2Bus = v
+                return v
+            case 0x3E:
+                var v = 0x01 | (ppu1Bus & 0x10)
+                if (rangeOver) { v = v | 0x40 }
+                if (timeOver) { v = v | 0x80 }
+                return v
+            case 0x3F:
+                var v = 0x03 | (ppu2Bus & 0x20)
+                if (latched) { v = v | 0x40 }
+                latched = false
+                hFlip = false
+                vFlip = false
+                ppu2Bus = v
+                return v
+            default:
+                return ppu1Bus
+        }
+    }
+
+    latchCounters(Int h, Int v) {
+        hLatch = h
+        vLatch = v
+        latched = true
+    }
+
+    // começo do vblank: o endereço do OAM volta pro valor programado
+    vblankStart() {
+        if (!forceBlank) {
+            oamByte = (oamAddr << 1) & 0x3FF
+        }
+    }
+
+    // ---------------- janelas ----------------
+    // máscara (1 = dentro da janela combinada) da camada L na linha
+    Bool buildWindow(Int layer) {
+        var sel = 0
+        var logic = 0
+        switch (layer) {
+            case 0:
+                sel = w12sel & 0xF
+                logic = wbglog & 3
+            case 1:
+                sel = w12sel >> 4
+                logic = (wbglog >> 2) & 3
+            case 2:
+                sel = w34sel & 0xF
+                logic = (wbglog >> 4) & 3
+            case 3:
+                sel = w34sel >> 4
+                logic = (wbglog >> 6) & 3
+            case 4:
+                sel = wobjsel & 0xF
+                logic = wobjlog & 3
+            default:
+                sel = wobjsel >> 4
+                logic = (wobjlog >> 2) & 3
+        }
+        var e1 = (sel & 2) != 0
+        var i1 = (sel & 1) != 0
+        var e2 = (sel & 8) != 0
+        var i2 = (sel & 4) != 0
+        var base = layer * 256
+        if (!e1 && !e2) {
+            var x = 0
+            while (x < 256) {
+                winMask[base + x] = 0
+                x++
+            }
+            return false
+        }
+        var x = 0
+        while (x < 256) {
+            var in1 = x >= wh0 && x <= wh1
+            if (i1) { in1 = !in1 }
+            var in2 = x >= wh2 && x <= wh3
+            if (i2) { in2 = !in2 }
+            var r = false
+            if (e1 && !e2) {
+                r = in1
+            } else if (e2 && !e1) {
+                r = in2
+            } else {
+                switch (logic) {
+                    case 0: r = in1 || in2
+                    case 1: r = in1 && in2
+                    case 2: r = in1 != in2
+                    default: r = in1 == in2
+                }
+            }
+            if (r) { winMask[base + x] = 1 } else { winMask[base + x] = 0 }
+            x++
+        }
+        return true
+    }
+
+    // ---------------- BGs ----------------
+    Int bppOf(Int mode, Int n) {
+        switch (mode) {
+            case 0: return 2
+            case 1:
+                if (n == 2) { return 2 }
+                if (n == 3) { return 0 }
+                return 4
+            case 2:
+                if (n >= 2) { return 0 }
+                return 4
+            case 3:
+                if (n == 0) { return 8 }
+                if (n == 1) { return 4 }
+                return 0
+            case 4:
+                if (n == 0) { return 8 }
+                if (n == 1) { return 2 }
+                return 0
+            case 5:
+                if (n == 0) { return 4 }
+                if (n == 1) { return 2 }
+                return 0
+            case 6:
+                if (n == 0) { return 4 }
+                return 0
+            default:
+                return 0
+        }
+    }
+
+    // decodifica a linha fy de um tile 8x8 em tileCache[0..7]
+    decodeTile(Int addr, Int bpp, Int fy) {
+        var p0 = vram[(addr + fy) & 0x7FFF]
+        var p1 = 0
+        var p2 = 0
+        var p3 = 0
+        if (bpp >= 4) { p1 = vram[(addr + 8 + fy) & 0x7FFF] }
+        if (bpp == 8) {
+            p2 = vram[(addr + 16 + fy) & 0x7FFF]
+            p3 = vram[(addr + 24 + fy) & 0x7FFF]
+        }
+        var i = 0
+        while (i < 8) {
+            var sh = 7 - i
+            var c = ((p0 >> sh) & 1) | (((p0 >> (sh + 8)) & 1) << 1)
+            if (bpp >= 4) {
+                c = c | (((p1 >> sh) & 1) << 2) | (((p1 >> (sh + 8)) & 1) << 3)
+            }
+            if (bpp == 8) {
+                c = c | (((p2 >> sh) & 1) << 4) | (((p2 >> (sh + 8)) & 1) << 5)
+                c = c | (((p3 >> sh) & 1) << 6) | (((p3 >> (sh + 8)) & 1) << 7)
+            }
+            tileCache[i] = c
+            i++
+        }
+    }
+
+    Int mapEntry(Int n, Int tx, Int ty) {
+        var sc = bgsc[n]
+        var base = (sc & 0xFC) << 8
+        var off = ((ty & 31) << 5) | (tx & 31)
+        if ((tx & 32) != 0 && (sc & 1) != 0) { off = off + 0x400 }
+        if ((ty & 32) != 0 && (sc & 2) != 0) {
+            if ((sc & 1) != 0) { off = off + 0x800 } else { off = off + 0x400 }
+        }
+        return vram[(base + off) & 0x7FFF]
+    }
+
+    // renderiza o BG n da linha y em linePix/linePri (índice de cor ou -1)
+    // width = 256 (normal) ou 512 (modos hi-res 5/6)
+    renderBg(Int n, Int mode, Int y, Int width) {
+        var bpp = bppOf(mode, n)
+        var big = (bgmode & (0x10 << n)) != 0
+        var tileW = 8
+        if (big || width == 512) { tileW = 16 }
+        var tileH = 8
+        if (big) { tileH = 16 }
+        var palBase = 0
+        if (mode == 0) { palBase = n * 32 }
+        var tileBase = bgnba[n] << 12
+        var tileWords = bpp * 4
+        var hs = hofs[n]
+        var vs = vofs[n]
+        var mosSize = 1
+        if ((mosaic & (1 << n)) != 0) { mosSize = (mosaic >> 4) + 1 }
+        var yy = y
+        if (mosSize > 1) { yy = y - ((y - 1) % mosSize) }
+        var opt = mode == 2 || mode == 4 || mode == 6
+        var lastKey = -1
+        var curPal = 0
+        var curPri = 0
+        var hiresShift = 0
+        if (width == 512) {
+            hs = hs << 1
+            hiresShift = 1
+        }
+        var x = 0
+        while (x < width) {
+            var sx = x
+            if (mosSize > 1) {
+                var mx = x >> hiresShift
+                sx = (mx - (mx % mosSize)) << hiresShift
+            }
+            var lhs = hs
+            var lvs = vs
+            if (opt && ((sx + (hs & 7)) >> 3) >= 1) {
+                var col = ((sx + (hs & 7)) >> 3) - 1
+                var o3h = hofs[2]
+                var o3v = vofs[2]
+                var ox = ((o3h >> 3) + col)
+                var oy = o3v >> 3
+                var eh = mapEntry(2, ox, oy)
+                var ev = 0
+                if (mode == 4) {
+                    if ((eh & 0x8000) != 0) {
+                        ev = eh
+                        eh = 0
+                    }
+                } else {
+                    ev = mapEntry(2, ox, oy + 1)
+                }
+                var bit = 0x2000 << n
+                if ((eh & bit) != 0) {
+                    var nh = eh & 0x3FF
+                    if (hiresShift == 1) {
+                        lhs = (nh << 1) | (hs & 15)
+                    } else {
+                        lhs = (nh & 0x3F8) | (hs & 7)
+                    }
+                }
+                if ((ev & bit) != 0) {
+                    lvs = ev & 0x3FF
+                }
+            }
+            var px = (sx + lhs) & 0xFFFF
+            var py = (yy + lvs) & 0xFFFF
+            var tx = px / tileW
+            var ty = py / tileH
+            var entry = mapEntry(n, tx, ty)
+            var hflip = (entry & 0x4000) != 0
+            var vflip = (entry & 0x8000) != 0
+            var tile = entry & 0x3FF
+            var fy = py & 7
+            var fx = px & 7
+            if (tileW == 16) {
+                var subx = (px >> 3) & 1
+                if (hflip) { subx = subx ^ 1 }
+                tile = tile + subx
+            }
+            if (tileH == 16) {
+                var suby = (py >> 3) & 1
+                if (vflip) { suby = suby ^ 1 }
+                tile = tile + (suby << 4)
+            }
+            if (vflip) { fy = 7 - fy }
+            var tAddr = (tileBase + (tile & 0x3FF) * tileWords) & 0x7FFF
+            var keyTile = (tAddr << 3) | fy
+            if (keyTile != lastKey) {
+                decodeTile(tAddr, bpp, fy)
+                lastKey = keyTile
+            }
+            if (hflip) { fx = 7 - fx }
+            var c = tileCache[fx]
+            if (c == 0) {
+                linePix[x] = -1
+            } else {
+                var pal = (entry >> 10) & 7
+                if (bpp == 8) {
+                    if ((cgwsel & 1) != 0) {
+                        linePix[x] = 0x10000 | directColor(c, pal)
+                    } else {
+                        linePix[x] = c
+                    }
+                } else if (bpp == 4) {
+                    linePix[x] = palBase + pal * 16 + c
+                } else {
+                    linePix[x] = palBase + pal * 4 + c
+                }
+                linePri[x] = (entry >> 13) & 1
+            }
+            x++
+        }
+    }
+
+    // cor direta (modos 3/4/7 com CGWSEL bit 0): BBGGGRRR + bits da paleta
+    Int directColor(Int c, Int pal) {
+        var r = ((c & 7) << 2) | ((pal & 1) << 1)
+        var g = (((c >> 3) & 7) << 2) | (pal & 2)
+        var b = (((c >> 6) & 3) << 3) | ((pal & 4) << 0)
+        return r | (g << 5) | (b << 10)
+    }
+
+    Int clip10(Int v) {
+        if ((v & 0x2000) != 0) {
+            return v | (0x3FF ^ -1)
+        }
+        return v & 0x3FF
+    }
+
+    // Mode 7: transformação afim (rotação/zoom) do mapa 128x128
+    renderMode7(Int y, Bool extbg) {
+        var a = m7a
+        var b = m7b
+        var c = m7c
+        var d = m7d
+        var cx = m7x
+        var cy = m7y
+        var hof = m7hofs
+        var vof = m7vofs
+        var mosSize = 1
+        if ((mosaic & 1) != 0) { mosSize = (mosaic >> 4) + 1 }
+        var yy = y
+        if (mosSize > 1) { yy = y - ((y - 1) % mosSize) }
+        var sy = yy
+        if ((m7sel & 2) != 0) { sy = 255 - yy }
+        var hc = clip10(hof - cx)
+        var vc = clip10(vof - cy)
+        var basex = ((a * hc) & (0 - 64)) + ((b * vc) & (0 - 64)) + ((b * sy) & (0 - 64)) + (cx << 8)
+        var basey = ((c * hc) & (0 - 64)) + ((d * vc) & (0 - 64)) + ((d * sy) & (0 - 64)) + (cy << 8)
+        var over = m7sel >> 6
+        var x = 0
+        while (x < 256) {
+            var sx = x
+            if (mosSize > 1) { sx = x - (x % mosSize) }
+            if ((m7sel & 1) != 0) { sx = 255 - sx }
+            var px = (basex + a * sx) >> 8
+            var py = (basey + c * sx) >> 8
+            var col = 0
+            var outside = (px & (0 - 1024)) != 0 || (py & (0 - 1024)) != 0
+            if (outside && over == 2) {
+                linePix[x] = -1
+                x++
+                continue
+            }
+            var tile = 0
+            if (outside && over == 3) {
+                tile = 0
+            } else {
+                tile = vram[(((py >> 3) & 127) << 7) | ((px >> 3) & 127)] & 0xFF
+            }
+            col = (vram[(tile << 6) | ((py & 7) << 3) | (px & 7)] >> 8) & 0xFF
+            if (extbg) {
+                linePri[x] = col >> 7
+                col = col & 0x7F
+            } else {
+                linePri[x] = 0
+            }
+            if (col == 0) {
+                linePix[x] = -1
+            } else if ((cgwsel & 1) != 0 && !extbg) {
+                linePix[x] = 0x10000 | directColor(col, 0)
+            } else {
+                linePix[x] = col
+            }
+            x++
+        }
+    }
+
+    // ---------------- sprites ----------------
+    Int sprW(Int size, Int big) {
+        var sz = (obsel >> 5) & 7
+        var small = 8
+        var large = 16
+        switch (sz) {
+            case 0:
+                small = 8
+                large = 16
+            case 1:
+                small = 8
+                large = 32
+            case 2:
+                small = 8
+                large = 64
+            case 3:
+                small = 16
+                large = 32
+            case 4:
+                small = 16
+                large = 64
+            case 5:
+                small = 32
+                large = 64
+            case 6:
+                small = 16
+                large = 32
+            default:
+                small = 16
+                large = 32
+        }
+        if (big == 1) { return large }
+        return small
+    }
+
+    Int sprH(Int big) {
+        var sz = (obsel >> 5) & 7
+        if (sz == 6) {
+            if (big == 1) { return 64 }
+            return 32
+        }
+        if (sz == 7) {
+            if (big == 1) { return 32 }
+            return 32
+        }
+        return sprW(0, big)
+    }
+
+    renderSprites(Int y) {
+        var x = 0
+        while (x < 256) {
+            objPix[x] = -1
+            x++
+        }
+        var first = 0
+        if (oamPriority) { first = (oamAddr >> 1) & 127 }
+        var count = 0
+        var i = 0
+        while (i < 128) {
+            var n = (first + i) & 127
+            var hi = (oam[0x200 + (n >> 2)] >> ((n & 3) << 1)) & 3
+            var big = (hi >> 1) & 1
+            var h = sprH(big)
+            var sy = oam[n * 4 + 1]
+            var row = (y - sy) & 0xFF
+            if (row < h) {
+                var sx = oam[n * 4] | ((hi & 1) << 8)
+                if (sx >= 256) { sx = sx - 512 }
+                var w = sprW(0, big)
+                if (sx > 0 - w) {
+                    if (count < 32) {
+                        sprIdx[count] = n
+                        count++
+                    } else {
+                        rangeOver = true
+                    }
+                }
+            }
+            i++
+        }
+        var base = (obsel & 7) << 13
+        var gap = (((obsel >> 3) & 3) + 1) << 12
+        var tiles = 0
+        var k = count - 1
+        // desenha do último pro primeiro: o de menor índice fica por cima
+        while (k >= 0) {
+            var n = sprIdx[k]
+            var hi = (oam[0x200 + (n >> 2)] >> ((n & 3) << 1)) & 3
+            var big = (hi >> 1) & 1
+            var w = sprW(0, big)
+            var h = sprH(big)
+            var sx = oam[n * 4] | ((hi & 1) << 8)
+            if (sx >= 256) { sx = sx - 512 }
+            var sy = oam[n * 4 + 1]
+            var tileNum = oam[n * 4 + 2]
+            var attr = oam[n * 4 + 3]
+            var row = (y - sy) & 0xFF
+            if ((attr & 0x80) != 0) {
+                row = h - 1 - row
+            }
+            var pal = 128 + ((attr >> 1) & 7) * 16
+            var pri = (attr >> 4) & 3
+            var table = base
+            if ((attr & 1) != 0) { table = base + gap }
+            var trow = ((tileNum >> 4) + (row >> 3)) & 15
+            var fy = row & 7
+            var cxi = 0
+            var ncols = w >> 3
+            while (cxi < ncols) {
+                var col = cxi
+                if ((attr & 0x40) != 0) { col = ncols - 1 - cxi }
+                var dx = sx + cxi * 8
+                if (dx > -8 && dx < 256) {
+                    tiles++
+                    var tcol = ((tileNum & 15) + col) & 15
+                    var addr = (table + (((trow << 4) | tcol) << 4)) & 0x7FFF
+                    decodeTile(addr, 4, fy)
+                    var p = 0
+                    while (p < 8) {
+                        var xx = dx + p
+                        if (xx >= 0 && xx < 256) {
+                            var fx = p
+                            if ((attr & 0x40) != 0) { fx = 7 - p }
+                            var c = tileCache[fx]
+                            if (c != 0) {
+                                objPix[xx] = pal + c
+                                objPri[xx] = pri
+                            }
+                        }
+                        p++
+                    }
+                }
+                cxi++
+            }
+            k--
+        }
+        if (tiles > 34) { timeOver = true }
+    }
+
+    // ---------------- composição ----------------
+    place(Int x, Int z, Int col, Int lay, Bool onMain, Bool onSub, Bool useWinMain, Bool useWinSub, Int layer) {
+        if (onMain && z > mainZ[x]) {
+            if (!(useWinMain && winMask[layer * 256 + x] == 1)) {
+                mainZ[x] = z
+                mainCol[x] = col
+                mainLay[x] = lay
+            }
+        }
+        if (onSub && z > subZ[x]) {
+            if (!(useWinSub && winMask[layer * 256 + x] == 1)) {
+                subZ[x] = z
+                subCol[x] = col
+                subLay[x] = lay
+            }
+        }
+    }
+
+    Int colorOf(Int p) {
+        if ((p & 0x10000) != 0) {
+            return p & 0x7FFF
+        }
+        return cgram[p & 0xFF]
+    }
+
+    renderLine(Int y) {
+        if (y < 1 || y > 239) { return }
+        var row = (y - 1) * 256
+        if (forceBlank) {
+            var x = 0
+            while (x < 256) {
+                frame[row + x] = 0xFF000000
+                x++
+            }
+            return
+        }
+        var mode = bgmode & 7
+        var zm = mode
+        if (mode == 1 && (bgmode & 8) != 0) { zm = 8 }
+        var backdrop = cgram[0]
+        var fixed = fixedR | (fixedG << 5) | (fixedB << 10)
+        var x = 0
+        while (x < 256) {
+            mainZ[x] = 0
+            mainCol[x] = backdrop
+            mainLay[x] = 5
+            subZ[x] = 0
+            subCol[x] = fixed
+            subLay[x] = 5
+            x++
+        }
+        var hires = mode == 5 || mode == 6
+        var width = 256
+        if (hires) { width = 512 }
+        var both = tm | ts
+        var n = 0
+        while (n < 4) {
+            var bit = 1 << n
+            var active = (both & bit) != 0
+            var bpp = bppOf(mode, n)
+            if (mode == 7) {
+                active = active && (n == 0 || (n == 1 && (setini & 0x40) != 0))
+            } else {
+                active = active && bpp > 0
+            }
+            if (active) {
+                var wm = (tmw & bit) != 0 && buildWindow(n)
+                var ws = (tsw & bit) != 0
+                if (ws && !wm) { ws = buildWindow(n) }
+                if (mode == 7) {
+                    renderMode7(y, n == 1)
+                } else {
+                    renderBg(n, mode, y, width)
+                }
+                var onM = (tm & bit) != 0
+                var onS = (ts & bit) != 0
+                var zl = (zm * 5 + n) * 4
+                x = 0
+                while (x < 256) {
+                    var p = 0
+                    var pr = 0
+                    if (hires) {
+                        p = linePix[x * 2 + 1]
+                        pr = linePri[x * 2 + 1]
+                        if (p < 0) {
+                            p = linePix[x * 2]
+                            pr = linePri[x * 2]
+                        }
+                    } else {
+                        p = linePix[x]
+                        pr = linePri[x]
+                    }
+                    if (p >= 0) {
+                        place(x, zTab[zl + pr], colorOf(p), n, onM, onS, wm, ws, n)
+                    }
+                    x++
+                }
+            }
+            n++
+        }
+        if ((both & 0x10) != 0) {
+            renderSprites(y)
+            var wm = (tmw & 0x10) != 0 && buildWindow(4)
+            var ws = (tsw & 0x10) != 0
+            if (ws && !wm) { ws = buildWindow(4) }
+            var onM = (tm & 0x10) != 0
+            var onS = (ts & 0x10) != 0
+            var zl = (zm * 5 + 4) * 4
+            x = 0
+            while (x < 256) {
+                var p = objPix[x]
+                if (p >= 0) {
+                    var lay = 4
+                    if (p < 192) { lay = 7 }
+                    place(x, zTab[zl + objPri[x]], cgram[p], lay, onM, onS, wm, ws, 4)
+                }
+                x++
+            }
+        }
+        // color math
+        var colorWin = (cgwsel & 0xF0) != 0
+        if (colorWin) { buildWindow(5) }
+        var clipMode = (cgwsel >> 6) & 3
+        var mathMode = (cgwsel >> 4) & 3
+        var useSub = (cgwsel & 2) != 0
+        var subtract = (cgadsub & 0x80) != 0
+        var half = (cgadsub & 0x40) != 0
+        var bl = brightness * 32
+        x = 0
+        while (x < 256) {
+            var inWin = winMask[5 * 256 + x] == 1
+            var c = mainCol[x]
+            var clipped = false
+            if (clipMode == 3 || (clipMode == 2 && inWin) || (clipMode == 1 && !inWin)) {
+                c = 0
+                clipped = true
+            }
+            var lay = mainLay[x]
+            var mathOn = false
+            if (lay == 7) {
+                mathOn = false
+            } else {
+                mathOn = (cgadsub & (1 << lay)) != 0
+            }
+            if (mathOn) {
+                if (mathMode == 3 || (mathMode == 1 && !inWin) || (mathMode == 2 && inWin)) {
+                    mathOn = false
+                }
+            }
+            if (mathOn) {
+                var o = fixed
+                var h = half && !clipped
+                if (useSub) {
+                    if (subLay[x] == 5) {
+                        h = false
+                    } else {
+                        o = subCol[x]
+                    }
+                }
+                var r = c & 31
+                var g = (c >> 5) & 31
+                var b = (c >> 10) & 31
+                var orr = o & 31
+                var og = (o >> 5) & 31
+                var ob = (o >> 10) & 31
+                if (subtract) {
+                    r = r - orr
+                    g = g - og
+                    b = b - ob
+                    if (h) {
+                        r = r >> 1
+                        g = g >> 1
+                        b = b >> 1
+                    }
+                    if (r < 0) { r = 0 }
+                    if (g < 0) { g = 0 }
+                    if (b < 0) { b = 0 }
+                } else {
+                    r = r + orr
+                    g = g + og
+                    b = b + ob
+                    if (h) {
+                        r = r >> 1
+                        g = g >> 1
+                        b = b >> 1
+                    }
+                    if (r > 31) { r = 31 }
+                    if (g > 31) { g = 31 }
+                    if (b > 31) { b = 31 }
+                }
+                c = r | (g << 5) | (b << 10)
+            }
+            frame[row + x] = 0xFF000000 | (lut[bl + (c & 31)] << 16) | (lut[bl + ((c >> 5) & 31)] << 8) | lut[bl + ((c >> 10) & 31)]
+            x++
+        }
+    }
+}

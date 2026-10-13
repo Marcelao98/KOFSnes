@@ -1,0 +1,61 @@
+package app
+
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
+
+// Teclado -> controle do SNES. Também guarda as teclas de atalho do
+// emulador (pausa, reset, turbo) pra janela consultar.
+class Controle implements KeyListener {
+    Int botoes
+    Bool turbo
+    Int pedido
+
+    public constructor() {
+        this.botoes = 0
+        this.turbo = false
+        this.pedido = 0
+    }
+
+    Int bit(Int code) {
+        switch (code) {
+            case 90: return 0x8000
+            case 65: return 0x4000
+            case 16: return 0x2000
+            case 10: return 0x1000
+            case 38: return 0x0800
+            case 40: return 0x0400
+            case 37: return 0x0200
+            case 39: return 0x0100
+            case 88: return 0x0080
+            case 83: return 0x0040
+            case 81: return 0x0020
+            case 87: return 0x0010
+            default: return 0
+        }
+    }
+
+    keyPressed(KeyEvent e) {
+        var c = e.getKeyCode()
+        botoes = botoes | bit(c)
+        if (c == 9) { turbo = true }
+        if (c == 80 || c == 27) { pedido = 1 }
+        if (c == 112) { pedido = 2 }
+        if (c == 79 && e.isControlDown()) { pedido = 3 }
+    }
+
+    keyReleased(KeyEvent e) {
+        var c = e.getKeyCode()
+        botoes = botoes & (bit(c) ^ 0xFFFF)
+        if (c == 9) { turbo = false }
+    }
+
+    keyTyped(KeyEvent e) { }
+
+    // um SNES de verdade não deixa apertar cima+baixo ou esquerda+direita
+    Int estado() {
+        var b = botoes
+        if ((b & 0x0C00) == 0x0C00) { b = b & (0x0C00 ^ 0xFFFF) }
+        if ((b & 0x0300) == 0x0300) { b = b & (0x0300 ^ 0xFFFF) }
+        return b
+    }
+}

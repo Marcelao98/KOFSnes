@@ -1,0 +1,183 @@
+package snes
+
+// Cartucho: detecta o cabeçalho (LoROM/HiROM/ExHiROM), espelha a ROM
+// numa potência de 2 e guarda a SRAM (bateria do save).
+class Cartridge {
+    Int[] rom
+    Int romMask
+    Int[] sram
+    Int sramMask
+    Int mapper
+    String title
+    Bool pal
+    Bool fastRomHeader
+
+    public constructor(Byte[] data) {
+        var size = data.length
+        var skip = 0
+        if ((size & 0x3FF) == 0x200) {
+            skip = 0x200
+            size = size - 0x200
+        }
+        var raw = new Int[size]
+        var i = 0
+        while (i < size) {
+            raw[i] = (data[i + skip] as Int) & 0xFF
+            i++
+        }
+        // pontua os três lugares possíveis do cabeçalho
+        var lo = score(raw, 0x7FC0)
+        var hi = score(raw, 0xFFC0)
+        var ex = score(raw, 0x40FFC0)
+        if (ex > 0) { ex = ex + 4 }
+        var hdr = 0x7FC0
+        this.mapper = 0
+        if (hi > lo && hi >= ex) {
+            hdr = 0xFFC0
+            this.mapper = 1
+        } else if (ex > lo && ex > hi) {
+            hdr = 0x40FFC0
+            this.mapper = 2
+        }
+        // título
+        var t = ""
+        if (hdr + 21 <= size) {
+            var k = 0
+            while (k < 21) {
+                var ch = raw[hdr + k]
+                if (ch >= 32 && ch < 127) {
+                    t = t + ((ch as Char) as String)
+                } else {
+                    t = t + " "
+                }
+                k++
+            }
+        }
+        this.title = t.trim()
+        var country = 0
+        var sramCode = 0
+        var mapMode = 0
+        if (hdr + 0x20 <= size) {
+            country = raw[hdr + 0x19]
+            sramCode = raw[hdr + 0x18]
+            mapMode = raw[hdr + 0x15]
+        }
+        this.pal = country >= 2 && country <= 12
+        this.fastRomHeader = (mapMode & 0x10) != 0
+        // ROM espelhada até a próxima potência de 2
+        var p2 = 1
+        while (p2 < size) { p2 = p2 << 1 }
+        this.rom = new Int[p2]
+        this.romMask = p2 - 1
+        var a = 0
+        while (a < p2) {
+            this.rom[a] = raw[mirror(a, size)]
+            a++
+        }
+        var ss = 0
+        if (sramCode > 0 && sramCode <= 8) { ss = 1024 << sramCode }
+        if (ss == 0) {
+            this.sram = new Int[1]
+            this.sramMask = 0
+        } else {
+            this.sram = new Int[ss]
+            this.sramMask = ss - 1
+        }
+    }
+
+    Bool hasSram() {
+        return sram.length > 1
+    }
+
+    Int mirror(Int addr, Int size) {
+        if (size == 0) { return 0 }
+        var base = 0
+        var mask = 1 << 23
+        var a = addr
+        var sz = size
+        while (a >= sz) {
+            while ((a & mask) == 0) { mask = mask >> 1 }
+            a = a - mask
+            if (sz > mask) {
+                sz = sz - mask
+                base = base + mask
+            }
+            mask = mask >> 1
+        }
+        return base + a
+    }
+
+    Int score(Int[] raw, Int at) {
+        if (at + 0x40 > raw.length) { return -100 }
+        var s = 0
+        var chk = raw[at + 0x1E] | (raw[at + 0x1F] << 8)
+        var cmp = raw[at + 0x1C] | (raw[at + 0x1D] << 8)
+        if ((chk ^ cmp) == 0xFFFF) { s = s + 8 }
+        var reset = raw[at + 0x3C] | (raw[at + 0x3D] << 8)
+        if (reset >= 0x8000) { s = s + 4 } else { s = s - 8 }
+        var mm = raw[at + 0x15] & 0xEF
+        if (at == 0x7FC0 && (mm == 0x20 || mm == 0x22 || mm == 0x23)) { s = s + 3 }
+        if (at == 0xFFC0 && (mm == 0x21 || mm == 0x25)) { s = s + 3 }
+        if (at == 0x40FFC0 && mm == 0x25) { s = s + 3 }
+        var k = 0
+        while (k < 21) {
+            var ch = raw[at + k]
+            if (ch >= 32 && ch < 127) { s = s + 0 } else { s = s - 1 }
+            k++
+        }
+        // primeira instrução no reset: SEI/CLC/... são bons sinais
+        var resetOff = 0
+        if (at == 0x7FC0) {
+            resetOff = (reset & 0x7FFF)
+        } else {
+            resetOff = (at & 0xFF0000) | reset
+        }
+        if (resetOff < raw.length) {
+            var op = raw[resetOff]
+            if (op == 0x78 || op == 0x18 || op == 0x38 || op == 0x9C || op == 0x4C || op == 0x5C || op == 0xC2 || op == 0xE2 || op == 0xA9 || op == 0xA2) {
+                s = s + 2
+            }
+        }
+        return s
+    }
+
+    // Converte endereço da CPU (24 bits) em índice da ROM, -1 se não é ROM.
+    // Para SRAM devolve -(2 + índice).
+    Int map(Int addr) {
+        var bank = addr >> 16
+        var off = addr & 0xFFFF
+        if (mapper == 0) {
+            if ((bank & 0x70) == 0x70 && bank != 0x7E && bank != 0x7F && off < 0x8000) {
+                if (sramMask > 0) {
+                    return -2 - ((((bank & 0x0F) << 15) | off) & sramMask)
+                }
+                return -1
+            }
+            if (bank == 0x7E || bank == 0x7F) { return -1 }
+            if (off >= 0x8000) {
+                return ((((bank & 0x7F) << 15) | (off & 0x7FFF))) & romMask
+            }
+            if ((bank & 0x7F) >= 0x40) {
+                return ((((bank & 0x7F) << 15) | (off & 0x7FFF))) & romMask
+            }
+            return -1
+        }
+        // HiROM / ExHiROM
+        var b = bank & 0x7F
+        if (b < 0x40) {
+            if (off >= 0x6000 && off < 0x8000 && b >= 0x20) {
+                if (sramMask > 0) {
+                    return -2 - ((((b & 0x1F) << 13) | (off - 0x6000)) & sramMask)
+                }
+                return -1
+            }
+            if (off < 0x8000) { return -1 }
+        }
+        if (bank == 0x7E || bank == 0x7F) { return -1 }
+        var r = ((bank & 0x3F) << 16) | off
+        if (mapper == 2 && bank < 0x80) {
+            r = r + 0x400000
+        }
+        return r & romMask
+    }
+}

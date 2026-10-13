@@ -1,0 +1,10 @@
+package snes
+
+// O que a CPU 65816 enxerga do mundo: leitura/escrita em endereço de 24
+// bits e um ciclo "interno" (sem acesso a memória). Quem implementa conta
+// o tempo — o Snes cobra 6/8/12 ciclos master por acesso, conforme a região.
+interface CpuBus {
+    Int read(Int addr)
+    write(Int addr, Int v)
+    idle()
+}

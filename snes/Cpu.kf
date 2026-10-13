@@ -1,0 +1,1410 @@
+package snes
+
+import snes.CpuBus
+
+// WDC 65C816 — a CPU do Super Nintendo (núcleo Ricoh 5A22).
+// Registradores de 16 bits, modo emulação (6502), flags M/X que mudam a
+// largura do acumulador e dos índices, modo decimal, MVN/MVP, WAI/STP.
+// A ordem e a quantidade de acessos ao barramento seguem o datasheet:
+// é isso que dá o tempo de cada instrução.
+class Cpu {
+    CpuBus bus
+    Int a
+    Int x
+    Int y
+    Int s
+    Int d
+    Int dbr
+    Int pbr
+    Int pc
+    // flags
+    Bool fneg
+    Bool fv
+    Bool fm
+    Bool fx
+    Bool fd
+    Bool fi
+    Bool fz
+    Bool fc
+    Bool e
+    // estado
+    Bool aw
+    Bool nmiPending
+    Bool irqLine
+    Bool waiting
+    Bool stopped
+    Int lastOp
+
+    public constructor(CpuBus bus) {
+        this.bus = bus
+        this.a = 0
+        this.x = 0
+        this.y = 0
+        this.s = 0x1FF
+        this.d = 0
+        this.dbr = 0
+        this.pbr = 0
+        this.pc = 0
+        this.fneg = false
+        this.fv = false
+        this.fm = true
+        this.fx = true
+        this.fd = false
+        this.fi = true
+        this.fz = false
+        this.fc = false
+        this.e = true
+        this.aw = false
+        this.nmiPending = false
+        this.irqLine = false
+        this.waiting = false
+        this.stopped = false
+        this.lastOp = 0
+    }
+
+    reset() {
+        e = true
+        fm = true
+        fx = true
+        fi = true
+        fd = false
+        x = x & 0xFF
+        y = y & 0xFF
+        s = 0x100 | (s & 0xFF)
+        d = 0
+        dbr = 0
+        pbr = 0
+        waiting = false
+        stopped = false
+        nmiPending = false
+        pc = rd(0xFFFC) | (rd(0xFFFD) << 8)
+    }
+
+    // ---------------- status ----------------
+    Int getP() {
+        var p = 0
+        if (fneg) { p = p | 0x80 }
+        if (fv) { p = p | 0x40 }
+        if (fm) { p = p | 0x20 }
+        if (fx) { p = p | 0x10 }
+        if (fd) { p = p | 0x08 }
+        if (fi) { p = p | 0x04 }
+        if (fz) { p = p | 0x02 }
+        if (fc) { p = p | 0x01 }
+        return p
+    }
+
+    setP(Int p) {
+        fneg = (p & 0x80) != 0
+        fv = (p & 0x40) != 0
+        fm = (p & 0x20) != 0
+        fx = (p & 0x10) != 0
+        fd = (p & 0x08) != 0
+        fi = (p & 0x04) != 0
+        fz = (p & 0x02) != 0
+        fc = (p & 0x01) != 0
+        if (e) {
+            fm = true
+            fx = true
+        }
+        if (fx) {
+            x = x & 0xFF
+            y = y & 0xFF
+        }
+    }
+
+    // ---------------- memória ----------------
+    Int rd(Int addr) {
+        return bus.read(addr & 0xFFFFFF)
+    }
+
+    wr(Int addr, Int v) {
+        bus.write(addr & 0xFFFFFF, v & 0xFF)
+    }
+
+    idle() {
+        bus.idle()
+    }
+
+    Int fetch() {
+        var v = bus.read((pbr << 16) | pc)
+        pc = (pc + 1) & 0xFFFF
+        return v
+    }
+
+    Int fetch16() {
+        var lo = fetch()
+        return lo | (fetch() << 8)
+    }
+
+    Int fetch24() {
+        var lo = fetch()
+        var mid = fetch()
+        return lo | (mid << 8) | (fetch() << 16)
+    }
+
+    Int hiAddr(Int addr) {
+        if (aw) {
+            return (addr & 0xFF0000) | ((addr + 1) & 0xFFFF)
+        }
+        return (addr + 1) & 0xFFFFFF
+    }
+
+    Int readM(Int addr) {
+        if (fm) {
+            return rd(addr)
+        }
+        var lo = rd(addr)
+        return lo | (rd(hiAddr(addr)) << 8)
+    }
+
+    Int readX(Int addr) {
+        if (fx) {
+            return rd(addr)
+        }
+        var lo = rd(addr)
+        return lo | (rd(hiAddr(addr)) << 8)
+    }
+
+    writeM(Int addr, Int v) {
+        if (fm) {
+            wr(addr, v)
+        } else {
+            wr(addr, v)
+            wr(hiAddr(addr), v >> 8)
+        }
+    }
+
+    writeX(Int addr, Int v) {
+        if (fx) {
+            wr(addr, v)
+        } else {
+            wr(addr, v)
+            wr(hiAddr(addr), v >> 8)
+        }
+    }
+
+    // ---------------- pilha ----------------
+    push8(Int v) {
+        wr(s, v)
+        if (e) {
+            s = 0x100 | ((s - 1) & 0xFF)
+        } else {
+            s = (s - 1) & 0xFFFF
+        }
+    }
+
+    push16(Int v) {
+        push8(v >> 8)
+        push8(v)
+    }
+
+    Int pull8() {
+        if (e) {
+            s = 0x100 | ((s + 1) & 0xFF)
+        } else {
+            s = (s + 1) & 0xFFFF
+        }
+        return rd(s)
+    }
+
+    Int pull16() {
+        var lo = pull8()
+        return lo | (pull8() << 8)
+    }
+
+    // versões "novas" (65816): não ficam presas na página 1 durante a
+    // instrução, mesmo em modo emulação; o S é corrigido no fim.
+    pushN(Int v) {
+        wr(s, v)
+        s = (s - 1) & 0xFFFF
+    }
+
+    Int pullN() {
+        s = (s + 1) & 0xFFFF
+        return rd(s)
+    }
+
+    fixS() {
+        if (e) {
+            s = 0x100 | (s & 0xFF)
+        }
+    }
+
+    // ---------------- endereçamento ----------------
+    Int dpAddr(Int o) {
+        if (e && (d & 0xFF) == 0) {
+            return d | (o & 0xFF)
+        }
+        return (d + o) & 0xFFFF
+    }
+
+    dpPenalty() {
+        if ((d & 0xFF) != 0) {
+            idle()
+        }
+    }
+
+    Int amImmM() {
+        aw = true
+        var addr = (pbr << 16) | pc
+        if (fm) {
+            pc = (pc + 1) & 0xFFFF
+        } else {
+            pc = (pc + 2) & 0xFFFF
+        }
+        return addr
+    }
+
+    Int amImmX() {
+        aw = true
+        var addr = (pbr << 16) | pc
+        if (fx) {
+            pc = (pc + 1) & 0xFFFF
+        } else {
+            pc = (pc + 2) & 0xFFFF
+        }
+        return addr
+    }
+
+    Int amDp() {
+        var o = fetch()
+        dpPenalty()
+        aw = true
+        return dpAddr(o)
+    }
+
+    Int amDpX() {
+        var o = fetch()
+        dpPenalty()
+        idle()
+        aw = true
+        return dpAddr(o + x)
+    }
+
+    Int amDpY() {
+        var o = fetch()
+        dpPenalty()
+        idle()
+        aw = true
+        return dpAddr(o + y)
+    }
+
+    Int amDpInd() {
+        var o = fetch()
+        dpPenalty()
+        var lo = rd(dpAddr(o))
+        var hi = rd(dpAddr(o + 1))
+        aw = false
+        return (dbr << 16) | lo | (hi << 8)
+    }
+
+    Int amDpIndX() {
+        var o = fetch()
+        dpPenalty()
+        idle()
+        var la = dpAddr(o + x)
+        var ha = 0
+        if (e) {
+            ha = (la & 0xFF00) | ((la + 1) & 0xFF)
+        } else {
+            ha = (la + 1) & 0xFFFF
+        }
+        var lo = rd(la)
+        var hi = rd(ha)
+        aw = false
+        return (dbr << 16) | lo | (hi << 8)
+    }
+
+    Int amDpIndY(Bool w) {
+        var o = fetch()
+        dpPenalty()
+        var lo = rd(dpAddr(o))
+        var hi = rd(dpAddr(o + 1))
+        var base = (dbr << 16) | lo | (hi << 8)
+        var addr = (base + y) & 0xFFFFFF
+        if (w || !fx || ((base ^ addr) & 0xFF00) != 0) {
+            idle()
+        }
+        aw = false
+        return addr
+    }
+
+    Int amDpIndLong() {
+        var o = fetch()
+        dpPenalty()
+        var p = (d + o) & 0xFFFF
+        var lo = rd(p)
+        var mid = rd((p + 1) & 0xFFFF)
+        var hi = rd((p + 2) & 0xFFFF)
+        aw = false
+        return lo | (mid << 8) | (hi << 16)
+    }
+
+    Int amDpIndLongY() {
+        var o = fetch()
+        dpPenalty()
+        var p = (d + o) & 0xFFFF
+        var lo = rd(p)
+        var mid = rd((p + 1) & 0xFFFF)
+        var hi = rd((p + 2) & 0xFFFF)
+        aw = false
+        return ((lo | (mid << 8) | (hi << 16)) + y) & 0xFFFFFF
+    }
+
+    Int amAbs() {
+        aw = false
+        return (dbr << 16) | fetch16()
+    }
+
+    Int amAbsX(Bool w) {
+        var base = (dbr << 16) | fetch16()
+        var addr = (base + x) & 0xFFFFFF
+        if (w || !fx || ((base ^ addr) & 0xFF00) != 0) {
+            idle()
+        }
+        aw = false
+        return addr
+    }
+
+    Int amAbsY(Bool w) {
+        var base = (dbr << 16) | fetch16()
+        var addr = (base + y) & 0xFFFFFF
+        if (w || !fx || ((base ^ addr) & 0xFF00) != 0) {
+            idle()
+        }
+        aw = false
+        return addr
+    }
+
+    Int amLong() {
+        aw = false
+        return fetch24()
+    }
+
+    Int amLongX() {
+        aw = false
+        return (fetch24() + x) & 0xFFFFFF
+    }
+
+    Int amSr() {
+        var o = fetch()
+        idle()
+        aw = true
+        return (s + o) & 0xFFFF
+    }
+
+    Int amSrIndY() {
+        var o = fetch()
+        idle()
+        var p = (s + o) & 0xFFFF
+        var lo = rd(p)
+        var hi = rd((p + 1) & 0xFFFF)
+        idle()
+        aw = false
+        return (((dbr << 16) | lo | (hi << 8)) + y) & 0xFFFFFF
+    }
+
+    // ---------------- flags auxiliares ----------------
+    nzM(Int v) {
+        if (fm) {
+            fz = (v & 0xFF) == 0
+            fneg = (v & 0x80) != 0
+        } else {
+            fz = (v & 0xFFFF) == 0
+            fneg = (v & 0x8000) != 0
+        }
+    }
+
+    nzX(Int v) {
+        if (fx) {
+            fz = (v & 0xFF) == 0
+            fneg = (v & 0x80) != 0
+        } else {
+            fz = (v & 0xFFFF) == 0
+            fneg = (v & 0x8000) != 0
+        }
+    }
+
+    nz8(Int v) {
+        fz = (v & 0xFF) == 0
+        fneg = (v & 0x80) != 0
+    }
+
+    nz16(Int v) {
+        fz = (v & 0xFFFF) == 0
+        fneg = (v & 0x8000) != 0
+    }
+
+    Int getAM() {
+        if (fm) {
+            return a & 0xFF
+        }
+        return a
+    }
+
+    setAM(Int v) {
+        if (fm) {
+            a = (a & 0xFF00) | (v & 0xFF)
+        } else {
+            a = v & 0xFFFF
+        }
+    }
+
+    Int maskX(Int v) {
+        if (fx) {
+            return v & 0xFF
+        }
+        return v & 0xFFFF
+    }
+
+    // ---------------- operações (ALU) ----------------
+    opOra(Int addr) {
+        var v = getAM() | readM(addr)
+        setAM(v)
+        nzM(v)
+    }
+
+    opAnd(Int addr) {
+        var v = getAM() & readM(addr)
+        setAM(v)
+        nzM(v)
+    }
+
+    opEor(Int addr) {
+        var v = getAM() ^ readM(addr)
+        setAM(v)
+        nzM(v)
+    }
+
+    opLda(Int addr) {
+        var v = readM(addr)
+        setAM(v)
+        nzM(v)
+    }
+
+    opSta(Int addr) {
+        writeM(addr, getAM())
+    }
+
+    opStz(Int addr) {
+        writeM(addr, 0)
+    }
+
+    opLdx(Int addr) {
+        x = readX(addr)
+        nzX(x)
+    }
+
+    opLdy(Int addr) {
+        y = readX(addr)
+        nzX(y)
+    }
+
+    opStx(Int addr) {
+        writeX(addr, x)
+    }
+
+    opSty(Int addr) {
+        writeX(addr, y)
+    }
+
+    compare(Int reg, Int v, Bool wide) {
+        var r = reg - v
+        fc = r >= 0
+        if (wide) {
+            nz16(r)
+        } else {
+            nz8(r)
+        }
+    }
+
+    opCmp(Int addr) {
+        compare(getAM(), readM(addr), !fm)
+    }
+
+    opCpx(Int addr) {
+        compare(x, readX(addr), !fx)
+    }
+
+    opCpy(Int addr) {
+        compare(y, readX(addr), !fx)
+    }
+
+    opBit(Int addr) {
+        var v = readM(addr)
+        if (fm) {
+            fneg = (v & 0x80) != 0
+            fv = (v & 0x40) != 0
+            fz = (v & a & 0xFF) == 0
+        } else {
+            fneg = (v & 0x8000) != 0
+            fv = (v & 0x4000) != 0
+            fz = (v & a) == 0
+        }
+    }
+
+    opBitImm(Int addr) {
+        var v = readM(addr)
+        if (fm) {
+            fz = (v & a & 0xFF) == 0
+        } else {
+            fz = (v & a) == 0
+        }
+    }
+
+    opAdc(Int addr) {
+        var data = readM(addr)
+        var c = 0
+        if (fc) { c = 1 }
+        var r = 0
+        if (fm) {
+            var av = a & 0xFF
+            if (!fd) {
+                r = av + data + c
+            } else {
+                r = (av & 0x0F) + (data & 0x0F) + c
+                if (r > 0x09) { r = r + 0x06 }
+                var cc = 0
+                if (r > 0x0F) { cc = 1 }
+                r = (av & 0xF0) + (data & 0xF0) + (cc << 4) + (r & 0x0F)
+            }
+            fv = ((av ^ data ^ 0xFF) & (av ^ r) & 0x80) != 0
+            if (fd && r > 0x9F) { r = r + 0x60 }
+            fc = r > 0xFF
+            a = (a & 0xFF00) | (r & 0xFF)
+            nz8(r)
+        } else {
+            var av = a
+            if (!fd) {
+                r = av + data + c
+            } else {
+                r = (av & 0x000F) + (data & 0x000F) + c
+                if (r > 0x0009) { r = r + 0x0006 }
+                var c1 = 0
+                if (r > 0x000F) { c1 = 1 }
+                r = (av & 0x00F0) + (data & 0x00F0) + (c1 << 4) + (r & 0x000F)
+                if (r > 0x009F) { r = r + 0x0060 }
+                var c2 = 0
+                if (r > 0x00FF) { c2 = 1 }
+                r = (av & 0x0F00) + (data & 0x0F00) + (c2 << 8) + (r & 0x00FF)
+                if (r > 0x09FF) { r = r + 0x0600 }
+                var c3 = 0
+                if (r > 0x0FFF) { c3 = 1 }
+                r = (av & 0xF000) + (data & 0xF000) + (c3 << 12) + (r & 0x0FFF)
+            }
+            fv = ((av ^ data ^ 0xFFFF) & (av ^ r) & 0x8000) != 0
+            if (fd && r > 0x9FFF) { r = r + 0x6000 }
+            fc = r > 0xFFFF
+            a = r & 0xFFFF
+            nz16(r)
+        }
+    }
+
+    opSbc(Int addr) {
+        var c = 0
+        if (fc) { c = 1 }
+        var r = 0
+        if (fm) {
+            var data = readM(addr) ^ 0xFF
+            var av = a & 0xFF
+            if (!fd) {
+                r = av + data + c
+            } else {
+                r = (av & 0x0F) + (data & 0x0F) + c
+                if (r <= 0x0F) { r = r - 0x06 }
+                var cc = 0
+                if (r > 0x0F) { cc = 1 }
+                r = (av & 0xF0) + (data & 0xF0) + (cc << 4) + (r & 0x0F)
+            }
+            fv = ((av ^ data ^ 0xFF) & (av ^ r) & 0x80) != 0
+            if (fd && r <= 0xFF) { r = r - 0x60 }
+            fc = r > 0xFF
+            a = (a & 0xFF00) | (r & 0xFF)
+            nz8(r)
+        } else {
+            var data = readM(addr) ^ 0xFFFF
+            var av = a
+            if (!fd) {
+                r = av + data + c
+            } else {
+                r = (av & 0x000F) + (data & 0x000F) + c
+                if (r <= 0x000F) { r = r - 0x0006 }
+                var c1 = 0
+                if (r > 0x000F) { c1 = 1 }
+                r = (av & 0x00F0) + (data & 0x00F0) + (c1 << 4) + (r & 0x000F)
+                if (r <= 0x00FF) { r = r - 0x0060 }
+                var c2 = 0
+                if (r > 0x00FF) { c2 = 1 }
+                r = (av & 0x0F00) + (data & 0x0F00) + (c2 << 8) + (r & 0x00FF)
+                if (r <= 0x0FFF) { r = r - 0x0600 }
+                var c3 = 0
+                if (r > 0x0FFF) { c3 = 1 }
+                r = (av & 0xF000) + (data & 0xF000) + (c3 << 12) + (r & 0x0FFF)
+            }
+            fv = ((av ^ data ^ 0xFFFF) & (av ^ r) & 0x8000) != 0
+            if (fd && r <= 0xFFFF) { r = r - 0x6000 }
+            fc = r > 0xFFFF
+            a = r & 0xFFFF
+            nz16(r)
+        }
+    }
+
+    // ---------------- read-modify-write ----------------
+    // kind: 0 ASL, 1 ROL, 2 LSR, 3 ROR, 4 INC, 5 DEC, 6 TSB, 7 TRB
+    Int alter(Int kind, Int v, Bool wide) {
+        var top = 0x80
+        var mask = 0xFF
+        if (wide) {
+            top = 0x8000
+            mask = 0xFFFF
+        }
+        var r = 0
+        switch (kind) {
+            case 0:
+                fc = (v & top) != 0
+                r = (v << 1) & mask
+            case 1:
+                var c = 0
+                if (fc) { c = 1 }
+                fc = (v & top) != 0
+                r = ((v << 1) | c) & mask
+            case 2:
+                fc = (v & 1) != 0
+                r = v >> 1
+            case 3:
+                var c = 0
+                if (fc) { c = top }
+                fc = (v & 1) != 0
+                r = (v >> 1) | c
+            case 4:
+                r = (v + 1) & mask
+            case 5:
+                r = (v - 1) & mask
+            case 6:
+                fz = (v & a & mask) == 0
+                return (v | a) & mask
+            default:
+                fz = (v & a & mask) == 0
+                return v & (a ^ 0xFFFF) & mask
+        }
+        if (wide) {
+            nz16(r)
+        } else {
+            nz8(r)
+        }
+        return r
+    }
+
+    rmw(Int kind, Int addr) {
+        if (fm) {
+            var v = rd(addr)
+            idle()
+            wr(addr, alter(kind, v, false))
+        } else {
+            var ha = hiAddr(addr)
+            var v = rd(addr) | (rd(ha) << 8)
+            idle()
+            var r = alter(kind, v, true)
+            wr(ha, r >> 8)
+            wr(addr, r)
+        }
+    }
+
+    rmwA(Int kind) {
+        idle()
+        if (fm) {
+            a = (a & 0xFF00) | alter(kind, a & 0xFF, false)
+        } else {
+            a = alter(kind, a, true)
+        }
+    }
+
+    // ---------------- desvios ----------------
+    branch(Bool cond) {
+        var off = fetch()
+        if (cond) {
+            if (off >= 0x80) { off = off - 0x100 }
+            var npc = (pc + off) & 0xFFFF
+            idle()
+            if (e && ((npc ^ pc) & 0xFF00) != 0) {
+                idle()
+            }
+            pc = npc
+        }
+    }
+
+    // ---------------- interrupções ----------------
+    interrupt(Int nativeVec, Int emuVec, Bool soft) {
+        if (!e) {
+            push8(pbr)
+        }
+        push16(pc)
+        var p = getP()
+        if (e && !soft) {
+            p = p & 0xEF
+        }
+        push8(p)
+        fi = true
+        fd = false
+        pbr = 0
+        var vec = nativeVec
+        if (e) { vec = emuVec }
+        pc = rd(vec) | (rd(vec + 1) << 8)
+    }
+
+    // Executa uma instrução (ou atende uma interrupção pendente).
+    step() {
+        if (stopped) {
+            idle()
+            return
+        }
+        if (waiting) {
+            if (nmiPending || irqLine) {
+                waiting = false
+                idle()
+                idle()
+            } else {
+                idle()
+                return
+            }
+        }
+        if (nmiPending) {
+            nmiPending = false
+            idle()
+            idle()
+            interrupt(0xFFEA, 0xFFFA, false)
+            return
+        }
+        if (irqLine && !fi) {
+            idle()
+            idle()
+            interrupt(0xFFEE, 0xFFFE, false)
+            return
+        }
+        var op = fetch()
+        lastOp = op
+        execute(op)
+    }
+
+    execute(Int op) {
+        switch (op >> 4) {
+            case 0: ex0(op)
+            case 1: ex1(op)
+            case 2: ex2(op)
+            case 3: ex3(op)
+            case 4: ex4(op)
+            case 5: ex5(op)
+            case 6: ex6(op)
+            case 7: ex7(op)
+            case 8: ex8(op)
+            case 9: ex9(op)
+            case 10: exA(op)
+            case 11: exB(op)
+            case 12: exC(op)
+            case 13: exD(op)
+            case 14: exE(op)
+            default: exF(op)
+        }
+    }
+
+    ex0(Int op) {
+        switch (op) {
+            case 0x00:
+                fetch()
+                interrupt(0xFFE6, 0xFFFE, true)
+            case 0x01: opOra(amDpIndX())
+            case 0x02:
+                fetch()
+                interrupt(0xFFE4, 0xFFF4, true)
+            case 0x03: opOra(amSr())
+            case 0x04: rmw(6, amDp())
+            case 0x05: opOra(amDp())
+            case 0x06: rmw(0, amDp())
+            case 0x07: opOra(amDpIndLong())
+            case 0x08:
+                idle()
+                push8(getP())
+            case 0x09: opOra(amImmM())
+            case 0x0A: rmwA(0)
+            case 0x0B:
+                idle()
+                pushN(d >> 8)
+                pushN(d)
+                fixS()
+            case 0x0C: rmw(6, amAbs())
+            case 0x0D: opOra(amAbs())
+            case 0x0E: rmw(0, amAbs())
+            default: opOra(amLong())
+        }
+    }
+
+    ex1(Int op) {
+        switch (op) {
+            case 0x10: branch(!fneg)
+            case 0x11: opOra(amDpIndY(false))
+            case 0x12: opOra(amDpInd())
+            case 0x13: opOra(amSrIndY())
+            case 0x14: rmw(7, amDp())
+            case 0x15: opOra(amDpX())
+            case 0x16: rmw(0, amDpX())
+            case 0x17: opOra(amDpIndLongY())
+            case 0x18:
+                idle()
+                fc = false
+            case 0x19: opOra(amAbsY(false))
+            case 0x1A: rmwA(4)
+            case 0x1B:
+                idle()
+                if (e) {
+                    s = 0x100 | (a & 0xFF)
+                } else {
+                    s = a
+                }
+            case 0x1C: rmw(7, amAbs())
+            case 0x1D: opOra(amAbsX(false))
+            case 0x1E: rmw(0, amAbsX(true))
+            default: opOra(amLongX())
+        }
+    }
+
+    ex2(Int op) {
+        switch (op) {
+            case 0x20:
+                var t = fetch16()
+                idle()
+                push16((pc - 1) & 0xFFFF)
+                pc = t
+            case 0x21: opAnd(amDpIndX())
+            case 0x22:
+                var lo = fetch()
+                var hi = fetch()
+                pushN(pbr)
+                idle()
+                var bank = fetch()
+                var ret = (pc - 1) & 0xFFFF
+                pushN(ret >> 8)
+                pushN(ret)
+                fixS()
+                pc = lo | (hi << 8)
+                pbr = bank
+            case 0x23: opAnd(amSr())
+            case 0x24: opBit(amDp())
+            case 0x25: opAnd(amDp())
+            case 0x26: rmw(1, amDp())
+            case 0x27: opAnd(amDpIndLong())
+            case 0x28:
+                idle()
+                idle()
+                setP(pull8())
+            case 0x29: opAnd(amImmM())
+            case 0x2A: rmwA(1)
+            case 0x2B:
+                idle()
+                idle()
+                var lo = pullN()
+                d = lo | (pullN() << 8)
+                fixS()
+                nz16(d)
+            case 0x2C: opBit(amAbs())
+            case 0x2D: opAnd(amAbs())
+            case 0x2E: rmw(1, amAbs())
+            default: opAnd(amLong())
+        }
+    }
+
+    ex3(Int op) {
+        switch (op) {
+            case 0x30: branch(fneg)
+            case 0x31: opAnd(amDpIndY(false))
+            case 0x32: opAnd(amDpInd())
+            case 0x33: opAnd(amSrIndY())
+            case 0x34: opBit(amDpX())
+            case 0x35: opAnd(amDpX())
+            case 0x36: rmw(1, amDpX())
+            case 0x37: opAnd(amDpIndLongY())
+            case 0x38:
+                idle()
+                fc = true
+            case 0x39: opAnd(amAbsY(false))
+            case 0x3A: rmwA(5)
+            case 0x3B:
+                idle()
+                a = s
+                nz16(a)
+            case 0x3C: opBit(amAbsX(false))
+            case 0x3D: opAnd(amAbsX(false))
+            case 0x3E: rmw(1, amAbsX(true))
+            default: opAnd(amLongX())
+        }
+    }
+
+    ex4(Int op) {
+        switch (op) {
+            case 0x40:
+                idle()
+                idle()
+                setP(pull8())
+                pc = pull16()
+                if (!e) {
+                    pbr = pull8()
+                }
+            case 0x41: opEor(amDpIndX())
+            case 0x42: fetch()
+            case 0x43: opEor(amSr())
+            case 0x44: blockMove(-1)
+            case 0x45: opEor(amDp())
+            case 0x46: rmw(2, amDp())
+            case 0x47: opEor(amDpIndLong())
+            case 0x48:
+                idle()
+                if (fm) {
+                    push8(a)
+                } else {
+                    push16(a)
+                }
+            case 0x49: opEor(amImmM())
+            case 0x4A: rmwA(2)
+            case 0x4B:
+                idle()
+                push8(pbr)
+            case 0x4C: pc = fetch16()
+            case 0x4D: opEor(amAbs())
+            case 0x4E: rmw(2, amAbs())
+            default: opEor(amLong())
+        }
+    }
+
+    ex5(Int op) {
+        switch (op) {
+            case 0x50: branch(!fv)
+            case 0x51: opEor(amDpIndY(false))
+            case 0x52: opEor(amDpInd())
+            case 0x53: opEor(amSrIndY())
+            case 0x54: blockMove(1)
+            case 0x55: opEor(amDpX())
+            case 0x56: rmw(2, amDpX())
+            case 0x57: opEor(amDpIndLongY())
+            case 0x58:
+                idle()
+                fi = false
+            case 0x59: opEor(amAbsY(false))
+            case 0x5A:
+                idle()
+                if (fx) {
+                    push8(y)
+                } else {
+                    push16(y)
+                }
+            case 0x5B:
+                idle()
+                d = a
+                nz16(d)
+            case 0x5C:
+                var t = fetch24()
+                pc = t & 0xFFFF
+                pbr = t >> 16
+            case 0x5D: opEor(amAbsX(false))
+            case 0x5E: rmw(2, amAbsX(true))
+            default: opEor(amLongX())
+        }
+    }
+
+    ex6(Int op) {
+        switch (op) {
+            case 0x60:
+                idle()
+                idle()
+                pc = (pull16() + 1) & 0xFFFF
+                idle()
+            case 0x61: opAdc(amDpIndX())
+            case 0x62:
+                var off = fetch16()
+                idle()
+                var v = (pc + off) & 0xFFFF
+                pushN(v >> 8)
+                pushN(v)
+                fixS()
+            case 0x63: opAdc(amSr())
+            case 0x64: opStz(amDp())
+            case 0x65: opAdc(amDp())
+            case 0x66: rmw(3, amDp())
+            case 0x67: opAdc(amDpIndLong())
+            case 0x68:
+                idle()
+                idle()
+                if (fm) {
+                    a = (a & 0xFF00) | pull8()
+                    nz8(a)
+                } else {
+                    a = pull16()
+                    nz16(a)
+                }
+            case 0x69: opAdc(amImmM())
+            case 0x6A: rmwA(3)
+            case 0x6B:
+                idle()
+                idle()
+                var lo = pullN()
+                var hi = pullN()
+                pbr = pullN()
+                fixS()
+                pc = ((lo | (hi << 8)) + 1) & 0xFFFF
+            case 0x6C:
+                var p = fetch16()
+                var lo = rd(p)
+                pc = lo | (rd((p + 1) & 0xFFFF) << 8)
+            case 0x6D: opAdc(amAbs())
+            case 0x6E: rmw(3, amAbs())
+            default: opAdc(amLong())
+        }
+    }
+
+    ex7(Int op) {
+        switch (op) {
+            case 0x70: branch(fv)
+            case 0x71: opAdc(amDpIndY(false))
+            case 0x72: opAdc(amDpInd())
+            case 0x73: opAdc(amSrIndY())
+            case 0x74: opStz(amDpX())
+            case 0x75: opAdc(amDpX())
+            case 0x76: rmw(3, amDpX())
+            case 0x77: opAdc(amDpIndLongY())
+            case 0x78:
+                idle()
+                fi = true
+            case 0x79: opAdc(amAbsY(false))
+            case 0x7A:
+                idle()
+                idle()
+                if (fx) {
+                    y = pull8()
+                    nz8(y)
+                } else {
+                    y = pull16()
+                    nz16(y)
+                }
+            case 0x7B:
+                idle()
+                a = d
+                nz16(a)
+            case 0x7C:
+                var p = fetch16()
+                idle()
+                var pa = (p + x) & 0xFFFF
+                var lo = rd((pbr << 16) | pa)
+                pc = lo | (rd((pbr << 16) | ((pa + 1) & 0xFFFF)) << 8)
+            case 0x7D: opAdc(amAbsX(false))
+            case 0x7E: rmw(3, amAbsX(true))
+            default: opAdc(amLongX())
+        }
+    }
+
+    ex8(Int op) {
+        switch (op) {
+            case 0x80: branch(true)
+            case 0x81: opSta(amDpIndX())
+            case 0x82:
+                var off = fetch16()
+                idle()
+                pc = (pc + off) & 0xFFFF
+            case 0x83: opSta(amSr())
+            case 0x84: opSty(amDp())
+            case 0x85: opSta(amDp())
+            case 0x86: opStx(amDp())
+            case 0x87: opSta(amDpIndLong())
+            case 0x88:
+                idle()
+                y = maskX(y - 1)
+                nzX(y)
+            case 0x89: opBitImm(amImmM())
+            case 0x8A:
+                idle()
+                setAM(x)
+                nzM(x)
+            case 0x8B:
+                idle()
+                push8(dbr)
+            case 0x8C: opSty(amAbs())
+            case 0x8D: opSta(amAbs())
+            case 0x8E: opStx(amAbs())
+            default: opSta(amLong())
+        }
+    }
+
+    ex9(Int op) {
+        switch (op) {
+            case 0x90: branch(!fc)
+            case 0x91: opSta(amDpIndY(true))
+            case 0x92: opSta(amDpInd())
+            case 0x93: opSta(amSrIndY())
+            case 0x94: opSty(amDpX())
+            case 0x95: opSta(amDpX())
+            case 0x96: opStx(amDpY())
+            case 0x97: opSta(amDpIndLongY())
+            case 0x98:
+                idle()
+                setAM(y)
+                nzM(y)
+            case 0x99: opSta(amAbsY(true))
+            case 0x9A:
+                idle()
+                if (e) {
+                    s = 0x100 | (x & 0xFF)
+                } else {
+                    s = x
+                }
+            case 0x9B:
+                idle()
+                y = x
+                nzX(y)
+            case 0x9C: opStz(amAbs())
+            case 0x9D: opSta(amAbsX(true))
+            case 0x9E: opStz(amAbsX(true))
+            default: opSta(amLongX())
+        }
+    }
+
+    exA(Int op) {
+        switch (op) {
+            case 0xA0: opLdy(amImmX())
+            case 0xA1: opLda(amDpIndX())
+            case 0xA2: opLdx(amImmX())
+            case 0xA3: opLda(amSr())
+            case 0xA4: opLdy(amDp())
+            case 0xA5: opLda(amDp())
+            case 0xA6: opLdx(amDp())
+            case 0xA7: opLda(amDpIndLong())
+            case 0xA8:
+                idle()
+                y = maskX(a)
+                nzX(y)
+            case 0xA9: opLda(amImmM())
+            case 0xAA:
+                idle()
+                x = maskX(a)
+                nzX(x)
+            case 0xAB:
+                idle()
+                idle()
+                dbr = pullN()
+                fixS()
+                nz8(dbr)
+            case 0xAC: opLdy(amAbs())
+            case 0xAD: opLda(amAbs())
+            case 0xAE: opLdx(amAbs())
+            default: opLda(amLong())
+        }
+    }
+
+    exB(Int op) {
+        switch (op) {
+            case 0xB0: branch(fc)
+            case 0xB1: opLda(amDpIndY(false))
+            case 0xB2: opLda(amDpInd())
+            case 0xB3: opLda(amSrIndY())
+            case 0xB4: opLdy(amDpX())
+            case 0xB5: opLda(amDpX())
+            case 0xB6: opLdx(amDpY())
+            case 0xB7: opLda(amDpIndLongY())
+            case 0xB8:
+                idle()
+                fv = false
+            case 0xB9: opLda(amAbsY(false))
+            case 0xBA:
+                idle()
+                x = maskX(s)
+                nzX(x)
+            case 0xBB:
+                idle()
+                x = y
+                nzX(x)
+            case 0xBC: opLdy(amAbsX(false))
+            case 0xBD: opLda(amAbsX(false))
+            case 0xBE: opLdx(amAbsY(false))
+            default: opLda(amLongX())
+        }
+    }
+
+    exC(Int op) {
+        switch (op) {
+            case 0xC0: opCpy(amImmX())
+            case 0xC1: opCmp(amDpIndX())
+            case 0xC2:
+                var v = fetch()
+                idle()
+                setP(getP() & (v ^ 0xFF))
+            case 0xC3: opCmp(amSr())
+            case 0xC4: opCpy(amDp())
+            case 0xC5: opCmp(amDp())
+            case 0xC6: rmw(5, amDp())
+            case 0xC7: opCmp(amDpIndLong())
+            case 0xC8:
+                idle()
+                y = maskX(y + 1)
+                nzX(y)
+            case 0xC9: opCmp(amImmM())
+            case 0xCA:
+                idle()
+                x = maskX(x - 1)
+                nzX(x)
+            case 0xCB:
+                idle()
+                idle()
+                waiting = true
+            case 0xCC: opCpy(amAbs())
+            case 0xCD: opCmp(amAbs())
+            case 0xCE: rmw(5, amAbs())
+            default: opCmp(amLong())
+        }
+    }
+
+    exD(Int op) {
+        switch (op) {
+            case 0xD0: branch(!fz)
+            case 0xD1: opCmp(amDpIndY(false))
+            case 0xD2: opCmp(amDpInd())
+            case 0xD3: opCmp(amSrIndY())
+            case 0xD4:
+                var o = fetch()
+                dpPenalty()
+                var lo = rd((d + o) & 0xFFFF)
+                var hi = rd((d + o + 1) & 0xFFFF)
+                pushN(hi)
+                pushN(lo)
+                fixS()
+            case 0xD5: opCmp(amDpX())
+            case 0xD6: rmw(5, amDpX())
+            case 0xD7: opCmp(amDpIndLongY())
+            case 0xD8:
+                idle()
+                fd = false
+            case 0xD9: opCmp(amAbsY(false))
+            case 0xDA:
+                idle()
+                if (fx) {
+                    push8(x)
+                } else {
+                    push16(x)
+                }
+            case 0xDB:
+                idle()
+                idle()
+                stopped = true
+            case 0xDC:
+                var p = fetch16()
+                var lo = rd(p)
+                var mid = rd((p + 1) & 0xFFFF)
+                pbr = rd((p + 2) & 0xFFFF)
+                pc = lo | (mid << 8)
+            case 0xDD: opCmp(amAbsX(false))
+            case 0xDE: rmw(5, amAbsX(true))
+            default: opCmp(amLongX())
+        }
+    }
+
+    exE(Int op) {
+        switch (op) {
+            case 0xE0: opCpx(amImmX())
+            case 0xE1: opSbc(amDpIndX())
+            case 0xE2:
+                var v = fetch()
+                idle()
+                setP(getP() | v)
+            case 0xE3: opSbc(amSr())
+            case 0xE4: opCpx(amDp())
+            case 0xE5: opSbc(amDp())
+            case 0xE6: rmw(4, amDp())
+            case 0xE7: opSbc(amDpIndLong())
+            case 0xE8:
+                idle()
+                x = maskX(x + 1)
+                nzX(x)
+            case 0xE9: opSbc(amImmM())
+            case 0xEA: idle()
+            case 0xEB:
+                idle()
+                idle()
+                a = ((a >> 8) & 0xFF) | ((a & 0xFF) << 8)
+                nz8(a)
+            case 0xEC: opCpx(amAbs())
+            case 0xED: opSbc(amAbs())
+            case 0xEE: rmw(4, amAbs())
+            default: opSbc(amLong())
+        }
+    }
+
+    exF(Int op) {
+        switch (op) {
+            case 0xF0: branch(fz)
+            case 0xF1: opSbc(amDpIndY(false))
+            case 0xF2: opSbc(amDpInd())
+            case 0xF3: opSbc(amSrIndY())
+            case 0xF4:
+                var v = fetch16()
+                pushN(v >> 8)
+                pushN(v)
+                fixS()
+            case 0xF5: opSbc(amDpX())
+            case 0xF6: rmw(4, amDpX())
+            case 0xF7: opSbc(amDpIndLongY())
+            case 0xF8:
+                idle()
+                fd = true
+            case 0xF9: opSbc(amAbsY(false))
+            case 0xFA:
+                idle()
+                idle()
+                if (fx) {
+                    x = pull8()
+                    nz8(x)
+                } else {
+                    x = pull16()
+                    nz16(x)
+                }
+            case 0xFB:
+                idle()
+                var oc = fc
+                fc = e
+                e = oc
+                if (e) {
+                    fm = true
+                    fx = true
+                    x = x & 0xFF
+                    y = y & 0xFF
+                    s = 0x100 | (s & 0xFF)
+                }
+            case 0xFC:
+                var lo = fetch()
+                pushN(pc >> 8)
+                pushN(pc)
+                var hi = fetch()
+                idle()
+                var pa = ((lo | (hi << 8)) + x) & 0xFFFF
+                var tl = rd((pbr << 16) | pa)
+                pc = tl | (rd((pbr << 16) | ((pa + 1) & 0xFFFF)) << 8)
+                fixS()
+            case 0xFD: opSbc(amAbsX(false))
+            case 0xFE: rmw(4, amAbsX(true))
+            default: opSbc(amLongX())
+        }
+    }
+
+    // MVN (dir=1) / MVP (dir=-1): copia um byte por execução e repete a
+    // própria instrução até A estourar para $FFFF.
+    blockMove(Int dir) {
+        var dst = fetch()
+        var src = fetch()
+        dbr = dst
+        var v = rd((src << 16) | x)
+        wr((dst << 16) | y, v)
+        idle()
+        idle()
+        x = maskX(x + dir)
+        y = maskX(y + dir)
+        a = (a - 1) & 0xFFFF
+        if (a != 0xFFFF) {
+            pc = (pc - 3) & 0xFFFF
+        }
+    }
+}

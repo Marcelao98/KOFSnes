@@ -1,0 +1,143 @@
+package tools
+
+import java.lang.Integer;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Arrays;
+import snes.Cpu
+import snes.CpuBus
+import snes.Spc
+import snes.SpcBus
+
+// Barramento plano de 16 MB que conta ciclos — só pra testes.
+class FlatBus implements CpuBus {
+    Int[] mem
+    Int cycles
+    public constructor() {
+        this.mem = new Int[0x1000000]
+        this.cycles = 0
+    }
+    Int read(Int addr) {
+        cycles = cycles + 1
+        return mem[addr]
+    }
+    write(Int addr, Int v) {
+        cycles = cycles + 1
+        mem[addr] = v
+    }
+    idle() { cycles = cycles + 1 }
+}
+
+
+class TesteCpu {
+    public constructor() { }
+    run(String dir) {
+            var bus = FlatBus()
+        var cpu = Cpu(bus)
+        var names = new File(dir).list()
+        Arrays.sort(names)
+        var totalPass = 0
+        var totalFail = 0
+        var cycFail = 0
+        var report = ""
+        for (var name in names) {
+            if (!name.endsWith(".txt")) { continue }
+            var op = Integer.parseInt(name.substring(0, 2), 16)
+            // WAI/STP não fazem sentido em teste de um passo
+            if (op == 0xCB || op == 0xDB) { continue }
+            var lines = Files.readAllLines(new File(dir + "/" + name).toPath())
+            var pass = 0
+            var fail = 0
+            var firstErr = ""
+            var li = 0
+            while (li < lines.size()) {
+                var line = lines.get(li) as String
+                li++
+                if (line.length() == 0) { continue }
+                var t = line.split(" ")
+                var k = 0
+                cpu.pc = Integer.parseInt(t[0])
+                cpu.s = Integer.parseInt(t[1])
+                var p = Integer.parseInt(t[2])
+                cpu.a = Integer.parseInt(t[3])
+                cpu.x = Integer.parseInt(t[4])
+                cpu.y = Integer.parseInt(t[5])
+                cpu.dbr = Integer.parseInt(t[6])
+                cpu.d = Integer.parseInt(t[7])
+                cpu.pbr = Integer.parseInt(t[8])
+                cpu.e = Integer.parseInt(t[9]) == 1
+                cpu.setP(p)
+                if (cpu.e) { cpu.s = 0x100 | (cpu.s & 0xFF) }
+                cpu.waiting = false
+                cpu.stopped = false
+                var n = Integer.parseInt(t[10])
+                k = 11
+                var i = 0
+                while (i < n) {
+                    bus.mem[Integer.parseInt(t[k])] = Integer.parseInt(t[k + 1])
+                    k = k + 2
+                    i++
+                }
+                bus.cycles = 0
+                cpu.step()
+                var ok = true
+                var err = ""
+                var exp = new Int[10]
+                var j = 0
+                while (j < 10) { exp[j] = Integer.parseInt(t[k + j]); j++ }
+                var ee = 0
+                if (cpu.e) { ee = 1 }
+                var got = new Int[10]
+                got[0] = cpu.pc
+                got[1] = cpu.s
+                got[2] = cpu.getP()
+                got[3] = cpu.a
+                got[4] = cpu.x
+                got[5] = cpu.y
+                got[6] = cpu.dbr
+                got[7] = cpu.d
+                got[8] = cpu.pbr
+                got[9] = ee
+                var regNames = "pc s p a x y dbr d pbr e".split(" ")
+                j = 0
+                while (j < 10) {
+                    if (got[j] != exp[j]) {
+                        ok = false
+                        err = err + regNames[j] + " got=" + got[j] + " exp=" + exp[j] + "; "
+                    }
+                    j++
+                }
+                k = k + 10
+                var n2 = Integer.parseInt(t[k])
+                k++
+                i = 0
+                while (i < n2) {
+                    var ad = Integer.parseInt(t[k])
+                    var vv = Integer.parseInt(t[k + 1])
+                    if (bus.mem[ad] != vv) {
+                        ok = false
+                        err = err + "mem[" + ad + "] got=" + bus.mem[ad] + " exp=" + vv + "; "
+                    }
+                    bus.mem[ad] = 0
+                    k = k + 2
+                    i++
+                }
+                var cyc = Integer.parseInt(t[k])
+                if (ok && cyc != bus.cycles) { cycFail++ }
+                // limpa a memória inicial também
+                k = 11
+                i = 0
+                while (i < n) { bus.mem[Integer.parseInt(t[k])] = 0; k = k + 2; i++ }
+                if (ok) { pass++ } else {
+                    fail++
+                    if (firstErr.length() == 0) { firstErr = line.substring(0, 60) + " => " + err }
+                }
+            }
+            totalPass = totalPass + pass
+            totalFail = totalFail + fail
+            if (fail > 0) { println(name + ": " + pass + " ok, " + fail + " falhas :: " + firstErr) }
+        }
+        println("TOTAL ok=" + totalPass + " falhas=" + totalFail + " ciclos-divergentes=" + cycFail)
+
+    }
+}

@@ -1,0 +1,420 @@
+package snes
+
+import java.lang.Math;
+import java.lang.Integer;
+
+// S-DSP: 8 vozes de sample BRR, envelope ADSR/GAIN, interpolação
+// gaussiana, ruído, modulação de pitch e eco com filtro FIR de 8 taps.
+// Gera um par de samples (esquerda/direita) a 32 kHz a cada sample().
+// Segue o comportamento descrito pelo SPC_DSP do blargg, simplificado pra
+// rodar por sample em vez de por ciclo.
+class Dsp {
+    Int[] regs
+    Int[] ram
+    Int[] gauss
+    Int[] rates
+    Int[] offsets
+    Int counter
+    Int noise
+    // por voz
+    Int[] buf
+    Int[] bufPos
+    Int[] interp
+    Int[] brrAddr
+    Int[] brrOff
+    Int[] env
+    Int[] hiddenEnv
+    Int[] envMode
+    Int[] konDelay
+    Int konPending
+    Bool everyOther
+    // eco
+    Int[] echoHistL
+    Int[] echoHistR
+    Int echoPos
+    Int echoOffset
+    Int echoLength
+    // saída
+    Int[] outBuf
+    Int outCount
+
+    public constructor(Int[] ram) {
+        this.ram = ram
+        this.regs = new Int[128]
+        this.gauss = new Int[512]
+        this.rates = new Int[32]
+        this.offsets = new Int[32]
+        this.counter = 0
+        this.noise = 0x4000
+        this.buf = new Int[8 * 12]
+        this.bufPos = new Int[8]
+        this.interp = new Int[8]
+        this.brrAddr = new Int[8]
+        this.brrOff = new Int[8]
+        this.env = new Int[8]
+        this.hiddenEnv = new Int[8]
+        this.envMode = new Int[8]
+        this.konDelay = new Int[8]
+        this.konPending = 0
+        this.everyOther = false
+        this.echoHistL = new Int[8]
+        this.echoHistR = new Int[8]
+        this.echoPos = 0
+        this.echoOffset = 0
+        this.echoLength = 0
+        this.outBuf = new Int[8192]
+        this.outCount = 0
+        var r = "30721 2048 1536 1280 1024 768 640 512 384 320 256 192 160 128 96 80 64 48 40 32 24 20 16 12 10 8 6 5 4 3 2 1".split(" ")
+        var o = "1 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 0 0".split(" ")
+        var i = 0
+        while (i < 32) {
+            this.rates[i] = Integer.parseInt(r[i])
+            this.offsets[i] = Integer.parseInt(o[i])
+            i++
+        }
+        // tabela gaussiana: núcleo de largura 4 amostras, centro 1305 (0x519)
+        var sig2 = 2.0 * 0.3977
+        var g2 = Math.exp(-4.0 / sig2)
+        var k = 0
+        while (k < 512) {
+            var dd = (511.5 - k) / 256.0
+            var g = (Math.exp(0.0 - dd * dd / sig2) - g2) / (1.0 - g2)
+            if (g < 0.0) { g = 0.0 }
+            this.gauss[k] = (g * 1305.0 + 0.5) as Int
+            k++
+        }
+        this.regs[0x6C] = 0xE0
+    }
+
+    Int s8(Int v) {
+        return ((v & 0xFF) << 24) >> 24
+    }
+
+    Int clamp16(Int v) {
+        if (v > 32767) { return 32767 }
+        if (v < -32768) { return -32768 }
+        return v
+    }
+
+    Int s16(Int v) {
+        return (v << 16) >> 16
+    }
+
+    Int read(Int addr) {
+        return regs[addr & 0x7F]
+    }
+
+    write(Int addr, Int v) {
+        if ((addr & 0x80) != 0) { return }
+        regs[addr] = v
+        if (addr == 0x7C) {
+            regs[0x7C] = 0
+        } else if (addr == 0x4C) {
+            konPending = konPending | v
+        }
+    }
+
+    Bool tick(Int rate) {
+        if (rate == 0) { return false }
+        return ((counter + offsets[rate]) % rates[rate]) == 0
+    }
+
+    decodeBrr(Int v) {
+        var addr = brrAddr[v]
+        var header = ram[addr & 0xFFFF]
+        var nyb = (ram[(addr + brrOff[v]) & 0xFFFF] << 8) | ram[(addr + brrOff[v] + 1) & 0xFFFF]
+        var shift = header >> 4
+        var filter = (header >> 2) & 3
+        var base = v * 12
+        var i = 0
+        while (i < 4) {
+            var s = s16(nyb) >> 12
+            nyb = nyb << 4
+            s = (s << shift) >> 1
+            if (shift >= 0xD) {
+                s = (s >> 25) << 11
+            }
+            var pos = bufPos[v]
+            var p1 = buf[base + ((pos + 11) % 12)]
+            var p2 = buf[base + ((pos + 10) % 12)] >> 1
+            if (filter >= 2) {
+                s = s + p1
+                s = s - p2
+                if (filter == 2) {
+                    s = s + (p2 >> 4)
+                    s = s + ((p1 * -3) >> 6)
+                } else {
+                    s = s + ((p1 * -13) >> 7)
+                    s = s + ((p2 * 3) >> 4)
+                }
+            } else if (filter == 1) {
+                s = s + (p1 >> 1)
+                s = s + ((0 - p1) >> 5)
+            }
+            s = clamp16(s)
+            s = s16(s * 2)
+            buf[base + pos] = s
+            bufPos[v] = (pos + 1) % 12
+            i++
+        }
+    }
+
+    Int dirAddr(Int v, Int which) {
+        var p = ((regs[0x5D] << 8) + (regs[v * 16 + 4] << 2) + which) & 0xFFFF
+        return ram[p] | (ram[(p + 1) & 0xFFFF] << 8)
+    }
+
+    keyOn(Int v) {
+        brrAddr[v] = dirAddr(v, 0)
+        brrOff[v] = 1
+        bufPos[v] = 0
+        var i = 0
+        while (i < 12) {
+            buf[v * 12 + i] = 0
+            i++
+        }
+        interp[v] = 0
+        env[v] = 0
+        hiddenEnv[v] = 0
+        envMode[v] = 0
+        konDelay[v] = 5
+        regs[0x7C] = regs[0x7C] & ((1 << v) ^ 0xFF)
+    }
+
+    runEnvelope(Int v) {
+        var e = env[v]
+        if (envMode[v] == 3) {
+            e = e - 8
+            if (e < 0) { e = 0 }
+            env[v] = e
+            return
+        }
+        var rate = 0
+        var adsr0 = regs[v * 16 + 5]
+        var envData = regs[v * 16 + 6]
+        if ((adsr0 & 0x80) != 0) {
+            if (envMode[v] >= 1) {
+                e = e - 1
+                e = e - (e >> 8)
+                rate = envData & 0x1F
+                if (envMode[v] == 1) {
+                    rate = ((adsr0 >> 3) & 0x0E) + 0x10
+                }
+            } else {
+                rate = (adsr0 & 0x0F) * 2 + 1
+                if (rate < 31) {
+                    e = e + 0x20
+                } else {
+                    e = e + 0x400
+                }
+            }
+        } else {
+            envData = regs[v * 16 + 7]
+            var mode = envData >> 5
+            if (mode < 4) {
+                e = envData * 0x10
+                rate = 31
+            } else {
+                rate = envData & 0x1F
+                if (mode == 4) {
+                    e = e - 0x20
+                } else if (mode < 6) {
+                    e = e - 1
+                    e = e - (e >> 8)
+                } else {
+                    e = e + 0x20
+                    if (mode > 6 && hiddenEnv[v] >= 0x600) {
+                        e = e + 0x8 - 0x20
+                    }
+                }
+            }
+        }
+        if ((e >> 8) == (envData >> 5) && envMode[v] == 1) {
+            envMode[v] = 2
+        }
+        hiddenEnv[v] = e
+        if (e < 0 || e > 0x7FF) {
+            if (e < 0) { e = 0 } else { e = 0x7FF }
+            if (envMode[v] == 0) {
+                envMode[v] = 1
+            }
+        }
+        if (tick(rate)) {
+            env[v] = e
+        }
+    }
+
+    // um par de samples estéreo de 32 kHz
+    sample() {
+        counter = counter - 1
+        if (counter < 0) { counter = 30719 }
+        everyOther = !everyOther
+        var flg = regs[0x6C]
+        if (everyOther) {
+            var kon = konPending
+            konPending = 0
+            var kof = regs[0x5C]
+            var vv = 0
+            while (vv < 8) {
+                var bit = 1 << vv
+                if ((kon & bit) != 0) {
+                    keyOn(vv)
+                }
+                if ((kof & bit) != 0) {
+                    envMode[vv] = 3
+                }
+                vv++
+            }
+        }
+        if ((flg & 0x80) != 0) {
+            var r = 0
+            while (r < 8) {
+                envMode[r] = 3
+                env[r] = 0
+                r++
+            }
+        }
+        if (tick(flg & 0x1F)) {
+            var fb = (noise << 13) ^ (noise << 14)
+            noise = (fb & 0x4000) ^ (noise >> 1)
+        }
+        var pmon = regs[0x2D]
+        var non = regs[0x3D]
+        var eon = regs[0x4D]
+        var mainL = 0
+        var mainR = 0
+        var echoL = 0
+        var echoR = 0
+        var prevOut = 0
+        var v = 0
+        while (v < 8) {
+            var rb = v * 16
+            var bit = 1 << v
+            var amp = 0
+            if (konDelay[v] > 0) {
+                konDelay[v] = konDelay[v] - 1
+                if (konDelay[v] == 0) {
+                    // primeiro bloco já disponível
+                    brrOff[v] = 1
+                    decodeBrr(v)
+                    brrOff[v] = 3
+                    decodeBrr(v)
+                    brrOff[v] = 5
+                    decodeBrr(v)
+                    brrOff[v] = 7
+                    interp[v] = 0
+                }
+                regs[rb + 8] = 0
+                regs[rb + 9] = 0
+                prevOut = 0
+                v++
+                continue
+            }
+            var pitch = ((regs[rb + 3] << 8) | regs[rb + 2]) & 0x3FFF
+            if (v > 0 && (pmon & bit) != 0) {
+                pitch = pitch + (((prevOut >> 5) * pitch) >> 10)
+            }
+            var out = 0
+            if ((non & bit) != 0) {
+                out = s16(noise * 2)
+            } else {
+                var off = (interp[v] >> 4) & 0xFF
+                var fwd = 255 - off
+                var base = v * 12
+                var p0 = (bufPos[v] + (interp[v] >> 12)) % 12
+                var s0 = buf[base + p0]
+                var s1 = buf[base + ((p0 + 1) % 12)]
+                var s2 = buf[base + ((p0 + 2) % 12)]
+                var s3 = buf[base + ((p0 + 3) % 12)]
+                out = (gauss[fwd] * s0) >> 11
+                out = out + ((gauss[fwd + 256] * s1) >> 11)
+                out = out + ((gauss[off + 256] * s2) >> 11)
+                out = s16(out)
+                out = out + ((gauss[off] * s3) >> 11)
+                out = clamp16(out) & (0 - 2)
+            }
+            amp = ((out * env[v]) >> 11) & (0 - 2)
+            prevOut = amp
+            regs[rb + 9] = (amp >> 8) & 0xFF
+            runEnvelope(v)
+            regs[rb + 8] = env[v] >> 4
+            // avança o sample
+            var ip = interp[v]
+            if (ip >= 0x4000) {
+                decodeBrr(v)
+                brrOff[v] = brrOff[v] + 2
+                if (brrOff[v] >= 9) {
+                    var header = ram[brrAddr[v] & 0xFFFF]
+                    brrOff[v] = 1
+                    if ((header & 1) != 0) {
+                        brrAddr[v] = dirAddr(v, 2)
+                        regs[0x7C] = regs[0x7C] | bit
+                        if ((header & 2) == 0) {
+                            envMode[v] = 3
+                            env[v] = 0
+                        }
+                    } else {
+                        brrAddr[v] = (brrAddr[v] + 9) & 0xFFFF
+                    }
+                }
+            }
+            ip = (ip & 0x3FFF) + pitch
+            if (ip > 0x7FFF) { ip = 0x7FFF }
+            interp[v] = ip
+            var l = (amp * s8(regs[rb])) >> 7
+            var r = (amp * s8(regs[rb + 1])) >> 7
+            mainL = clamp16(mainL + l)
+            mainR = clamp16(mainR + r)
+            if ((eon & bit) != 0) {
+                echoL = clamp16(echoL + l)
+                echoR = clamp16(echoR + r)
+            }
+            v++
+        }
+        // eco
+        var ea = ((regs[0x6D] << 8) + echoOffset) & 0xFFFF
+        if (echoOffset == 0) {
+            echoLength = (regs[0x7D] & 0x0F) * 0x800
+            if (echoLength == 0) { echoLength = 4 }
+        }
+        echoPos = (echoPos + 1) & 7
+        echoHistL[echoPos] = s16(ram[ea] | (ram[(ea + 1) & 0xFFFF] << 8)) >> 1
+        echoHistR[echoPos] = s16(ram[(ea + 2) & 0xFFFF] | (ram[(ea + 3) & 0xFFFF] << 8)) >> 1
+        var firL = 0
+        var firR = 0
+        var t = 0
+        while (t < 7) {
+            var c = s8(regs[(t << 4) | 0x0F])
+            firL = firL + ((echoHistL[(echoPos + 1 + t) & 7] * c) >> 6)
+            firR = firR + ((echoHistR[(echoPos + 1 + t) & 7] * c) >> 6)
+            t++
+        }
+        var c7 = s8(regs[0x7F])
+        firL = s16(firL) + ((echoHistL[echoPos] * c7) >> 6)
+        firR = s16(firR) + ((echoHistR[echoPos] * c7) >> 6)
+        firL = clamp16(firL) & (0 - 2)
+        firR = clamp16(firR) & (0 - 2)
+        var outL = clamp16(((mainL * s8(regs[0x0C])) >> 7) + ((firL * s8(regs[0x2C])) >> 7))
+        var outR = clamp16(((mainR * s8(regs[0x1C])) >> 7) + ((firR * s8(regs[0x3C])) >> 7))
+        if ((flg & 0x20) == 0) {
+            var efb = s8(regs[0x0D])
+            var inL = clamp16(echoL + ((firL * efb) >> 7)) & (0 - 2)
+            var inR = clamp16(echoR + ((firR * efb) >> 7)) & (0 - 2)
+            ram[ea] = inL & 0xFF
+            ram[(ea + 1) & 0xFFFF] = (inL >> 8) & 0xFF
+            ram[(ea + 2) & 0xFFFF] = inR & 0xFF
+            ram[(ea + 3) & 0xFFFF] = (inR >> 8) & 0xFF
+        }
+        echoOffset = echoOffset + 4
+        if (echoOffset >= echoLength) { echoOffset = 0 }
+        if ((flg & 0x40) != 0) {
+            outL = 0
+            outR = 0
+        }
+        if (outCount < 8190) {
+            outBuf[outCount] = outL
+            outBuf[outCount + 1] = outR
+            outCount = outCount + 2
+        }
+    }
+}
