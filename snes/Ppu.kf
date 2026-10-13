@@ -10,6 +10,7 @@ class Ppu {
     Int[] oam
     Int[] frame
     Int visibleLines
+    Bool inVblank
     // registradores
     Bool forceBlank
     Int brightness
@@ -94,6 +95,7 @@ class Ppu {
         this.oam = new Int[544]
         this.frame = new Int[256 * 240]
         this.visibleLines = 224
+        this.inVblank = false
         this.forceBlank = true
         this.brightness = 0
         this.obsel = 0
@@ -312,13 +314,19 @@ class Ppu {
             case 0x17:
                 vaddr = (vaddr & 0xFF) | (v << 8)
                 vbuf = vram[vremap(vaddr)]
+            // fora do vblank (e sem force blank) a VRAM está ocupada com o
+            // desenho: a escrita some, mas o endereço anda igual
             case 0x18:
-                var a = vremap(vaddr)
-                vram[a] = (vram[a] & 0xFF00) | v
+                if (forceBlank || inVblank) {
+                    var a = vremap(vaddr)
+                    vram[a] = (vram[a] & 0xFF00) | v
+                }
                 if ((vmain & 0x80) == 0) { vaddr = (vaddr + vinc()) & 0xFFFF }
             case 0x19:
-                var a = vremap(vaddr)
-                vram[a] = (vram[a] & 0xFF) | (v << 8)
+                if (forceBlank || inVblank) {
+                    var a = vremap(vaddr)
+                    vram[a] = (vram[a] & 0xFF) | (v << 8)
+                }
                 if ((vmain & 0x80) != 0) { vaddr = (vaddr + vinc()) & 0xFFFF }
             case 0x1A: m7sel = v
             case 0x1B:

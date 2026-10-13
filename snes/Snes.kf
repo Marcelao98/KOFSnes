@@ -192,6 +192,7 @@ class Snes implements CpuBus {
         v = v + 1
         if (v == vblankLine()) {
             inVblank = true
+            ppu.inVblank = true
             nmiFlag = true
             ppu.vblankStart()
             ppu.visibleLines = vblankLine() - 1
@@ -207,6 +208,7 @@ class Snes implements CpuBus {
         if (v >= linesPerFrame) {
             v = 0
             inVblank = false
+            ppu.inVblank = false
             nmiFlag = false
             ppu.rangeOver = false
             ppu.timeOver = false
