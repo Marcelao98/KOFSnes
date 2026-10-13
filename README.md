@@ -36,7 +36,7 @@
 | **Windows** (x64) | `KOFnes-instalador-windows.exe` · **12 MB** (15 MB instalado) | dois cliques → instala (sem pedir administrador) → ícone na área de trabalho |
 | **Windows** (x64), portátil | `KOFnes-windows-x64.zip` · 13 MB | extrair → dois cliques em **`KOFnes.exe`** |
 | **Linux** (x64) | `KOFnes-linux-x64.tar.xz` · 23 MB | extrair → `./KOFnes/KOFnes` |
-| **Windows**, **sem Java** | `KOFnes-sem-java-windows.zip` · **0,4 MB** | extrair → dois cliques em **`KOFnes.exe`** (abre numa janela do Edge) |
+| **Windows**, **sem Java** | `KOFnes-sem-java-windows.zip` · **0,1 MB** | extrair → dois cliques em **`KOFnes.exe`** (abre numa janela do Edge) |
 | **Qualquer sistema**, navegador | `KOFnes.html` · 0,3 MB | abrir no Chrome/Edge |
 | **Linux** (x64), **só Kof** | `KOFnes-so-kof-linux-x64` · **0,3 MB** | `./KOFnes-so-kof-linux-x64 jogo.sfc` (veja o [tradeoff](#-duas-versões-com-java--só-kof)) |
 
