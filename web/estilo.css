@@ -578,3 +578,113 @@ body[data-moldura="fliperama"] .mold-extra::after {    /* painel: alavanca + 6 b
    grade (altura fixa) espremia os cartões até sumirem (item com overflow:hidden
    tem tamanho mínimo 0 numa grade) */
 body.sofa #roms { grid-auto-rows: max-content; }
+
+/* ============ Layout com menu lateral ============ */
+body { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
+#menu, #status { grid-column: 1 / -1; }
+#lateral { grid-row: 2; grid-column: 1; }
+#palco { grid-row: 2; grid-column: 2; min-height: 0; min-width: 0; }
+body.cheia #lateral, body.sofa #lateral { display: none; }
+
+/* Menu lateral: trilho de ícones que abre com os nomes ao passar o mouse */
+#lateral { position: relative; width: 52px; z-index: 6; }
+.lat-itens {
+  position: absolute; inset: 0 auto 0 0; width: 52px; overflow: hidden; padding: 8px 6px;
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--painel); border-right: 1px solid var(--borda); transition: width .16s ease, box-shadow .16s;
+}
+#lateral:hover .lat-itens, #lateral:focus-within .lat-itens { width: 184px; box-shadow: var(--brilho); }
+.lat-itens button {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 38px; padding: 0 8px;
+  background: none; border: 0; border-radius: var(--raio); white-space: nowrap; text-align: left; text-transform: var(--caixa);
+}
+.lat-itens button i { font-style: normal; font-size: 18px; width: 22px; text-align: center; flex-shrink: 0; }
+.lat-itens button span { opacity: 0; transition: opacity .12s; }
+#lateral:hover .lat-itens button span, #lateral:focus-within .lat-itens button span { opacity: 1; }
+.lat-itens button:hover { background: var(--sel); }
+.lat-itens button.ativo { background: var(--sel); box-shadow: inset 3px 0 0 var(--destaque); }
+.lat-itens hr { width: 100%; border: 0; border-top: 1px solid var(--borda); margin: 4px 0; }
+
+/* ============ Início ============ */
+#home {
+  position: absolute; inset: 0; overflow-y: auto; z-index: 3; padding: 30px clamp(18px, 4vw, 48px) 22px;
+  display: flex; flex-direction: column; gap: 22px;
+  background:
+    radial-gradient(900px 480px at 88% -8%, color-mix(in srgb, var(--destaque) 22%, transparent), transparent 62%),
+    radial-gradient(700px 420px at -10% 110%, color-mix(in srgb, var(--borda) 30%, transparent), transparent 60%),
+    var(--fundo-img), var(--fundo);
+  background-size: auto, auto, cover, auto; font-family: var(--fonte);
+}
+.hm-topo { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+.hm-marca { display: flex; align-items: center; gap: 16px; }
+.hm-logo {
+  width: 68px; height: 68px; display: grid; place-items: center; font-size: 36px; flex-shrink: 0;
+  background: var(--painel2); border: 1px solid var(--borda); border-radius: calc(var(--raio) * 2); box-shadow: var(--brilho);
+}
+.hm-marca h1 { margin: 0; font-size: clamp(34px, 5vw, 54px); line-height: 1; letter-spacing: .02em; text-transform: var(--caixa); }
+.hm-lema { margin: 6px 0 0; color: var(--fraco); font-size: 15px; }
+.hm-saudacao { margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--painel); border: 1px solid var(--borda); color: var(--texto); font-size: 14px; }
+.hm-saudacao b { color: var(--destaque); }
+.hm-corpo { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; }
+.hm-destaque {
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); overflow: hidden; min-height: 250px;
+  background: var(--painel2); border: 1px solid var(--borda); border-radius: calc(var(--raio) * 1.5); box-shadow: var(--brilho);
+}
+.hm-print { display: grid; place-items: center; background: #000; font-size: 64px; min-height: 220px; }
+.hm-print img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; display: block; }
+.hm-info { padding: 20px 22px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.hm-info h2 { margin: 2px 0 0; font-size: 22px; line-height: 1.2; text-transform: var(--caixa); }
+.hm-info .dica { margin: 0 0 8px; }
+.hm-info .grande { width: 100%; margin: 4px 0 0; }
+.hm-rotulo { color: var(--destaque); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 12px; }
+.hm-atalhos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hm-atalhos button {
+  display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left;
+  padding: 12px 14px; background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); transition: transform .12s, border-color .12s;
+}
+.hm-atalhos button:hover, .hm-atalhos button:focus-visible { border-color: var(--destaque); transform: translateY(-2px); outline: none; }
+.hm-atalhos i { grid-row: 1 / 3; font-style: normal; font-size: 24px; text-align: center; }
+.hm-atalhos b { text-transform: var(--caixa); }
+.hm-atalhos small { color: var(--fraco); font-size: 12px; }
+.hm-bloco h3 { margin: 0 0 10px; font-size: 13px; color: var(--fraco); text-transform: uppercase; letter-spacing: .08em; }
+.hm-recentes { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; }
+.hm-cartao { padding: 0; text-align: left; background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; transition: transform .12s, border-color .12s; }
+.hm-cartao:hover, .hm-cartao:focus-visible { border-color: var(--destaque); transform: translateY(-3px); outline: none; }
+.hm-capa { aspect-ratio: 4 / 3; display: grid; place-items: center; background: var(--fundo); font-size: 30px; }
+.hm-capa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hm-cartao span { display: block; padding: 7px 9px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hm-dica { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--painel); border: 1px solid var(--borda); border-left: 4px solid var(--destaque); border-radius: var(--raio); }
+.hm-dica > span { font-size: 20px; }
+.hm-dica p { margin: 0; flex: 1; }
+.hm-dica b { color: var(--destaque); }
+.hm-rodape { margin-top: auto; text-align: center; color: var(--fraco); font-size: 12px; }
+.hm-link { background: none; border: 0; padding: 0; color: var(--destaque); text-decoration: underline; font-size: 12px; }
+@media (max-width: 900px) { .hm-corpo, .hm-destaque { grid-template-columns: 1fr; } }
+
+/* ============ Guia ============ */
+#guia { width: min(900px, 96vw); height: min(620px, 90vh); display: flex; flex-direction: column; text-align: left; }
+.gu { flex: 1; display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 18px; min-height: 0; }
+.gu-menu { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
+.gu-menu button { text-align: left; padding: 8px 10px; background: none; border: 0; border-radius: var(--raio); text-transform: var(--caixa); }
+.gu-menu button:hover { background: var(--sel); }
+.gu-menu button.ativo { background: var(--sel); box-shadow: inset 3px 0 0 var(--destaque); }
+.gu-texto { overflow-y: auto; padding-right: 6px; line-height: 1.55; }
+.gu-texto h3 { margin: 2px 0 10px; font-size: 20px; text-transform: var(--caixa); }
+.gu-texto li { margin: 6px 0; }
+.gu-texto b { color: var(--destaque); }
+.gu-texto table { border-collapse: collapse; width: 100%; }
+.gu-texto th, .gu-texto td { padding: 5px 10px; border-bottom: 1px solid var(--borda); text-align: left; }
+.gu-texto th { color: var(--destaque); text-transform: var(--caixa); }
+@media (max-width: 700px) { .gu { grid-template-columns: 1fr; } .gu-menu { flex-direction: row; flex-wrap: wrap; } }
+/* o topo e o rodapé do início ganham um fundo próprio: em temas de fundo colorido
+   (98, Luna, desenho...) o texto direto no fundo sumia */
+.hm-topo { padding: 14px 18px; background: color-mix(in srgb, var(--painel) 90%, transparent); border: 1px solid var(--borda); border-radius: calc(var(--raio) * 1.5); box-shadow: var(--brilho); }
+.hm-rodape { align-self: center; padding: 5px 14px; background: color-mix(in srgb, var(--painel) 90%, transparent); border-radius: 999px; }
+/* botão secundário: contorno com a cor do texto em todos os temas (alguns temas
+   pintavam o .grande de branco/preto e o secundário ficava invisível) */
+[data-tema] .grande.sec { color: var(--texto); background: none; text-shadow: none; }
+[data-tema="classico98"] .grande.sec { background: #c0c0c0; color: #000; }
+/* item ativo/hover do menu lateral nos temas em que a seleção é azul escuro */
+[data-tema="classico98"] .lat-itens button:hover, [data-tema="classico98"] .lat-itens button.ativo,
+[data-tema="luna"] .lat-itens button:hover, [data-tema="luna"] .lat-itens button.ativo,
+[data-tema="classico98"] .gu-menu button.ativo, [data-tema="luna"] .gu-menu button.ativo { color: #fff; }

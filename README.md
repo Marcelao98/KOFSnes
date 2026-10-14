@@ -88,6 +88,10 @@ Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
   meio; funciona pausado, pra voltar ao ponto exato e salvar ali (F5). Guarda só o que
   mudou entre os quadros (~3 KB por foto, 30 por segundo) e volta bit a bit igual.
 - **Molduras**: TV de madeira dos anos 80, TV de tubo dos anos 90 ou fliperama.
+- **Início**: a primeira tela, no clima do tema escolhido (até a frase de boas-vindas muda):
+  continuar de onde parou com o print, jogados recentemente, atalhos e dica do dia. Menu
+  lateral (Início, Voltar, Biblioteca, Jukebox, Estatísticas, Tema, Guia), **Voltar** com
+  histórico de telas (Alt+←, Esc, botão voltar do mouse) e o **Guia do KOFnes**.
 - **Atualiza sozinho**: o `KOFnes.exe` lê `publicado/versao.txt` no GitHub ao abrir e,
   se for mais novo, baixa `publicado/KOFnes.html` (confere o tamanho) antes de abrir a
   janela; o emulador avisa "atualizado" e tem Ajuda → Procurar atualização. Pra

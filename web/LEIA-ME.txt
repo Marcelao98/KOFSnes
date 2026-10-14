@@ -4,6 +4,10 @@ Dois cliques no KOFnes.exe. Ele abre o emulador numa janela do Microsoft
 Edge (que já vem no Windows 10 e 11), sem barra de endereço.
 Também dá pra abrir o KOFnes.html direto no Chrome ou no Edge.
 
+O KOFnes abre no INÍCIO: continuar de onde parou, recentes e atalhos. O menu da
+esquerda leva pra qualquer tela; Alt+← (ou Esc numa janela) volta pra anterior.
+Ajuda > Guia do KOFnes explica tudo.
+
 F5 salva o estado, F8 carrega o último, F6 abre os estados salvos.
 Ctrl+O abre uma ROM (.sfc, .smc ou .zip), ou arraste a ROM pra janela.
 Arquivo > Escolher pasta de ROMs: a lista aparece dentro do emulador (Ctrl+L).

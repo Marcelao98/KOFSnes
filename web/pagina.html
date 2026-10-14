@@ -12,6 +12,7 @@
 <body>
 <nav id="menu">
   <div class="m"><button>Arquivo</button><div class="sub">
+    <button data-acao="home">🏠 Início<kbd>Home</kbd></button>
     <button data-acao="biblioteca">Biblioteca<kbd>Ctrl+L</kbd></button>
     <button data-acao="pasta">Escolher pasta de ROMs…</button>
     <button data-acao="abrir">Adicionar arquivo…<kbd>Ctrl+O</kbd></button>
@@ -68,7 +69,8 @@
   </div></div>
   <div class="m"><button data-acao="temas" title="galeria de temas">Tema</button></div>
   <div class="m"><button>Ajuda</button><div class="sub">
-    <button data-acao="controles">Controles</button>
+    <button data-acao="guia">📖 Guia do KOFnes</button>
+    <button data-acao="controles">Atalhos e controles</button>
     <hr>
     <button data-acao="bug">🐞 Reportar bug…<kbd>F9</kbd></button>
     <button data-acao="cacador-toggle">Caçador de bugs: ligado</button>
@@ -77,7 +79,53 @@
   </div></div>
 </nav>
 
+<nav id="lateral" aria-label="navegação">
+  <div class="lat-itens">
+    <button data-acao="home" data-tela="home" title="Início (tecla Home)"><i>🏠</i><span>Início</span></button>
+    <button data-acao="voltar" title="Voltar (Alt+←)"><i>←</i><span>Voltar</span></button>
+    <button data-acao="voltar-jogo" id="lat-jogo" data-tela="jogo" title="Voltar ao jogo" hidden><i>🎮</i><span>Voltar ao jogo</span></button>
+    <hr>
+    <button data-acao="biblioteca" data-tela="biblioteca" title="Biblioteca (Ctrl+L)"><i>📚</i><span>Biblioteca</span></button>
+    <button data-acao="jukebox" data-tela="jukebox" title="Jukebox"><i>🎵</i><span>Jukebox</span></button>
+    <button data-acao="estatisticas" data-tela="estatisticas" title="Estatísticas"><i>📊</i><span>Estatísticas</span></button>
+    <button data-acao="temas" title="Mudar o tema"><i>🎨</i><span>Tema</span></button>
+    <button data-acao="guia" data-tela="guia" title="Guia do KOFnes"><i>📖</i><span>Guia</span></button>
+    <hr>
+    <button data-acao="cheia" title="Tela cheia (F11)"><i>⛶</i><span>Tela cheia</span></button>
+  </div>
+</nav>
+
 <main id="palco">
+  <section id="home" hidden>
+    <header class="hm-topo">
+      <div class="hm-marca">
+        <span class="hm-logo" id="hm-logo">☕</span>
+        <div>
+          <h1>KOFnes</h1>
+          <p class="hm-lema">Um Super Nintendo escrito em Kof, feito pra facilitar a sua jogatina.</p>
+        </div>
+      </div>
+      <p class="hm-saudacao" id="hm-saudacao"></p>
+    </header>
+    <div class="hm-corpo">
+      <article class="hm-destaque" id="hm-destaque"></article>
+      <div class="hm-atalhos">
+        <button data-acao="biblioteca"><i>📚</i><b>Biblioteca</b><small>seus jogos e a pasta de ROMs</small></button>
+        <button data-acao="abrir"><i>＋</i><b>Abrir uma ROM</b><small>.sfc, .smc ou .zip (ou arraste)</small></button>
+        <button data-acao="jukebox"><i>🎵</i><b>Jukebox</b><small>as trilhas que você guardou</small></button>
+        <button data-acao="estatisticas"><i>📊</i><b>Estatísticas</b><small>quanto você jogou, e o quê</small></button>
+        <button data-acao="temas"><i>🎨</i><b>Temas</b><small>28 jeitos de deixar com a sua cara</small></button>
+        <button data-acao="guia"><i>📖</i><b>Guia</b><small>tudo que o KOFnes sabe fazer</small></button>
+      </div>
+    </div>
+    <section class="hm-bloco" id="hm-bloco-recentes">
+      <h3>Jogados recentemente</h3>
+      <div class="hm-recentes" id="hm-recentes"></div>
+    </section>
+    <div class="hm-dica"><span>💡</span><p id="hm-dica"></p><button class="x" data-acao="hm-dica" title="outra dica">↻</button></div>
+    <footer class="hm-rodape">núcleo 100% em Kof · <span id="hm-versao"></span> · <button class="hm-link" data-acao="guia">guia</button> · <button class="hm-link" data-acao="bug">reportar bug</button></footer>
+  </section>
+
   <div id="moldura"><canvas id="tela" width="256" height="224"></canvas><div class="mold-extra"></div></div>
 
   <section id="biblioteca" class="janela">
@@ -121,10 +169,92 @@
     <button class="grande" data-acao="salvar-estado">Salvar estado agora (F5)</button>
   </section>
 
-  <section id="ajuda" class="janela" hidden>
-    <div class="titulo-j">Controles <button class="x" data-acao="fechar-ajuda">×</button></div>
-    <table id="tab-ajuda"></table>
-    <p class="dica">Pra mudar as teclas: <b>Emulação → Configurar teclas…</b></p>
+  <section id="guia" class="janela" hidden>
+    <div class="titulo-j">📖 Guia do KOFnes <button class="x" data-acao="fechar-guia">×</button></div>
+    <div class="gu">
+      <nav class="gu-menu">
+        <button data-guia="comecar">👋 Começando</button>
+        <button data-guia="biblioteca">📚 Biblioteca</button>
+        <button data-guia="jogando">🎮 Jogando</button>
+        <button data-guia="tempo">⏪ Voltar no tempo</button>
+        <button data-guia="imagem">🖼 Imagem e som</button>
+        <button data-guia="jukebox">🎵 Jukebox</button>
+        <button data-guia="temas">🎨 Temas e início</button>
+        <button data-guia="bugs">🐞 Bugs e atualizações</button>
+        <button data-guia="atalhos">⌨️ Atalhos</button>
+      </nav>
+      <div class="gu-texto">
+        <div data-pagina="comecar">
+          <h3>Bem-vindo ao KOFnes 👋</h3>
+          <p>O KOFnes é um <b>Super Nintendo inteiro escrito em Kof</b>, uma linguagem brasileira, que roda numa janela leve e se atualiza sozinho. A ideia é simples: abrir, escolher o jogo e jogar.</p>
+          <ol>
+            <li><b>Traga seus jogos.</b> Em <b>Biblioteca → Escolher pasta de ROMs</b> você aponta a pasta uma vez só. Também dá pra arrastar uma ROM (.sfc, .smc ou .zip) pra janela.</li>
+            <li><b>Escolha e jogue.</b> Enter ou clique duplo. Na próxima vez, o jogo aparece no <b>Início</b> com <b>Continuar</b>.</li>
+            <li><b>Controles:</b> setas = direcional · Z/X = B/A · A/S = Y/X · Q/W = L/R · Enter = Start · Shift = Select. Controle USB, Xbox ou 8BitDo funciona sozinho.</li>
+          </ol>
+          <p class="dica">O menu da esquerda leva pra qualquer lugar: 🏠 Início, ← Voltar, 📚 Biblioteca, 🎵 Jukebox, 📊 Estatísticas, 🎨 Tema e este guia.</p>
+        </div>
+        <div data-pagina="biblioteca" hidden>
+          <h3>📚 Biblioteca</h3>
+          <ul>
+            <li><b>Pasta de ROMs:</b> lida uma vez por sessão, em segundo plano. Colocou jogos novos? <b>🔄 Reler pasta</b>.</li>
+            <li><b>Busca:</b> digite qualquer pedaço do nome, em qualquer ordem, sem se preocupar com acento ("mario super" acha "Super Mario World").</li>
+            <li><b>🧹 Só os principais:</b> esconde hacks e cópias ruins dos pacotes de ROMs ([h], [b], [o]…) e deixa as traduções [T+Por].</li>
+            <li><b>Capas oficiais:</b> baixadas do acervo aberto do RetroArch e guardadas pra funcionar sem internet.</li>
+            <li><b>🛋 Modo sofá:</b> a biblioteca vira uma grade de capas em tela cheia, feita pro controle (A joga, X estados, Select liga/desliga).</li>
+          </ul>
+        </div>
+        <div data-pagina="jogando" hidden>
+          <h3>🎮 Jogando</h3>
+          <ul>
+            <li><b>Menu rápido:</b> botão direito do mouse, F2 ou Select+Start no controle. Salvar, carregar, filtro, moldura, volume… sem sair do jogo.</li>
+            <li><b>Savestates:</b> F5 salva, F8 carrega o último, F6 abre a galeria com o print de cada momento (no controle: Select+L e Select+R).</li>
+            <li><b>Continuar de onde parou:</b> o salvar automático guarda o jogo sozinho; no Início é só clicar em Continuar.</li>
+            <li><b>Turbo:</b> segure Tab. <b>Pausa:</b> P ou Esc. Sair da janela também pausa (dá pra desligar em Som).</li>
+          </ul>
+        </div>
+        <div data-pagina="tempo" hidden>
+          <h3>⏪ Voltar no tempo</h3>
+          <p>Segure <b>Backspace</b> (ou <b>Select+Y</b>) e o jogo volta no tempo, até mais ou menos um minuto e meio. Soltou, continua dali.</p>
+          <p><b>O truque:</b> pause (P), segure Backspace até o momento exato e aperte <b>F5</b>. Pronto: um savestate daquele instante, com print, na galeria.</p>
+          <p class="dica">No menu rápido também tem "Voltar 5 segundos".</p>
+        </div>
+        <div data-pagina="imagem" hidden>
+          <h3>🖼 Imagem e som</h3>
+          <ul>
+            <li><b>Filtros:</b> nítido, suave, TV de tubo (CRT), fliperama, Game Boy, café (sépia) e LCD.</li>
+            <li><b>Proporção:</b> 4:3 como na TV de antigamente, pixel perfeito (8:7) ou esticar.</li>
+            <li><b>Molduras:</b> TV de madeira dos anos 80, TV de tubo dos anos 90 ou fliperama.</li>
+            <li><b>Tela cheia:</b> F11 ou duplo clique no jogo. O cursor some sozinho; encoste no topo pra ver o menu.</li>
+            <li><b>Volume:</b> teclas - e =, ou no menu Som.</li>
+          </ul>
+        </div>
+        <div data-pagina="jukebox" hidden>
+          <h3>🎵 Jukebox</h3>
+          <p>A música do Super Nintendo roda num chip separado. Por isso dá pra <b>guardar a música</b> que está tocando (F7) e ouvir depois, sem o jogo.</p>
+          <ul>
+            <li>Abra arquivos <b>.spc</b> (o formato das trilhas de SNES) ou exporte as suas.</li>
+            <li>As <b>8 vozes</b> do chip aparecem ao vivo: clique numa pra silenciar e ouvir só o baixo, só a percussão…</li>
+            <li>Fechou a janela, a música continua no mini-player da barra de baixo. P volta pro jogo.</li>
+          </ul>
+        </div>
+        <div data-pagina="temas" hidden>
+          <h3>🎨 Temas e o Início</h3>
+          <p>São 28 temas: consoles, computador e internet antiga, anime e bem brasileiro. Clique em <b>🎨 Tema</b>, passe o mouse pra experimentar e clique pra escolher. A tela de Início muda junto, até a frase de boas-vindas.</p>
+          <p>O <b>Início</b> mostra o que você jogou por último, com o print de onde parou, os jogados recentemente e uma dica do dia.</p>
+        </div>
+        <div data-pagina="bugs" hidden>
+          <h3>🐞 Bugs e atualizações</h3>
+          <p>O KOFnes é jovem, e cada bug encontrado ajuda o emulador <i>e</i> a linguagem Kof. Aperte <b>F9</b>: a issue abre no GitHub já preenchida e um pacote é baixado pra reproduzir o bug quadro a quadro. É só arrastar ele pra dentro da issue.</p>
+          <p>Se o emulador quebrar, ele mesmo oferece reportar. E ele <b>se atualiza sozinho</b>: ao abrir o KOFnes.exe, a versão nova já vem (Ajuda → Procurar atualização).</p>
+        </div>
+        <div data-pagina="atalhos" hidden>
+          <h3>⌨️ Atalhos e controles</h3>
+          <table id="tab-ajuda"></table>
+          <p class="dica">Pra mudar as teclas: <b>Emulação → Configurar teclas…</b></p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section id="teclas" class="janela" hidden>

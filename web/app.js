@@ -341,8 +341,12 @@ addEventListener('keydown', (e) => {
   if (e.code === 'F8') { e.preventDefault(); acao('carregar-ultimo'); return; }
   if (e.code === 'F11') { e.preventDefault(); acao('cheia'); return; }
   if (!$('#biblioteca').hidden) { listaTecla(e); return; }
-  const aberta = ['estados', 'ajuda', 'teclas', 'temas', 'estatisticas', 'jukebox'].some((id) => !$('#' + id).hidden);
-  if (e.code === 'Escape' && aberta) { fecharJanelas(); return; }
+  if (e.altKey && e.code === 'ArrowLeft') { e.preventDefault(); voltar(); return; }
+  if (e.code === 'BrowserBack') { e.preventDefault(); voltar(); return; }
+  if (e.code === 'Home' && !e.target.closest('input, textarea')) { e.preventDefault(); acao('home'); return; }
+  if (!$('#home').hidden) { if (homeTecla(e)) return; }
+  const aberta = ['estados', 'guia', 'teclas', 'temas', 'estatisticas', 'jukebox'].some((id) => !$('#' + id).hidden);
+  if (e.code === 'Escape' && aberta) { voltar(); return; }
   if (e.code === 'F1') { e.preventDefault(); acao('reiniciar'); return; }
   if (e.code === 'KeyP' || e.code === 'Escape') { acao('pausar'); return; }
   if (e.code === 'KeyM') { acao('mudo'); return; }
@@ -361,9 +365,9 @@ addEventListener('blur', () => { teclado = 0; turbo = false; voltandoTecla = fal
 let ultimo = 0, sobra = 0, contados = 0, marco = 0;
 function laco(t) {
   requestAnimationFrame(laco);
-  if (snes && voltando() && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden) { rebobinarPasso(); ultimo = marco = t; contados = 0; return; }
+  if (snes && voltando() && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden && $('#home').hidden) { rebobinarPasso(); ultimo = marco = t; contados = 0; return; }
   if (rebobinou) terminarRebobinar();
-  if (!snes || pausado || !$('#biblioteca').hidden || !$('#estados').hidden || !$('#jukebox').hidden) { ultimo = marco = t; contados = 0; return; }
+  if (!snes || pausado || !$('#biblioteca').hidden || !$('#estados').hidden || !$('#jukebox').hidden || !$('#home').hidden || !$('#guia').hidden) { ultimo = marco = t; contados = 0; return; }
   if (juke.tocando) jukePausar();
   const dt = Math.min(t - ultimo, 100);
   sobra += dt; ultimo = t;
@@ -807,6 +811,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   document.body.classList.remove('vazio');
   fecharJanelas();
   $('#st-jogo').textContent = romNome + ' · ' + (s.cart.title.trim() || '?');
+  marcarLateral();
   document.title = 'KOFnes — ' + romNome;
   ajustarEscala();
   // a ROM vai pra biblioteca: da próxima vez abre sem diálogo nenhum
@@ -1142,7 +1147,7 @@ function capaChegou(nome) {
   const sel = visiveis[selecionada];
   if (sel && sel.nome === nome) mostrarInfo();
 }
-function capaJukeChegou() { if (!$('#jukebox').hidden) montarJuke(); }
+function capaJukeChegou() { if (!$('#jukebox').hidden) montarJuke(); if (!$('#home').hidden) { clearTimeout(capaJukeChegou.t); capaJukeChegou.t = setTimeout(montarHome, 300); } }
 function srcCapa(r) {   // capa oficial (do cache), senão o print de quando parou
   const c = r && capasNet ? capasMem.get(r.nome) : null;
   if (c instanceof Blob) {
@@ -1264,8 +1269,8 @@ function mostrarInfo() {
   parou.hidden = !mostrarParou; if (mostrarParou) parou.src = r.jogo.autoCapa;
   capaPorNome(r.nome).catch(() => {});
 }
-async function jogar(doZero) {
-  const r = visiveis[selecionada];
+async function jogar(doZero) { await abrirJogo(visiveis[selecionada], doZero); }
+async function abrirJogo(r, doZero) {
   if (!r) return;
   try {
     if (autoSalvar && r.jogo && r.jogo.temAuto && !doZero) await continuar(r.jogo);
@@ -1278,7 +1283,7 @@ async function jogar(doZero) {
   } catch (e) { avisar(e.message, 4000); }
 }
 function listaTecla(e) {
-  if (e.code === 'Escape') { if (snes) fecharJanelas(); return true; }
+  if (e.code === 'Escape') { voltar(); return true; }
   const passo = { ArrowDown: colunas(), ArrowUp: -colunas(), ArrowRight: sofa ? 1 : 0, ArrowLeft: sofa ? -1 : 0 }[e.code];
   if (passo) {
     e.preventDefault(); marcarSel(selecionada + passo); return true;
@@ -1304,10 +1309,16 @@ async function mostrarBiblioteca(pedir, relerPasta) {
     if (antes) { const j = visiveis.indexOf(antes); if (j >= 0) marcarSel(j); }
   }
 }
-function fecharJanelas() { fecharTemas(false); for (const id of ['biblioteca', 'estados', 'ajuda', 'teclas', 'estatisticas', 'jukebox']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
+function fecharJanelas() { fecharTemas(false); for (const id of ['home', 'biblioteca', 'estados', 'guia', 'teclas', 'estatisticas', 'jukebox']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
 // controle também navega na biblioteca
 let padAntes = 0;
 setInterval(() => {
+  if (!$('#home').hidden) {               // no início: A/Start = ação principal, X = biblioteca
+    const b = estado(), novo = b & ~padAntes; padAntes = b;
+    if (novo & (0x0080 | 0x1000)) { const pr = $('#hm-destaque .grande'); if (pr) pr.click(); }
+    if (novo & 0x0040) acao('biblioteca');
+    return;
+  }
   if ($('#biblioteca').hidden) { padAntes = 0; return; }
   const b = estado(), novo = b & ~padAntes; padAntes = b;
   const ir = (code) => listaTecla({ code, preventDefault() {}, target: null, key: '' });
@@ -1373,7 +1384,7 @@ addEventListener('contextmenu', (e) => {
   if (e.target.closest('input, textarea')) return;
   e.preventDefault();
   if (rapidoAberto) fecharRapido();
-  else if (snes && $('#biblioteca').hidden && ['estados', 'ajuda', 'teclas', 'temas', 'estatisticas', 'bug', 'jukebox'].every((id) => $('#' + id).hidden)) abrirRapido();
+  else if (snes && $('#biblioteca').hidden && ['home', 'estados', 'guia', 'teclas', 'temas', 'estatisticas', 'bug', 'jukebox'].every((id) => $('#' + id).hidden)) abrirRapido();
 });
 // clique fora do menu rápido fecha ele
 addEventListener('mousedown', (e) => { if (rapidoAberto && e.button === 0 && !e.target.closest('#rapido')) fecharRapido(); });
@@ -1418,6 +1429,169 @@ addEventListener('blur', sair);
 addEventListener('focus', voltar);
 document.addEventListener('visibilitychange', () => { if (document.hidden) sair(); else voltar(); });
 
+// ---------------- início (home) ----------------
+// A primeira tela: o que você jogou por último (com o print de onde parou), os
+// recentes, atalhos e uma dica. Muda com o tema, até a frase de boas-vindas.
+const FRASES = {
+  cafe: 'Um cafezinho e um clássico?', escuro: 'A noite é uma criança. E o jogo também.', claro: 'Dia bonito pra zerar um jogo.',
+  zsnes: 'PRESS START', super16: 'Assopra o cartucho e bora.', portatil: 'Pilhas novas, jogo novo.',
+  atomico: 'Transparente por fora, clássico por dentro.', blast16: 'Processamento a jato. Em Kof.', cinza32: '△ ○ ✕ □ … mas hoje é dia de 16 bits.',
+  branco: 'Clique, relaxe, jogue.', laminas: 'Conquista desbloqueada: abriu o KOFnes.', neon: 'INSERT COIN',
+  classico98: 'Bem-vindo ao KOFnes 98. Clique em Iniciar… digo, em Jogar.', luna: 'Seu emulador está pronto. Sem clipe de papel.',
+  mensageiro: '🟢 KOFnes ficou online.', rosa2004: 'Você tem 1 recado novo: "bora jogar?"', terminal: '> kofnes --jogar_',
+  vapor: 'ｋｏｆｎｅｓ　ａｅｓｔｈｅｔｉｃ', web1: '🚧 Bem-vindo à minha homepage!!! Você é o visitante nº 000427 🚧',
+  esferas: 'Junte as 7 esferas… ou só jogue mesmo.', unidade01: 'Entre no robô… digo, no jogo.', lua: 'Em nome da lua, vamos jogar!',
+  dourado: 'Eleve seu cosmo e aperte Start.', pokebola: 'Um jogo selvagem apareceu!', floresta: 'Um bom lugar pra se perder num jogo.',
+  desenho: 'Tá na hora do desenho… digo, do jogo!', camelo: '9999 JOGOS EM 1 (e esse funciona)', brasil: 'Bora jogar, Brasil!',
+};
+const LOGOS = { cafe: '☕', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
+  branco: '🤍', laminas: '🟢', neon: '🕹️', classico98: '🪟', luna: '🌄', mensageiro: '💬', rosa2004: '💌', terminal: '⌨️', vapor: '🌴',
+  web1: '🚧', esferas: '⭐', unidade01: '🤖', lua: '🌙', dourado: '✨', pokebola: '🔴', floresta: '🌿', desenho: '📺', camelo: '🎁', brasil: '🇧🇷' };
+const DICAS = [
+  'Segure <b>Backspace</b> pra voltar no tempo. Pausado, volte até o ponto exato e aperte <b>F5</b> pra guardar aquele momento.',
+  'O <b>botão direito</b> do mouse abre o menu rápido no meio do jogo.',
+  'Tocou aquela música que você ama? <b>F7</b> guarda ela na Jukebox.',
+  'Achou um bug? <b>F9</b> abre a issue no GitHub com tudo pra reproduzir.',
+  'No controle, <b>Select+Start</b> abre o menu rápido; <b>Select+L</b> salva e <b>Select+R</b> carrega.',
+  'Arraste uma ROM pra janela pra jogar na hora.',
+  '<b>Duplo clique</b> no jogo: tela cheia de verdade.',
+  'Em <b>Imagem → Moldura</b> tem uma TV de madeira dos anos 80 esperando.',
+  'O filtro <b>TV de tubo (CRT)</b> com proporção <b>4:3</b> é o mais perto da sua TV de antigamente.',
+  'Na Jukebox, clique numa das 8 vozes pra silenciar e ouvir só o baixo ou a percussão.',
+  'Na biblioteca, "mario super" acha "Super Mario World": a busca aceita as palavras em qualquer ordem.',
+  'O <b>🛋 modo sofá</b> transforma a biblioteca numa grade de capas pra jogar de longe, com o controle.',
+  '<b>Alt+←</b> (ou o ← do menu da esquerda) volta pra tela anterior.',
+];
+let homeJogos = [], dicaAtual = -1;
+function fraseHome(id) {
+  if ($('#home').hidden) return;
+  const h = new Date().getHours(), ola = h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  $('#hm-logo').textContent = LOGOS[id] || '🎮';
+  $('#hm-saudacao').innerHTML = '';
+  const b = document.createElement('b'); b.textContent = ola + '! ';
+  $('#hm-saudacao').append(b, document.createTextNode(FRASES[id] || 'Bora jogar?'));
+}
+function novaDica() {
+  let i; do { i = Math.floor(Math.random() * DICAS.length); } while (i === dicaAtual && DICAS.length > 1);
+  dicaAtual = i; $('#hm-dica').innerHTML = DICAS[i];
+}
+function abrirHome() { fecharJanelas(); fecharMenus(); $('#home').hidden = false; montarHome(); }
+const elem = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+function botao(txt, acaoNome, cls) { const b = elem('button', cls || 'grande', txt); b.dataset.acao = acaoNome; return b; }
+async function montarHome() {
+  fraseHome(document.documentElement.dataset.tema);
+  if (dicaAtual < 0) novaDica();
+  $('#hm-versao').textContent = 'versão ' + VERSAO;
+  try { homeJogos = (await bdTodos('jogos')).sort((a, b) => b.ultimo - a.ultimo); } catch (e) { homeJogos = []; }
+  await carregarEstat();
+  const d = $('#hm-destaque'); d.innerHTML = '';
+  const fig = elem('div', 'hm-print'), info = elem('div', 'hm-info');
+  if (snes) {                                   // jogando agora: volta pro jogo
+    const im = elem('img'); im.src = foto(320); im.alt = ''; fig.appendChild(im);
+    info.append(elem('small', 'hm-rotulo', '🎮 Jogando agora'), elem('h2', '', romNome),
+      elem('p', 'dica', 'O jogo está pausado esperando você.'), botao('▶ Voltar ao jogo', 'voltar-jogo'), botao('💾 Salvar estado', 'salvar-estado', 'grande sec'));
+  } else if (homeJogos.length) {                // continuar de onde parou
+    const j = homeJogos[0], e = estat[j.id], src = j.autoCapa || j.capa || srcCapa({ nome: j.nome, jogo: j });
+    if (src) { const im = elem('img'); im.src = src; im.alt = ''; fig.appendChild(im); } else fig.textContent = LOGOS[temaSalvo] || '🎮';
+    const det = [j.temAuto && autoSalvar ? 'parou em ' + quando(j.autoQuando) : 'jogado ' + quando(j.ultimo)];
+    if (e && e.tempo) det.push(duracao(e.tempo) + ' jogados');
+    info.append(elem('small', 'hm-rotulo', autoSalvar && j.temAuto ? '⟳ Continuar de onde parou' : '🕹 Jogado por último'), elem('h2', '', j.nome), elem('p', 'dica', det.join(' · ')),
+      botao(autoSalvar && j.temAuto ? '▶ Continuar' : '▶ Jogar', 'hm-continuar'));
+    if (autoSalvar && j.temAuto) info.appendChild(botao('↺ Começar do zero', 'hm-zero', 'grande sec'));
+  } else {                                      // primeira vez
+    fig.textContent = LOGOS[temaSalvo] || '🎮';
+    info.append(elem('small', 'hm-rotulo', '👋 Primeira vez por aqui?'), elem('h2', '', 'Vamos começar'),
+      elem('p', 'dica', 'Escolha a pasta onde ficam suas ROMs (uma vez só) ou arraste uma ROM pra esta janela.'));
+    if (temPasta) info.appendChild(botao('📁 Escolher pasta de ROMs', 'pasta'));
+    info.append(botao('＋ Abrir uma ROM', 'abrir', temPasta ? 'grande sec' : 'grande'), botao('📖 Ver o guia', 'guia', 'grande sec'));
+  }
+  d.append(fig, info);
+  // recentes (sem repetir o do destaque)
+  const rec = $('#hm-recentes'); rec.innerHTML = '';
+  const lista = homeJogos.filter((j) => !(snes ? j.id === jogoId : j === homeJogos[0])).slice(0, 6);
+  $('#hm-bloco-recentes').hidden = !lista.length;
+  for (const j of lista) {
+    const c = elem('button', 'hm-cartao'), src = srcCapa({ nome: j.nome, jogo: j });
+    const capa = elem('div', 'hm-capa');
+    if (src) { const im = elem('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; capa.appendChild(im); } else capa.textContent = '🎮';
+    c.append(capa, elem('span', '', j.nome));
+    c.title = 'jogado ' + quando(j.ultimo);
+    c.onclick = () => abrirJogo({ nome: j.nome, jogo: j }, false);
+    rec.appendChild(c);
+    capaPorNome(j.nome).catch(() => {});
+  }
+}
+// no início: Enter/A = ação principal; setas andam pelos botões
+function homeTecla(e) {
+  if (e.target.closest('input, textarea')) return false;
+  if (e.code === 'Escape') { if (snes) fecharJanelas(); return true; }
+  const bts = [...$('#home').querySelectorAll('button:not([hidden])')].filter((b) => b.offsetParent);
+  const i = bts.indexOf(document.activeElement);
+  if (e.code === 'ArrowDown' || e.code === 'ArrowRight' || e.code === 'ArrowUp' || e.code === 'ArrowLeft') {
+    e.preventDefault();
+    const d = e.code === 'ArrowDown' || e.code === 'ArrowRight' ? 1 : -1;
+    (bts[i < 0 ? 0 : (i + d + bts.length) % bts.length] || {}).focus?.();
+    return true;
+  }
+  if (e.code === 'Enter' && i < 0) { e.preventDefault(); const p = $('#hm-destaque .grande'); if (p) p.click(); return true; }
+  return false;
+}
+
+// ---------------- voltar (histórico de telas) ----------------
+// Cada tela que aparece guarda a anterior; Voltar (← do menu lateral, Alt+←,
+// Esc numa janela, o botão "voltar" do mouse) leva de volta pra ela.
+const TELAS = ['home', 'biblioteca', 'estados', 'jukebox', 'estatisticas', 'guia', 'teclas'];
+const telaAtual = () => TELAS.find((id) => !$('#' + id).hidden) || 'jogo';
+let historico = [], telaConhecida = 'jogo', voltandoHist = false, telaT = 0;
+new MutationObserver(() => {
+  clearTimeout(telaT);
+  telaT = setTimeout(() => {     // espera a troca assentar (uma janela fecha e a outra abre)
+    const t = telaAtual();
+    if (t === telaConhecida) return;
+    if (!voltandoHist && !(telaConhecida === 'jogo' && !snes)) { historico.push(telaConhecida); if (historico.length > 30) historico.shift(); }
+    telaConhecida = t; marcarLateral();
+  }, 120);
+}).observe($('#palco'), { attributes: true, attributeFilter: ['hidden'], subtree: true });
+async function voltar() {
+  let alvo;
+  do { alvo = historico.pop(); } while (alvo && (alvo === telaAtual() || (alvo === 'jogo' && !snes)));
+  if (!alvo) alvo = snes ? 'jogo' : 'home';
+  if (alvo === telaAtual()) return;
+  voltandoHist = true;
+  try { await abrirTela(alvo); } finally { setTimeout(() => { voltandoHist = false; }, 250); }
+}
+async function abrirTela(t) {
+  switch (t) {
+    case 'jogo': fecharJanelas(); break;
+    case 'home': abrirHome(); break;
+    case 'biblioteca': await mostrarBiblioteca(false); break;
+    case 'jukebox': await abrirJuke(); break;
+    case 'estatisticas': await mostrarEstat(); break;
+    case 'estados': await mostrarEstados(jogoId); break;
+    case 'guia': abrirGuia(); break;
+    case 'teclas': fecharJanelas(); montarGrade(); $('#teclas').hidden = false; break;
+  }
+}
+addEventListener('mouseup', (e) => { if (e.button === 3) { e.preventDefault(); voltar(); } });
+function marcarLateral() {
+  const t = telaAtual();
+  $('#lat-jogo').hidden = !snes;
+  document.querySelectorAll('#lateral [data-tela]').forEach((b) => b.classList.toggle('ativo', b.dataset.tela === t));
+}
+
+// ---------------- guia ----------------
+function abrirGuia(pagina) {
+  fecharJanelas(); fecharMenus(); montarAjuda(); $('#guia').hidden = false;
+  mostrarPaginaGuia(pagina || mostrarPaginaGuia.ultima || 'comecar');
+}
+function mostrarPaginaGuia(p) {
+  mostrarPaginaGuia.ultima = p;
+  document.querySelectorAll('#guia [data-pagina]').forEach((d) => { d.hidden = d.dataset.pagina !== p; });
+  document.querySelectorAll('#guia [data-guia]').forEach((b) => b.classList.toggle('ativo', b.dataset.guia === p));
+  $('#guia .gu-texto').scrollTop = 0;
+}
+$('#guia .gu-menu').addEventListener('click', (e) => { const b = e.target.closest('[data-guia]'); if (b) mostrarPaginaGuia(b.dataset.guia); });
+
 // ---------------- menu, temas e ações ----------------
 function avisar(t, ms) {
   const a = $('#aviso'); a.textContent = t; a.hidden = false;
@@ -1439,6 +1613,7 @@ const TODOS_TEMAS = TEMAS.flatMap(([, l]) => l);
 let temaSalvo = 'cafe';
 function experimentar(id) {
   document.documentElement.dataset.tema = id;
+  fraseHome(id);
   const t = TODOS_TEMAS.find(([k]) => k === id);
   $('#tema-nome').textContent = t ? '· ' + t[1] + (id === temaSalvo ? ' (em uso)' : '') : '';
 }
@@ -1467,8 +1642,9 @@ $('#grade-temas').addEventListener('mouseleave', () => {
 $('#veu').addEventListener('click', () => acao('fechar-temas'));
 let temasVoltar = null;   // a janela que estava aberta (biblioteca...) volta quando a galeria fecha
 function abrirTemas() {
-  temasVoltar = ['biblioteca', 'estatisticas', 'jukebox', 'estados'].find((id) => !$('#' + id).hidden) || null;
-  fecharJanelas(); montarTemas(); $('#temas').hidden = false; $('#veu').hidden = false;
+  temasVoltar = ['home', 'biblioteca', 'estatisticas', 'jukebox', 'estados', 'guia'].find((id) => !$('#' + id).hidden) || null;
+  fecharMenus(); if (rapidoAberto) fecharRapido();   // a tela de trás fica (aparece sob o véu e muda ao vivo)
+  montarTemas(); $('#temas').hidden = false; $('#veu').hidden = false;
   const b = $(`.previa[data-tema="${temaSalvo}"]`); if (b) { b.focus({ preventScroll: true }); b.scrollIntoView({ block: 'nearest' }); }
 }
 function fecharTemas(voltar) {
@@ -1515,7 +1691,7 @@ async function acao(a) {
     case 'reler-pasta': await mostrarBiblioteca(true, true); break;
     case 'so-principais':
       soPrincipais = !soPrincipais; guardar('soPrincipais', soPrincipais ? '1' : '0'); marcarPrincipais(); montarLista(); break;
-    case 'fechar-biblioteca': if (snes) fecharJanelas(); else avisar('escolha um jogo'); break;
+    case 'fechar-biblioteca': voltar(); break;
     case 'jogar': await jogar(false); break;
     case 'auto-toggle':
       autoSalvar = !autoSalvar; guardar('autoSalvar', autoSalvar ? '1' : '0'); marcarAuto();
@@ -1525,7 +1701,7 @@ async function acao(a) {
     case 'do-zero': await jogar(true); break;
     case 'estados-do-sel': { const r = visiveis[selecionada]; await mostrarEstados(r && r.jogo ? r.jogo.id : jogoId); break; }
     case 'estados': await mostrarEstados(jogoId); break;
-    case 'fechar-estados': $('#estados').hidden = true; if (!snes) mostrarBiblioteca(false); break;
+    case 'fechar-estados': voltar(); break;
     case 'salvar-estado': await salvarEstado(); break;
     case 'carregar-ultimo': await carregarUltimo(); break;
     case 'reiniciar': if (snes) { snes.reset(); novoRebob(); avisar('reiniciado'); } break;
@@ -1537,7 +1713,7 @@ async function acao(a) {
     case 'bug': abrirBug(); break;
     case 'atualizacao': await procurarAtualizacao(true); break;
     case 'jukebox': await abrirJuke(); break;
-    case 'fechar-jukebox': $('#jukebox').hidden = true; montarJuke(); if (!snes) mostrarBiblioteca(false); break;
+    case 'fechar-jukebox': await voltar(); montarJuke(); break;
     case 'guardar-musica': await guardarMusica(); break;
     case 'abrir-spc': $('#arquivo-spc').click(); break;
     case 'jk-tocar': jukeAlternar(); break;
@@ -1559,17 +1735,24 @@ async function acao(a) {
       avisar(pausaAuto ? 'pausa ao sair da janela ligada' : 'pausa ao sair da janela desligada'); break;
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
     case 'temas': if ($('#temas').hidden) abrirTemas(); else fecharTemas(); break;
-    case 'fechar-temas': fecharTemas(); if (!snes && $('#biblioteca').hidden) mostrarBiblioteca(false); break;
+    case 'fechar-temas': fecharTemas(); if (!snes && telaAtual() === 'jogo') abrirHome(); break;
     case 'estatisticas': await mostrarEstat(); break;
-    case 'fechar-estat': $('#estatisticas').hidden = true; if (!snes) mostrarBiblioteca(false); break;
-    case 'controles': fecharJanelas(); montarAjuda(); $('#ajuda').hidden = false; break;
+    case 'fechar-estat': voltar(); break;
+    case 'controles': abrirGuia('atalhos'); break;
+    case 'guia': abrirGuia(); break;
+    case 'fechar-guia': voltar(); break;
+    case 'home': abrirHome(); break;
+    case 'voltar': voltar(); break;
+    case 'voltar-jogo': if (snes) fecharJanelas(); break;
+    case 'hm-dica': novaDica(); break;
+    case 'hm-continuar': { const j = homeJogos[0]; if (j) abrirJogo({ nome: j.nome, jogo: j }, false); break; }
+    case 'hm-zero': { const j = homeJogos[0]; if (j) abrirJogo({ nome: j.nome, jogo: j }, true); break; }
     case 'teclas': fecharJanelas(); montarGrade(); $('#teclas').hidden = false; break;
-    case 'fechar-teclas': capturando = null; $('#teclas').hidden = true; if (!snes) mostrarBiblioteca(false); break;
+    case 'fechar-teclas': capturando = null; voltar(); break;
     case 'teclas-padrao':
       mapa = {}; for (const [n, , padrao] of BOTOES_SNES) mapa[n] = padrao;
       guardar('teclas', JSON.stringify(mapa)); montarTeclas(); montarGrade(); montarAjuda(); avisar('teclas padrão restauradas');
       break;
-    case 'fechar-ajuda': $('#ajuda').hidden = true; if (!snes) mostrarBiblioteca(false); break;
   }
 }
 function fecharMenus() { document.querySelectorAll('.m.aberto').forEach((m) => m.classList.remove('aberto')); }
@@ -1585,7 +1768,7 @@ addEventListener('click', (e) => {
   if (!b) { if (!e.target.closest('.janela')) fecharMenus(); return; }
   if (b.dataset.acao) acao(b.dataset.acao);
   else if (b.dataset.escala) { escala = +b.dataset.escala; guardar('escala', escala); ajustarEscala(); fecharMenus(); }
-  else if (b.dataset.tema && b.closest('#temas')) { tema(b.dataset.tema); fecharTemas(); avisar('🎨 tema: ' + TODOS_TEMAS.find(([k]) => k === temaSalvo)[1]); if (!snes && $('#biblioteca').hidden) mostrarBiblioteca(false); }
+  else if (b.dataset.tema && b.closest('#temas')) { tema(b.dataset.tema); fecharTemas(); avisar('🎨 tema: ' + TODOS_TEMAS.find(([k]) => k === temaSalvo)[1]); if (!snes && telaAtual() === 'jogo') abrirHome(); }
   else if (b.dataset.filtro) { aplicarFiltro(b.dataset.filtro); fecharMenus(); }
   else if (b.dataset.prop) { mudarProporcao(b.dataset.prop); fecharMenus(); }
   else if (b.dataset.moldura) { mudarMoldura(b.dataset.moldura); fecharMenus(); }
@@ -1606,10 +1789,10 @@ document.body.classList.toggle('sofa', sofa);
 $('[data-acao="capas"]').textContent = capasNet ? '🖼 Capas oficiais: ligadas' : '🖼 Capas oficiais: desligadas';
 ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
-mostrarBiblioteca(false);
+if (sofa) mostrarBiblioteca(false); else abrirHome();
 window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
-  testeLista: (n, nomes) => { itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
+  testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
   volume: () => volume, juke: () => ({ faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
   assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
