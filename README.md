@@ -72,6 +72,13 @@ Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
 - **Lista de ROMs dentro da janela**, estilo ZSNES: escolha a pasta uma vez
   (**Arquivo → Escolher pasta de ROMs**), depois **Ctrl+L**, digite pra filtrar
   e Enter. Também abre `.sfc`, `.smc` e `.zip`, ou é só arrastar a ROM.
+- **Savestates por jogo, com print do momento**: F5 salva, F8 carrega o último,
+  F6 abre a galeria. **Continuar de onde parou**: um estado automático por jogo
+  (dá pra desligar em Emulação → Salvar automático).
+- **Biblioteca** com **capa oficial** (acervo aberto libretro-thumbnails, baixada
+  uma vez e guardada) e **modo sofá** (grade de capas em tela cheia, pro controle).
+- **7 filtros** na placa de vídeo (Tela): nítido, suave, **TV de tubo (CRT)**,
+  fliperama, Game Boy, café (sépia) e LCD.
 - **Teclas configuráveis** (Emulação → Configurar teclas…), saves de bateria
   automáticos, controle USB/Xbox, tela cheia (F11), mudo (M).
 

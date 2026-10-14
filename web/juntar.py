@@ -42,7 +42,7 @@ pagina = (web / "pagina.html").read_text()
 partes = {
     "{{CSS}}": (web / "estilo.css").read_text(),
     "{{NUCLEO}}": script,
-    "{{APP}}": (web / "app.js").read_text(),
+    "{{APP}}": (web / "estado.js").read_text() + "\n" + (web / "app.js").read_text(),
     "{{ICONE}}": "data:image/png;base64," + base64.b64encode(icone.read_bytes()).decode(),
 }
 for k, v in partes.items():

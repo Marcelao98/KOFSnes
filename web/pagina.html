@@ -12,15 +12,20 @@
 <body>
 <nav id="menu">
   <div class="m"><button>Arquivo</button><div class="sub">
-    <button data-acao="abrir">Abrir ROM…<kbd>Ctrl+O</kbd></button>
+    <button data-acao="biblioteca">Biblioteca<kbd>Ctrl+L</kbd></button>
     <button data-acao="pasta">Escolher pasta de ROMs…</button>
-    <button data-acao="lista">Lista de ROMs<kbd>Ctrl+L</kbd></button>
+    <button data-acao="abrir">Adicionar arquivo…<kbd>Ctrl+O</kbd></button>
     <hr>
     <button data-acao="reiniciar">Reiniciar<kbd>F1</kbd></button>
   </div></div>
   <div class="m"><button>Emulação</button><div class="sub">
     <button data-acao="pausar">Pausar / continuar<kbd>P</kbd></button>
     <button data-acao="mudo">Som ligado / mudo<kbd>M</kbd></button>
+    <hr>
+    <button data-acao="salvar-estado">Salvar estado<kbd>F5</kbd></button>
+    <button data-acao="carregar-ultimo">Carregar último estado<kbd>F8</kbd></button>
+    <button data-acao="estados">Estados salvos…<kbd>F6</kbd></button>
+    <button data-acao="auto-toggle">Salvar automático: ligado</button>
     <hr>
     <button data-acao="teclas">Configurar teclas…</button>
   </div></div>
@@ -30,7 +35,16 @@
     <button data-escala="4">Escala 4×</button>
     <button data-escala="0">Encaixar na janela</button>
     <hr>
+    <button data-filtro="nitido">Filtro: Nítido</button>
+    <button data-filtro="suave">Filtro: Suave</button>
+    <button data-filtro="crt">Filtro: TV de tubo (CRT)</button>
+    <button data-filtro="fliperama">Filtro: Fliperama</button>
+    <button data-filtro="gameboy">Filtro: Game Boy</button>
+    <button data-filtro="cafe">Filtro: Café (sépia)</button>
+    <button data-filtro="lcd">Filtro: Tela LCD</button>
+    <hr>
     <button data-acao="cheia">Tela cheia<kbd>F11</kbd></button>
+    <button data-acao="sofa">Modo sofá (tela cheia, controle)</button>
   </div></div>
   <div class="m"><button>Tema</button><div class="sub">
     <button data-tema="cafe">☕ Café queimado</button>
@@ -46,19 +60,40 @@
 <main id="palco">
   <canvas id="tela" width="256" height="224"></canvas>
 
-  <section id="inicio" class="janela">
-    <h1>KOF<span>nes</span></h1>
-    <p class="sub-t">Super Nintendo escrito em Kof ☕</p>
-    <button class="grande" data-acao="abrir">Abrir ROM</button>
-    <button class="grande sec" data-acao="pasta">Escolher pasta de ROMs</button>
-    <p class="dica">ou arraste um <b>.sfc</b>, <b>.smc</b> ou <b>.zip</b> pra cá</p>
+  <section id="biblioteca" class="janela">
+    <div class="titulo-j">☕ Biblioteca <span><button class="x" data-acao="sofa" title="modo sofá (Select no controle)">🛋</button>
+      <button class="x" data-acao="fechar-biblioteca" title="voltar ao jogo (Esc)">×</button></span></div>
+    <div class="bib">
+      <div class="bib-esq">
+        <input id="filtro" placeholder="digite pra procurar…" autocomplete="off" spellcheck="false">
+        <ul id="roms"></ul>
+        <p id="lista-vazia" class="dica"></p>
+      </div>
+      <div class="bib-dir">
+        <div class="capa"><img id="capa-img" alt=""><span id="capa-vazia">☕</span><img id="parou-img" alt="onde você parou" title="onde você parou" hidden></div>
+        <h2 id="info-nome">KOFnes</h2>
+        <p id="info-det" class="dica">Super Nintendo escrito em Kof</p>
+        <div class="bib-botoes">
+          <button class="grande" data-acao="jogar">▶ Jogar</button>
+          <button class="grande sec" data-acao="do-zero" hidden>↺ Começar do zero</button>
+          <button class="grande sec" data-acao="estados-do-sel">Estados salvos</button>
+        </div>
+      </div>
+    </div>
+    <div class="bib-rodape">
+      <button class="sec" data-acao="pasta">📁 Escolher pasta de ROMs</button>
+      <button class="sec" data-acao="abrir">＋ Adicionar arquivo</button>
+      <button class="sec" data-acao="capas">🖼 Capas oficiais: ligadas</button>
+      <span class="dica">setas navegam · Enter joga · Shift+Enter do zero · E estados · controle: A joga, X estados, Select sofá</span>
+    </div>
   </section>
 
-  <section id="lista" class="janela" hidden>
-    <div class="titulo-j">Carregar jogo <button class="x" data-acao="fechar-lista">×</button></div>
-    <input id="filtro" placeholder="digite pra procurar…" autocomplete="off" spellcheck="false">
-    <ul id="roms"></ul>
-    <p id="lista-vazia" class="dica">Nenhuma pasta escolhida. Use <b>Arquivo → Escolher pasta de ROMs</b>.</p>
+  <section id="estados" class="janela" hidden>
+    <div class="titulo-j"><span>💾 Estados salvos — <select id="estados-jogo"></select></span>
+      <button class="x" data-acao="fechar-estados">×</button></div>
+    <div id="grade-estados"></div>
+    <p id="estados-vazio" class="dica">Nenhum estado salvo deste jogo. Aperte <b>F5</b> durante o jogo.</p>
+    <button class="grande" data-acao="salvar-estado">Salvar estado agora (F5)</button>
   </section>
 
   <section id="ajuda" class="janela" hidden>
