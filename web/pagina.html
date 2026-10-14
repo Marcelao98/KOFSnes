@@ -27,6 +27,7 @@
     <button data-acao="carregar-ultimo">Carregar último estado<kbd>F8</kbd></button>
     <button data-acao="estados">Estados salvos…<kbd>F6</kbd></button>
     <button data-acao="auto-toggle">Salvar automático: ligado</button>
+    <button data-acao="rebob-toggle">Rebobinar (Backspace): ligado</button>
     <hr>
     <button data-acao="teclas">Configurar teclas…</button>
   </div></div>
@@ -39,6 +40,11 @@
     <button data-prop="43">Proporção 4:3 (como na TV)</button>
     <button data-prop="87">Pixel perfeito (8:7)</button>
     <button data-prop="esticar">Esticar</button>
+    <hr>
+    <button data-moldura="nenhuma">Sem moldura</button>
+    <button data-moldura="tv80">Moldura: TV de madeira (anos 80)</button>
+    <button data-moldura="tv90">Moldura: TV de tubo (anos 90)</button>
+    <button data-moldura="fliperama">Moldura: Fliperama</button>
     <hr>
     <button data-filtro="nitido">Filtro: Nítido</button>
     <button data-filtro="suave">Filtro: Suave</button>
@@ -64,7 +70,7 @@
 </nav>
 
 <main id="palco">
-  <canvas id="tela" width="256" height="224"></canvas>
+  <div id="moldura"><canvas id="tela" width="256" height="224"></canvas><div class="mold-extra"></div></div>
 
   <section id="biblioteca" class="janela">
     <div class="titulo-j">☕ Biblioteca <span><button class="x" data-acao="sofa" title="modo sofá (Select no controle)">🛋</button>

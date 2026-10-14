@@ -100,13 +100,19 @@ function desenhar() {
 const PROPORCOES = [['43', '4:3 (como na TV)'], ['87', 'Pixel perfeito (8:7)'], ['esticar', 'Esticar']];
 const RAZAO = { 43: 4 / 3, 87: 8 / 7 };
 let proporcao = PROPORCOES.some(([k]) => k === ler('proporcao')) ? ler('proporcao') : '43';
+// moldura em volta do jogo; as bordas são frações da altura da tela (cima, direita, baixo, esquerda)
+const MOLDURAS = [['nenhuma', 'Sem moldura'], ['tv80', 'TV de madeira (anos 80)'], ['tv90', 'TV de tubo (anos 90)'], ['fliperama', 'Fliperama']];
+const BORDAS = { nenhuma: [0, 0, 0, 0], tv80: [0.1, 0.44, 0.1, 0.1], tv90: [0.08, 0.08, 0.2, 0.08], fliperama: [0.3, 0.12, 0.34, 0.12] };
+let moldura = BORDAS[ler('moldura')] ? ler('moldura') : 'nenhuma';
+function mudarMoldura(v) { moldura = BORDAS[v] ? v : 'nenhuma'; guardar('moldura', moldura); ajustarEscala(); }
 function ajustarEscala() {
   const p = $('#palco'), cheia = document.body.classList.contains('cheia'), folga = cheia ? 0 : 16;
   const W = Math.max(256, p.clientWidth - folga), H = Math.max(224, p.clientHeight - folga);
+  const [bc, bd, bb, be] = BORDAS[moldura], comMoldura = moldura !== 'nenhuma';
   let w, h;
-  if (proporcao === 'esticar') { w = W; h = H; } else {
-    const r = RAZAO[proporcao], hMax = Math.min(H, W / r);
-    if (cheia) h = hMax;                                       // tela cheia: o maior que couber
+  if (proporcao === 'esticar') { h = H / (1 + bc + bb); w = W - (bd + be) * h; } else {
+    const r = RAZAO[proporcao], hMax = Math.min(H / (1 + bc + bb), W / (r + bd + be));
+    if (cheia || comMoldura) h = hMax;                         // tela cheia ou moldura: o maior que couber
     else {
       const maxE = Math.max(1, Math.floor(hMax / 224));
       h = 224 * (escala ? Math.min(escala, maxE) : maxE);       // na janela: múltiplo inteiro
@@ -115,6 +121,10 @@ function ajustarEscala() {
   }
   w = Math.floor(w); h = Math.floor(h);
   tela.style.width = w + 'px'; tela.style.height = h + 'px';
+  const m = $('#moldura');
+  document.body.dataset.moldura = moldura;
+  m.style.padding = [bc, bd, bb, be].map((f) => Math.round(f * h) + 'px').join(' ');
+  m.style.setProperty('--h', h + 'px');
   if (gl) {   // o canvas WebGL desenha na resolução da tela, pros filtros terem detalhe
     const dpr = window.devicePixelRatio || 1;
     tela.width = Math.round(w * dpr); tela.height = Math.round(h * dpr);
@@ -122,6 +132,7 @@ function ajustarEscala() {
   } else { tela.width = 256; tela.height = 224; }
   document.querySelectorAll('[data-escala]').forEach((b) => b.classList.toggle('ativo', +b.dataset.escala === escala));
   document.querySelectorAll('[data-prop]').forEach((b) => b.classList.toggle('ativo', b.dataset.prop === proporcao));
+  document.querySelectorAll('[data-moldura]').forEach((b) => { if (b.tagName === 'BUTTON') b.classList.toggle('ativo', b.dataset.moldura === moldura); });
 }
 function mudarProporcao(v) {
   proporcao = PROPORCOES.some(([k]) => k === v) ? v : '43'; guardar('proporcao', proporcao); ajustarEscala();
@@ -206,7 +217,7 @@ const BOTOES_SNES = [
   ['L', 0x0020, 'KeyQ'], ['R', 0x0010, 'KeyW'], ['Start', 0x1000, 'Enter'], ['Select', 0x2000, 'ShiftLeft'],
 ];
 // atalhos do emulador: não podem virar botão do jogo
-const RESERVADAS = ['Escape', 'Tab', 'F1', 'F2', 'F5', 'F6', 'F8', 'F11', 'KeyP', 'KeyM', 'Minus', 'Equal', 'NumpadSubtract', 'NumpadAdd'];
+const RESERVADAS = ['Escape', 'Tab', 'Backspace', 'F1', 'F2', 'F5', 'F6', 'F8', 'F11', 'KeyP', 'KeyM', 'Minus', 'Equal', 'NumpadSubtract', 'NumpadAdd'];
 let mapa = {};   // nome do botão -> código da tecla (KeyboardEvent.code)
 let TECLAS = {}; // código da tecla -> bit
 function carregarMapa() {
@@ -272,6 +283,7 @@ function montarAjuda() {
     ['Controle USB/Xbox', 'também funciona', 'Tela cheia', 'F11 · duplo clique'],
     ['Menu rápido', 'Select+Start · F2', 'Volume', '- / ='],
     ['Salvar · carregar', 'Select+L · Select+R', 'Sair da tela cheia', 'Esc'],
+    ['Rebobinar (segurar)', 'Select+Y', 'Rebobinar (segurar)', 'Backspace'],
   ];
   const tab = $('#tab-ajuda');
   tab.innerHTML = '<tr><th>SNES</th><th>Teclado</th><th>Emulador</th><th>Teclado</th></tr>';
@@ -299,7 +311,7 @@ function estado() {
 }
 // Select + Start/L/R é atalho do emulador: enquanto apertados juntos, não chegam ao jogo
 function semCombo(b) {
-  return (b & 0x2000) && (b & 0x1030) ? b & ~0x3030 : b;
+  return (b & 0x2000) && (b & 0x5030) ? b & ~0x7030 : b;
 }
 addEventListener('keydown', (e) => {
   ligarSom();
@@ -326,18 +338,22 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyP' || e.code === 'Escape') { acao('pausar'); return; }
   if (e.code === 'KeyM') { acao('mudo'); return; }
   if (e.code === 'Tab') { e.preventDefault(); turbo = true; return; }
+  if (e.code === 'Backspace') { e.preventDefault(); if (snes) voltandoTecla = true; return; }
   if (TECLAS[e.code] && snes) { e.preventDefault(); teclado |= TECLAS[e.code]; }
 });
 addEventListener('keyup', (e) => {
   if (e.code === 'Tab') turbo = false;
+  if (e.code === 'Backspace') voltandoTecla = false;
   if (TECLAS[e.code]) teclado &= ~TECLAS[e.code];
 });
-addEventListener('blur', () => { teclado = 0; turbo = false; });
+addEventListener('blur', () => { teclado = 0; turbo = false; voltandoTecla = false; });
 
 // ---------------- laço principal ----------------
 let ultimo = 0, sobra = 0, contados = 0, marco = 0;
 function laco(t) {
   requestAnimationFrame(laco);
+  if (snes && voltando() && !rapidoAberto && $('#biblioteca').hidden) { rebobinarPasso(); ultimo = t; return; }
+  if (rebobinou) terminarRebobinar();
   if (!snes || pausado) { ultimo = t; return; }
   const dt = Math.min(t - ultimo, 100);
   sobra += dt; ultimo = t;
@@ -356,6 +372,8 @@ function laco(t) {
     pausado = true; avisar('erro no emulador: ' + e.message, 6000); console.error(e); return;
   }
   if (vezes) desenhar();
+  desdeFoto += vezes;
+  if (rebobLigado && rebob && desdeFoto >= 2) { rebob.gravar(); desdeFoto = 0; }   // ~30 fotos por segundo
   contados += vezes;
   if (t - marco >= 1000) {
     $('#st-fps').textContent = (pausado ? 'pausado · ' : '') + Math.round(contados * 1000 / (t - marco)) + ' fps';
@@ -363,6 +381,36 @@ function laco(t) {
   }
 }
 requestAnimationFrame(laco);
+
+// ---------------- rebobinar ----------------
+// segura Backspace (ou Select+Y no controle) e o jogo volta no tempo, 2x mais
+// rápido que o normal; funciona pausado também: volta até o ponto certo e
+// aperta F5 pra guardar aquele momento num savestate
+let rebob = null, rebobLigado = ler('rebobinar') !== '0', desdeFoto = 0, voltandoTecla = false, rebobinou = 0;
+const voltando = () => voltandoTecla || (estado() & 0x6000) === 0x6000;
+function novoRebob() { rebob = rebobLigado && snes ? KofEstado.Rebobinador(snes, 48 << 20) : null; desdeFoto = 0; }
+function mostrarRebob() {
+  const s = (rebobinou * 2 / 60).toFixed(1).replace('.', ',');
+  avisar(`⏪ −${s} s · ${rebob.fotos ? 'segure pra voltar mais' : 'não dá pra voltar mais'} · F5 salva este momento`, 1500);
+}
+function rebobinarPasso() {
+  if (!rebob) { if (!rebobLigado) avisar('rebobinar está desligado (Emulação → Rebobinar)'); return; }
+  if (rebob.voltar()) rebobinou++;
+  snes.pad[0] = 0; snes.runFrame(); snes.apu.dsp.outCount = 0;    // um quadro pra ter a imagem daquele momento
+  desenhar(); mostrarRebob();
+}
+function terminarRebobinar() { rebobinou = 0; ini = fim = 0; sobra = 0; desdeFoto = 0; }
+function voltarSegundos(seg) {   // do menu rápido: volta e fica pausado
+  if (!rebob) { avisar('rebobinar está desligado (Emulação → Rebobinar)'); return; }
+  let n = 0;
+  for (let i = 0; i < seg * 30 && rebob.voltar(); i++) n++;
+  snes.pad[0] = 0; snes.runFrame(); snes.apu.dsp.outCount = 0; desenhar();
+  avisar(n ? `⏪ voltou ${(n * 2 / 60).toFixed(1).replace('.', ',')} s` : 'não dá pra voltar mais');
+}
+function marcarRebob() {
+  const b = $('[data-acao="rebob-toggle"]');
+  b.textContent = 'Rebobinar (Backspace): ' + (rebobLigado ? 'ligado' : 'desligado'); b.classList.toggle('ativo', rebobLigado);
+}
 
 // ---------------- ROMs ----------------
 async function lerZip(buf) {
@@ -471,7 +519,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
     for (let i = 0; i < b.length && i < s.cart.sram.length; i++) s.cart.sram[i] = b.charCodeAt(i);
   }
   s.reset();
-  snes = s; sramAntes = textoSram(); pausado = false; sobra = 0;
+  snes = s; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob();
   document.body.classList.remove('vazio');
   fecharJanelas();
   $('#st-jogo').textContent = romNome + ' · ' + (s.cart.title.trim() || '?');
@@ -615,7 +663,7 @@ async function carregarEstado(est) {
       await abrirBytes(j.arquivo || j.nome, j.rom, false);
     }
     KofEstado.restaurar(snes, JSON.parse(await descomprimir(est.dados)));
-    snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0; pausado = false;
+    snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0; pausado = false; novoRebob();
     fecharJanelas();
     snes.runFrame(); snes.apu.dsp.outCount = 0; desenhar();
     avisar('estado de ' + quando(est.quando) + ' carregado');
@@ -625,7 +673,7 @@ async function continuar(j) {
   await abrirBytes(j.arquivo || j.nome, j.rom, false);
   if (!j.auto) return;
   KofEstado.restaurar(snes, JSON.parse(j.auto));
-  snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0;
+  snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0; novoRebob();
   snes.runFrame(); snes.apu.dsp.outCount = 0; desenhar();
   avisar('continuando de ' + quando(j.autoQuando));
 }
@@ -889,10 +937,12 @@ const ITENS_RAPIDO = [
   { t: '▶ Continuar', f: () => fecharRapido() },
   { t: '💾 Salvar estado', f: () => { fecharRapido(); salvarEstado(); } },
   { t: '⟲ Carregar último estado', f: () => { fecharRapido(); carregarUltimo(); } },
+  { t: '⏪ Voltar 5 segundos', f: () => { voltarSegundos(5); } },
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
   { t: 'Filtro', v: () => FILTROS.find(([k]) => k === filtro)[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, filtro, d)) },
   { t: 'Proporção', v: () => PROPORCOES.find(([k]) => k === proporcao)[1], aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
+  { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS, moldura, d)) },
   { t: 'Volume', v: () => (mudo ? 'mudo' : volume + '%'), aj: (d) => mudarVolume(d * 10) },
   { t: '⛶ Tela cheia', f: () => acao('cheia') },
   { t: '↺ Reiniciar', f: () => { fecharRapido(); acao('reiniciar'); } },
@@ -1067,9 +1117,12 @@ async function acao(a) {
     case 'fechar-estados': $('#estados').hidden = true; if (!snes) mostrarBiblioteca(false); break;
     case 'salvar-estado': await salvarEstado(); break;
     case 'carregar-ultimo': await carregarUltimo(); break;
-    case 'reiniciar': if (snes) { snes.reset(); avisar('reiniciado'); } break;
+    case 'reiniciar': if (snes) { snes.reset(); novoRebob(); avisar('reiniciado'); } break;
     case 'pausar': if (snes) { pausado = !pausado; avisar(pausado ? 'pausado' : 'continuando'); } break;
     case 'mudo': mudo = !mudo; guardar('mudo', mudo ? '1' : '0'); marcarSom(); avisar(mudo ? 'som desligado' : 'som ligado'); break;
+    case 'rebob-toggle':
+      rebobLigado = !rebobLigado; guardar('rebobinar', rebobLigado ? '1' : '0'); novoRebob(); marcarRebob();
+      avisar(rebobLigado ? 'rebobinar ligado: segure Backspace (ou Select+Y)' : 'rebobinar desligado'); break;
     case 'vol-menos': mudarVolume(-10); break;
     case 'vol-mais': mudarVolume(10); break;
     case 'rapido': if (rapidoAberto) fecharRapido(); else if (snes) abrirRapido(); else avisar('abra um jogo primeiro'); break;
@@ -1107,6 +1160,7 @@ addEventListener('click', (e) => {
   else if (b.dataset.tema && b.closest('#temas')) { tema(b.dataset.tema); fecharTemas(); avisar('🎨 tema: ' + TODOS_TEMAS.find(([k]) => k === temaSalvo)[1]); if (!snes) mostrarBiblioteca(false); }
   else if (b.dataset.filtro) { aplicarFiltro(b.dataset.filtro); fecharMenus(); }
   else if (b.dataset.prop) { mudarProporcao(b.dataset.prop); fecharMenus(); }
+  else if (b.dataset.moldura) { mudarMoldura(b.dataset.moldura); fecharMenus(); }
 });
 
 document.body.classList.add('vazio');
@@ -1116,12 +1170,13 @@ tema(ler('tema') || 'cafe');
 aplicarFiltro(filtro);
 marcarAuto();
 marcarSom();
+marcarRebob();
 document.body.classList.toggle('sofa', sofa);
 $('[data-acao="capas"]').textContent = capasNet ? '🖼 Capas oficiais: ligadas' : '🖼 Capas oficiais: desligadas';
 ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"]').forEach((b) => { b.hidden = true; });
 mostrarBiblioteca(false);
 window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
-  volume: () => volume, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
+  volume: () => volume, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
   assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
 })();

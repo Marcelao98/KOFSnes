@@ -16,6 +16,9 @@ Enter = Start · Shift = Select · P = pausa · F1 = reiniciar · Tab = turbo
 F11 ou duplo clique = tela cheia · M = mudo · - e = = volume.
 Select+Start (ou F2) = menu rápido no meio do jogo: salvar, carregar,
 filtro, proporção 4:3, volume. No controle: Select+L salva, Select+R carrega.
+Segure Backspace (ou Select+Y) pra REBOBINAR: o jogo volta no tempo. Pausado
+também funciona: volte até o ponto certo e aperte F5 pra salvar aquele momento.
+Imagem > Moldura: TV de madeira, TV de tubo ou fliperama em volta do jogo.
 Controle USB/Xbox também funciona.
 
 Os saves de bateria ficam guardados sozinhos no perfil do KOFnes

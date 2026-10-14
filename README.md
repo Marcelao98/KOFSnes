@@ -84,6 +84,10 @@ Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
 - **Conforto**: proporção 4:3 como na TV (ou 8:7, esticar) no menu Imagem; volume
   (- e =) no menu Som; menu rápido no jogo com Select+Start (ou F2); Select+L/R
   salva e carrega pelo controle; pausa sozinho quando você sai da janela.
+- **Rebobinar**: segure Backspace (ou Select+Y) e o jogo volta no tempo, até ~1 min e
+  meio; funciona pausado, pra voltar ao ponto exato e salvar ali (F5). Guarda só o que
+  mudou entre os quadros (~3 KB por foto, 30 por segundo) e volta bit a bit igual.
+- **Molduras**: TV de madeira dos anos 80, TV de tubo dos anos 90 ou fliperama.
 - **28 temas** com galeria de prévias (consoles, computador e internet antiga, anime,
   bem brasileiro) e **estatísticas**: tempo jogado, sessões, primeira e última vez
   por jogo, e o gráfico dos últimos 7 dias.

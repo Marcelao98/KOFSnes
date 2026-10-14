@@ -92,6 +92,82 @@ const KofEstado = (() => {
     };
     objeto(raiz, foto.raiz);
   }
-  return { capturar, restaurar };
+  // ---------------- rebobinar ----------------
+  // Fotos rápidas e pequenas, várias por segundo. Um "plano" lista uma vez os
+  // arrays tipados e os campos simples do grafo; a "cabeça" é uma cópia do
+  // estado. Cada foto guarda só o DESFAZER: os pedaços (64 palavras) que
+  // mudaram desde a foto anterior, com o valor antigo. Voltar = aplicar o
+  // desfazer na cabeça e copiar a cabeça pro console.
+  const PEDACO = 64;
+  function Rebobinador(raiz, limiteBytes) {
+    let plano = null, cabeca = null, primsCab = null, fotos = [], bytes = 0;
+    const palavras = (a) => (a.byteLength % 4 === 0 && a.byteOffset % 4 === 0
+      ? new Int32Array(a.buffer, a.byteOffset, a.byteLength / 4) : new Uint8Array(a.buffer, a.byteOffset, a.byteLength));
+    function planejar() {
+      const arrs = [], prims = [], refs = [], vistos = new Set();
+      const anda = (o) => {
+        if (vistos.has(o)) return; vistos.add(o);
+        for (const k of Object.keys(o)) {
+          if (PULAR.has(k)) continue;
+          const v = o[k];
+          if (v === null || typeof v !== 'object') { if (typeof v !== 'function') prims.push([o, k]); continue; }
+          refs.push([o, k, v]);
+          if (ArrayBuffer.isView(v)) { if (!vistos.has(v)) { vistos.add(v); arrs.push(v); } } else anda(v);
+        }
+      };
+      anda(raiz);
+      plano = { arrs, prims, refs, vivas: arrs.map(palavras) };
+      cabeca = plano.vivas.map((w) => w.slice());
+      primsCab = prims.map(([o, k]) => o[k]);
+      fotos = []; bytes = 0;
+    }
+    // o núcleo trocou algum objeto/array de lugar? então o plano velho não vale
+    const mudouEstrutura = () => plano.refs.some(([o, k, v]) => o[k] !== v);
+    function gravar() {
+      if (!plano || mudouEstrutura()) { planejar(); return; }
+      const pedacos = [];
+      let tam = 0;
+      for (let i = 0; i < cabeca.length; i++) {
+        const h = cabeca[i], w = plano.vivas[i], n = w.length;
+        for (let ini = 0; ini < n; ini += PEDACO) {
+          const fim = Math.min(n, ini + PEDACO);
+          let p = ini;
+          while (p < fim && h[p] === w[p]) p++;
+          if (p === fim) continue;
+          pedacos.push(i, ini, h.slice(ini, fim));          // valor antigo
+          h.set(w.subarray(ini, fim), ini);
+          tam += (fim - ini) * h.BYTES_PER_ELEMENT + 24;
+        }
+      }
+      const antigos = primsCab;
+      primsCab = plano.prims.map(([o, k]) => o[k]);
+      fotos.push({ pedacos, prims: antigos, tam });
+      bytes += tam + antigos.length * 8;
+      while (bytes > limiteBytes && fotos.length > 1) { const f = fotos.shift(); bytes -= f.tam + f.prims.length * 8; }
+    }
+    function escreverNoConsole() {
+      for (let i = 0; i < cabeca.length; i++) plano.vivas[i].set(cabeca[i]);
+      plano.prims.forEach(([o, k], j) => { o[k] = primsCab[j]; });
+    }
+    // volta uma foto; false quando não tem mais pra onde voltar
+    function voltar() {
+      if (!plano) return false;
+      const f = fotos.pop();
+      if (f) {
+        const p = f.pedacos;
+        for (let j = 0; j < p.length; j += 3) cabeca[p[j]].set(p[j + 2], p[j + 1]);
+        primsCab = f.prims; bytes -= f.tam + f.prims.length * 8;
+      }
+      escreverNoConsole();
+      return !!f;
+    }
+    return {
+      gravar, voltar,
+      limpar() { plano = null; fotos = []; bytes = 0; },
+      get fotos() { return fotos.length; },
+      get bytes() { return bytes; },
+    };
+  }
+  return { capturar, restaurar, Rebobinador };
 })();
 if (typeof module !== 'undefined') module.exports = KofEstado;
