@@ -12,14 +12,17 @@ SAIDA="$RAIZ/dist/web"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 mkdir -p "$T/src" "$SAIDA"
+# número da versão (cresce sempre): o atualizador do KOFnes.exe compara ele
+export KOFNES_BUILD="${KOFNES_BUILD:-$(date -u +%Y%m%d%H%M)}"
 cp "$AQUI/nucleo.kf" "$T/src/"
 cp -r "$RAIZ/snes" "$T/src/snes"
 kof build "$T/src/nucleo.kf" --target js --output "$T/out"
 python3 "$RAIZ/empacotar/icone.py" "$T" >/dev/null
 python3 "$AQUI/juntar.py" "$T/out" "$AQUI" "$T/icone.png" "$SAIDA/KOFnes.html"
+printf 'versao=%s\ntamanho=%s\n' "$KOFNES_BUILD" "$(stat -c %s "$SAIDA/KOFnes.html")" > "$SAIDA/versao.txt"
 if command -v x86_64-w64-mingw32-gcc >/dev/null; then
     (cd "$T" && cp "$RAIZ/empacotar/kofnes.rc" . && x86_64-w64-mingw32-windres kofnes.rc -O coff -o res.o)
-    x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFnes.exe" "$AQUI/lancador_win.c" "$T/res.o" -lshlwapi
+    x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFnes.exe" "$AQUI/lancador_win.c" "$T/res.o" -lshlwapi -lurlmon
 fi
 sed "s/$/\r/" "$AQUI/LEIA-ME.txt" > "$SAIDA/LEIA-ME.txt"
 rm -f "$RAIZ/dist/KOFnes-sem-java-windows.zip"

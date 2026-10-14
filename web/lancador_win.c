@@ -4,9 +4,68 @@
 // dois, abre no navegador padrão.
 // Perfil próprio em %LOCALAPPDATA%\KOFnes\navegador: os saves, o tema e a
 // pasta de ROMs ficam guardados lá.
+//
+// Atualizador: antes de abrir, lê publicado/versao.txt do GitHub. Se o número
+// de lá for maior que o do versao.txt daqui, baixa o KOFnes.html novo, confere
+// o tamanho e o começo do arquivo, e troca. Sem internet (ou se o GitHub
+// demorar), abre a versão que já tem. Os saves não moram no KOFnes.html, então
+// trocar o arquivo não mexe neles. Um arquivo "nao-atualizar" do lado do .exe
+// desliga isso.
 #include <windows.h>
 #include <shlwapi.h>
+#include <urlmon.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define PUBLICADO L"https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado/"
+
+typedef struct {
+    wchar_t dir[MAX_PATH];
+    volatile LONG baixando;   // 1 = achou versão nova e está baixando o KOFnes.html
+} Atualizacao;
+
+// lê "campo=número" de um versao.txt (0 se não tem)
+static long long campo(const wchar_t *arq, const char *nome) {
+    FILE *f = _wfopen(arq, L"rb");
+    if (!f) return 0;
+    char b[1024] = { 0 };
+    fread(b, 1, sizeof(b) - 1, f);
+    fclose(f);
+    char *p = strstr(b, nome);
+    return p ? _strtoi64(p + strlen(nome), NULL, 10) : 0;
+}
+
+static DWORD WINAPI atualizar(LPVOID arg) {
+    Atualizacao *a = (Atualizacao *)arg;
+    wchar_t url[512], vNova[MAX_PATH], vAqui[MAX_PATH], hNovo[MAX_PATH], hAqui[MAX_PATH];
+    swprintf(vNova, MAX_PATH, L"%ls\\versao.txt.novo", a->dir);
+    swprintf(vAqui, MAX_PATH, L"%ls\\versao.txt", a->dir);
+    swprintf(hNovo, MAX_PATH, L"%ls\\KOFnes.html.novo", a->dir);
+    swprintf(hAqui, MAX_PATH, L"%ls\\KOFnes.html", a->dir);
+    swprintf(url, 512, PUBLICADO L"versao.txt?t=%lu", GetTickCount());
+    if (URLDownloadToFileW(NULL, url, vNova, 0, NULL) != S_OK) return 0;
+    long long nova = campo(vNova, "versao="), aqui = campo(vAqui, "versao="), tam = campo(vNova, "tamanho=");
+    if (nova <= aqui || tam <= 0) { DeleteFileW(vNova); return 0; }
+    InterlockedExchange(&a->baixando, 1);
+    swprintf(url, 512, PUBLICADO L"KOFnes.html?t=%lu", GetTickCount());
+    if (URLDownloadToFileW(NULL, url, hNovo, 0, NULL) != S_OK) { DeleteFileW(vNova); return 0; }
+    // confere: o tamanho anunciado e o começo de uma página do KOFnes
+    WIN32_FILE_ATTRIBUTE_DATA d;
+    char ini[16] = { 0 };
+    FILE *f = _wfopen(hNovo, L"rb");
+    if (f) { fread(ini, 1, 15, f); fclose(f); }
+    int ok = GetFileAttributesExW(hNovo, GetFileExInfoStandard, &d)
+        && (((long long)d.nFileSizeHigh << 32) | d.nFileSizeLow) == tam
+        && _strnicmp(ini, "<!doctype html", 14) == 0;
+    if (ok && MoveFileExW(hNovo, hAqui, MOVEFILE_REPLACE_EXISTING)) {
+        MoveFileExW(vNova, vAqui, MOVEFILE_REPLACE_EXISTING);
+    } else {
+        DeleteFileW(hNovo);
+        DeleteFileW(vNova);
+    }
+    return 0;
+}
 
 static int acharNavegador(const wchar_t *exe, wchar_t *saida, DWORD tam) {
     wchar_t chave[256];
@@ -34,6 +93,20 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
         MessageBoxW(NULL, L"Não achei o KOFnes.html do lado do KOFnes.exe.\n"
                           L"Extraia a pasta inteira antes de abrir.", L"KOFnes", MB_ICONERROR);
         return 1;
+    }
+
+    // atualizador: espera até 3 s pra saber se tem versão nova; se tiver, até 20 s pra baixar
+    wchar_t trava[MAX_PATH];
+    swprintf(trava, MAX_PATH, L"%ls\\nao-atualizar", dir);
+    if (GetFileAttributesW(trava) == INVALID_FILE_ATTRIBUTES) {
+        static Atualizacao at;
+        wcscpy(at.dir, dir);
+        at.baixando = 0;
+        HANDLE t = CreateThread(NULL, 0, atualizar, &at, 0, NULL);
+        if (t) {
+            if (WaitForSingleObject(t, 3000) == WAIT_TIMEOUT && at.baixando) WaitForSingleObject(t, 20000);
+            CloseHandle(t);
+        }
     }
     if (UrlCreateFromPathW(html, url, &n, 0) != S_OK) return 1;
 

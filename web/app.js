@@ -628,6 +628,27 @@ addEventListener('error', (e) => {
   ultimoErroUi = Date.now(); abrirBug(e.error);
 });
 
+// ---------------- atualizações ----------------
+// O KOFnes.exe se atualiza sozinho ao abrir (baixa publicado/KOFnes.html do
+// GitHub). Aqui só avisa: "atualizou" depois que trocou, e "tem versão nova"
+// se o GitHub já tem uma maior que esta (aí é fechar e abrir de novo).
+const BUILD = parseInt(VERSAO, 10) || 0;
+const URL_VERSAO = `https://raw.githubusercontent.com/${REPO}/main/publicado/versao.txt`;
+async function procurarAtualizacao(manual) {
+  try {
+    const t = await (await fetch(URL_VERSAO + '?t=' + Date.now(), { cache: 'no-store' })).text();
+    const nova = +((t.match(/versao=(\d+)/) || [])[1] || 0);
+    if (nova > BUILD) avisar('🆕 tem versão nova do KOFnes no GitHub: feche e abra o KOFnes pra atualizar', 8000);
+    else if (manual) avisar(`✔ você está na versão mais nova (${VERSAO})`, 4000);
+  } catch (e) { if (manual) avisar('não consegui falar com o GitHub agora', 4000); }
+}
+function avisarSeAtualizou() {
+  const vista = +(ler('versaoVista') || 0);
+  if (BUILD && vista && vista < BUILD) setTimeout(() => avisar(`✨ KOFnes atualizado! versão ${VERSAO}`, 5000), 1200);
+  if (BUILD) guardar('versaoVista', BUILD);
+  setTimeout(() => procurarAtualizacao(false), 10000);
+}
+
 // ---------------- rebobinar ----------------
 // segura Backspace (ou Select+Y no controle) e o jogo volta no tempo, 2x mais
 // rápido que o normal; funciona pausado também: volta até o ponto certo e
@@ -1447,6 +1468,7 @@ async function acao(a) {
       rebobLigado = !rebobLigado; guardar('rebobinar', rebobLigado ? '1' : '0'); novoRebob(); marcarRebob();
       avisar(rebobLigado ? 'rebobinar ligado: segure Backspace (ou Select+Y)' : 'rebobinar desligado'); break;
     case 'bug': abrirBug(); break;
+    case 'atualizacao': await procurarAtualizacao(true); break;
     case 'jukebox': await abrirJuke(); break;
     case 'fechar-jukebox': $('#jukebox').hidden = true; montarJuke(); if (!snes) mostrarBiblioteca(false); break;
     case 'guardar-musica': await guardarMusica(); break;
@@ -1511,6 +1533,7 @@ marcarAuto();
 marcarSom();
 marcarRebob();
 marcarCacador();
+avisarSeAtualizou();
 document.body.classList.toggle('sofa', sofa);
 $('[data-acao="capas"]').textContent = capasNet ? '🖼 Capas oficiais: ligadas' : '🖼 Capas oficiais: desligadas';
 ajustarEscala();

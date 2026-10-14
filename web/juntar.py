@@ -27,7 +27,9 @@ def versao():
         c = subprocess.run(["git", "-C", str(web), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
     except OSError:
         c = ""
-    return (c or "sem-git") + " · " + datetime.date.today().isoformat()
+    import os
+    build = os.environ.get("KOFNES_BUILD") or datetime.datetime.utcnow().strftime("%Y%m%d%H%M")
+    return build + " · " + (c or "sem-git")
 
 runtime = (saida_kof / "kof-runtime.mjs").read_text()
 runtime = re.sub(r"^export (function|const|let|class) ", r"\1 ", runtime, flags=re.M)
