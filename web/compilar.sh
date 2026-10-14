@@ -19,11 +19,16 @@ cp -r "$RAIZ/snes" "$T/src/snes"
 kof build "$T/src/nucleo.kf" --target js --output "$T/out"
 python3 "$RAIZ/empacotar/icone.py" "$T" >/dev/null
 python3 "$AQUI/juntar.py" "$T/out" "$AQUI" "$T/icone.png" "$SAIDA/KOFnes.html"
-printf 'versao=%s\ntamanho=%s\n' "$KOFNES_BUILD" "$(stat -c %s "$SAIDA/KOFnes.html")" > "$SAIDA/versao.txt"
 if command -v x86_64-w64-mingw32-gcc >/dev/null; then
     (cd "$T" && cp "$RAIZ/empacotar/kofnes.rc" . && x86_64-w64-mingw32-windres kofnes.rc -O coff -o res.o)
-    x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFnes.exe" "$AQUI/lancador_win.c" "$T/res.o" -lshlwapi -lurlmon
+    x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFnes.exe" "$AQUI/lancador_win.c" "$T/res.o" -lshlwapi -lwinhttp
 fi
+# versao.txt: o atualizador do KOFnes.exe compara a versão da página e a do lançador
+LANCADOR="$(sed -n 's/^#define LANCADOR \([0-9]*\).*/\1/p' "$AQUI/lancador_win.c")"
+{
+    printf 'versao=%s\ntamanho=%s\nlancador=%s\n' "$KOFNES_BUILD" "$(stat -c %s "$SAIDA/KOFnes.html")" "$LANCADOR"
+    [ -f "$SAIDA/KOFnes.exe" ] && printf 'tamanho_exe=%s\n' "$(stat -c %s "$SAIDA/KOFnes.exe")"
+} > "$SAIDA/versao.txt"
 sed "s/$/\r/" "$AQUI/LEIA-ME.txt" > "$SAIDA/LEIA-ME.txt"
 rm -f "$RAIZ/dist/KOFnes-sem-java-windows.zip"
 (cd "$RAIZ/dist" && mkdir -p z/KOFnes && cp web/* z/KOFnes/ && cd z && zip -qr -9 ../KOFnes-sem-java-windows.zip KOFnes && cd .. && rm -rf z)

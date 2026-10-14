@@ -34,7 +34,8 @@ Controle USB/Xbox também funciona.
 ATUALIZA SOZINHO: o KOFnes.exe confere no GitHub, ao abrir, se tem versão nova
 do emulador e baixa (leva uns segundos; sem internet abre normal). Os saves,
 estados e a biblioteca não se perdem. Pra desligar, crie um arquivo chamado
-"nao-atualizar" nesta pasta. Deixe a pasta num lugar seu (Documentos,
+"nao-atualizar" nesta pasta. O que o atualizador fez fica
+anotado no arquivo atualizacao.log. Deixe a pasta num lugar seu (Documentos,
 Área de Trabalho), não em Arquivos de Programas.
 
 Os saves de bateria ficam guardados sozinhos no perfil do KOFnes
