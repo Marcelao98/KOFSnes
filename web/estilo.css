@@ -573,3 +573,8 @@ body[data-moldura="fliperama"] .mold-extra::after {    /* painel: alavanca + 6 b
 #st-juke { display: flex; align-items: center; gap: 4px; }
 #st-juke .x { font-size: 13px; color: inherit; }
 @media (max-width: 760px) { .jk { grid-template-columns: 1fr; } .jk-capa { width: 140px; height: 140px; } }
+#bib-estado { margin: 6px 2px 0; font-size: 12px; }
+/* sofá: cada linha da grade tem a altura do cartão. Sem isto, com muitos jogos a
+   grade (altura fixa) espremia os cartões até sumirem (item com overflow:hidden
+   tem tamanho mínimo 0 numa grade) */
+body.sofa #roms { grid-auto-rows: max-content; }
