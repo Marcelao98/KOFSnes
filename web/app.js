@@ -352,6 +352,15 @@ const bdPegar = (loja, k) => bdOp(loja, 'readonly', (o) => o.get(k));
 const bdPor = (loja, k, v) => bdOp(loja, 'readwrite', (o) => o.put(v, k));
 const bdGuardar = (loja, v) => bdOp(loja, 'readwrite', (o) => o.put(v));
 const bdApagar = (loja, k) => bdOp(loja, 'readwrite', (o) => o.delete(k));
+// lê, muda e grava o registro de um jogo NUMA transação só: o estado automático,
+// a capa baixada e a troca de jogo podem chegar juntos, e um não apaga o outro
+function bdMudarJogo(id, f) {
+  return bdOp('jogos', 'readwrite', (o) => {
+    const q = o.get(id);
+    q.onsuccess = () => { const novo = f(q.result); if (novo) o.put(novo); };
+    return q;
+  });
+}
 async function comprimir(texto) {
   return new Response(new Blob([texto]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
 }
@@ -398,18 +407,16 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   ajustarEscala();
   // a ROM vai pra biblioteca: da próxima vez abre sem diálogo nenhum
   try {
-    const antigo = await bdPegar('jogos', jogoId);
-    // mantém tudo o que o registro já tinha (capa oficial, estado automático...)
-    await bdGuardar('jogos', { ...(antigo || {}), id: jogoId, nome: romNome, arquivo: nome, titulo: s.cart.title.trim(),
-      tamanho: bytes.length, rom: guardarNaBiblioteca || !antigo ? bytes : antigo.rom, ultimo: Date.now() });
+    const novo = { id: jogoId, nome: romNome, arquivo: nome, titulo: s.cart.title.trim(), tamanho: bytes.length, ultimo: Date.now() };
+    await bdMudarJogo(jogoId, (antigo) => ({ ...(antigo || {}), ...novo, rom: guardarNaBiblioteca || !antigo ? bytes : antigo.rom }));
     autoAntes = Date.now();
   } catch (e) { console.warn('biblioteca indisponível', e); }
 }
 async function atualizarCapa() {   // print do jogo atual vira a capa dele na biblioteca
   if (!snes || !jogoId) return;
   try {
-    const j = await bdPegar('jogos', jogoId);
-    if (j) { j.capa = foto(256); j.ultimo = Date.now(); await bdGuardar('jogos', j); }
+    const capa = foto(256), agora = Date.now();
+    await bdMudarJogo(jogoId, (j) => j && Object.assign(j, { capa, ultimo: agora }));
   } catch (e) { /* sem banco */ }
 }
 function textoSram() {
@@ -445,10 +452,8 @@ async function salvarAuto() {
   if (!autoSalvar || !snes || !jogoId) return;
   try {
     const texto = JSON.stringify(KofEstado.capturar(snes)), capa = foto(256);
-    const j = await bdPegar('jogos', jogoId);
-    if (!j) return;
-    j.auto = texto; j.autoQuando = Date.now(); j.autoCapa = capa; j.capa = capa; j.ultimo = Date.now();
-    await bdGuardar('jogos', j);
+    const quandoAgora = Date.now();
+    await bdMudarJogo(jogoId, (j) => j && Object.assign(j, { auto: texto, autoQuando: quandoAgora, autoCapa: capa, capa, ultimo: quandoAgora }));
     autoAntes = Date.now();
   } catch (e) { console.warn('auto-save falhou', e); }
 }
@@ -590,10 +595,8 @@ async function baixarCapa(nome) {
 async function garantirCapa(j) {
   if (!capasNet || !j || j.boxart || (j.boxartFalhou && Date.now() - j.boxartFalhou < 7 * 864e5)) return;
   const blob = await baixarCapa(j.nome);
-  const atual = await bdPegar('jogos', j.id);
-  if (!atual) return;
-  if (blob) { atual.boxart = blob; j.boxart = blob; } else atual.boxartFalhou = j.boxartFalhou = Date.now();
-  await bdGuardar('jogos', atual);
+  if (blob) j.boxart = blob; else j.boxartFalhou = Date.now();
+  await bdMudarJogo(j.id, (atual) => atual && Object.assign(atual, blob ? { boxart: blob } : { boxartFalhou: j.boxartFalhou }));
   if (blob) montarLista();
 }
 function srcCapa(j) {   // capa oficial, senão o print de quando parou
