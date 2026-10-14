@@ -1,4 +1,6 @@
-/* Temas: cada um só troca as variáveis. data-tema fica no <html>. */
+/* Temas: cada um só troca as variáveis. data-tema fica no <html> (e nas
+   prévias da galeria de temas, por isso a base vale pra qualquer [data-tema]). */
+[data-tema] { --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 8px; --brilho: 0 8px 30px #0008; --fundo-img: none; }
 :root, [data-tema="cafe"] {
   --fundo: #1a110b; --painel: #2b1d14; --painel2: #3b2a1e; --texto: #f3e5d0;
   --fraco: #b89c80; --destaque: #c08552; --borda: #6f4e37; --sel: #6f4e37;
@@ -227,3 +229,216 @@ body.cheia.cursor-oculto, body.cheia.cursor-oculto * { cursor: none; }
 #rapido .ajuste button { background: none; border: 1px solid var(--borda); border-radius: var(--raio); padding: 0 7px; }
 #rapido .dica { text-align: center; margin: 10px 0 0; }
 #aviso { z-index: 15; }
+
+/* ============ Mais temas (galeria: Tema → Todos os temas…) ============ */
+body { background-image: var(--fundo-img); background-size: cover; }
+/* --- consoles --- */
+[data-tema="super16"] {
+  --fundo: #d6d3dc; --painel: #ecebf0; --painel2: #f7f6fa; --texto: #2b2838; --fraco: #6c6880;
+  --destaque: #5b4ba8; --borda: #b9b5c6; --sel: #ddd7f2; --tela-borda: #8f8aa3; --brilho: 0 6px 22px #0003; --raio: 12px;
+}
+[data-tema="super16"] .titulo-j { background: linear-gradient(90deg, #d03a3a 0 25%, #e7b52c 0 50%, #2a8f4a 0 75%, #2f5fc0 0); color: #fff; }
+[data-tema="portatil"] {
+  --fundo: #0f380f; --painel: #306230; --painel2: #8bac0f; --texto: #0f380f; --fraco: #306230;
+  --destaque: #0f380f; --borda: #0f380f; --sel: #9bbc0f; --tela-borda: #306230;
+  --fonte: "Lucida Console", "Courier New", monospace; --raio: 4px; --brilho: none;
+}
+[data-tema="portatil"] #menu, [data-tema="portatil"] #status { color: #9bbc0f; }
+[data-tema="portatil"] .sub { color: #0f380f; }
+[data-tema="portatil"] .grande { color: #9bbc0f; }
+[data-tema="atomico"] {
+  --fundo: #1d1030; --painel: #3c2160; --painel2: #4d2c78; --texto: #efe6ff; --fraco: #b9a3dc;
+  --destaque: #c6a6ff; --borda: #7b5aa8; --sel: #6a44a0; --tela-borda: #7b5aa8; --raio: 14px;
+  --fundo-img: radial-gradient(circle at 20% 20%, #5b2f8a 0, transparent 40%), radial-gradient(circle at 80% 90%, #3b6fa0 0, transparent 35%);
+}
+[data-tema="blast16"] {
+  --fundo: #050505; --painel: #141414; --painel2: #1e1e1e; --texto: #f2f2f2; --fraco: #a0a0a0;
+  --destaque: #e8b00f; --borda: #c4161c; --sel: #4a1012; --tela-borda: #c4161c; --raio: 2px; --caixa: uppercase;
+}
+[data-tema="blast16"] .titulo-j { border-bottom: 2px solid #c4161c; }
+[data-tema="cinza32"] {
+  --fundo: #1b1c1f; --painel: #2b2d31; --painel2: #36383d; --texto: #e6e6e6; --fraco: #9a9ca3;
+  --destaque: #c5c8ce; --borda: #4a4d54; --sel: #44474e; --tela-borda: #4a4d54; --raio: 4px;
+}
+[data-tema="cinza32"] #menu .m:nth-child(4n+1) > button { color: #3cc8a8; }
+[data-tema="cinza32"] #menu .m:nth-child(4n+2) > button { color: #ec5a6a; }
+[data-tema="cinza32"] #menu .m:nth-child(4n+3) > button { color: #7ea4e8; }
+[data-tema="cinza32"] #menu .m:nth-child(4n+4) > button { color: #e58fc8; }
+[data-tema="branco"] {
+  --fundo: #eef1f4; --painel: #ffffff; --painel2: #ffffff; --texto: #3a3f45; --fraco: #8a929b;
+  --destaque: #34bce8; --borda: #d3dae1; --sel: #dff3fb; --tela-borda: #d3dae1; --raio: 18px; --brilho: 0 8px 30px #0002;
+  --fundo-img: repeating-linear-gradient(0deg, transparent 0 22px, #00000006 22px 23px);
+}
+[data-tema="branco"] .grande { color: #fff; }
+[data-tema="laminas"] {
+  --fundo: #101210; --painel: #2a2d2a; --painel2: #353935; --texto: #f0f0f0; --fraco: #a3aaa3;
+  --destaque: #8fd400; --borda: #4c524c; --sel: #3d5a10; --tela-borda: #8fd400; --raio: 6px;
+  --fundo-img: linear-gradient(160deg, #1d2a10 0, #101210 60%);
+}
+[data-tema="neon"] {
+  --fundo: #07020f; --painel: #120726; --painel2: #1a0b36; --texto: #fbe9ff; --fraco: #b48cd8;
+  --destaque: #ff3ec8; --borda: #26e0ff; --sel: #3a1460; --tela-borda: #26e0ff;
+  --fonte: "Lucida Console", "Courier New", monospace; --caixa: uppercase; --raio: 0; --brilho: 0 0 18px #ff3ec866;
+}
+[data-tema="neon"] #tela { box-shadow: 0 0 24px #26e0ff88; }
+[data-tema="neon"] .titulo-j, [data-tema="neon"] .sub button.ativo { text-shadow: 0 0 8px #ff3ec8; }
+/* --- computador e internet antiga --- */
+[data-tema="classico98"] {
+  --fundo: #008080; --painel: #c0c0c0; --painel2: #c0c0c0; --texto: #000; --fraco: #404040;
+  --destaque: #000080; --borda: #808080; --sel: #000080; --tela-borda: #c0c0c0;
+  --fonte: Tahoma, "MS Sans Serif", Verdana, sans-serif; --raio: 0; --brilho: none;
+}
+[data-tema="classico98"] .janela, [data-tema="classico98"] .sub, [data-tema="classico98"] #rapido {
+  border: 2px solid; border-color: #fff #404040 #404040 #fff; box-shadow: 1px 1px 0 #000;
+}
+[data-tema="classico98"] .titulo-j { background: linear-gradient(90deg, #000080, #1084d0); color: #fff; }
+[data-tema="classico98"] .sub button:hover, [data-tema="classico98"] #roms li.sel, [data-tema="classico98"] #rapido-lista li.sel { color: #fff; }
+[data-tema="classico98"] .grande, [data-tema="classico98"] .bib-rodape button, [data-tema="classico98"] .tecla {
+  background: #c0c0c0; color: #000; border: 2px solid; border-color: #fff #404040 #404040 #fff;
+}
+[data-tema="classico98"] .grande:active { border-color: #404040 #fff #fff #404040; }
+[data-tema="classico98"] #tela { border: 2px solid; border-color: #404040 #fff #fff #404040; }
+[data-tema="luna"] {
+  --fundo: #3a6ea5; --painel: #ece9d8; --painel2: #f5f3ea; --texto: #000; --fraco: #5a5a5a;
+  --destaque: #2f9e2f; --borda: #7a96df; --sel: #316ac5; --tela-borda: #0a246a;
+  --fonte: Tahoma, Verdana, sans-serif; --raio: 6px; --brilho: 0 6px 18px #0005;
+  --fundo-img: radial-gradient(ellipse 120% 55% at 50% 100%, #5fa83a 0 60%, transparent 61%), linear-gradient(#2a6bd6, #8cc4f5 70%);
+}
+[data-tema="luna"] #menu { background: linear-gradient(#3c8cf4, #2160d8); color: #fff; }
+[data-tema="luna"] #menu .m > button:hover, [data-tema="luna"] #menu .m.aberto > button { background: #1941a5; }
+[data-tema="luna"] .titulo-j { background: linear-gradient(#0a5ce6, #3a93ff 10%, #0254e0 90%); color: #fff; border-radius: 6px 6px 0 0; }
+[data-tema="luna"] .sub button:hover, [data-tema="luna"] #roms li.sel, [data-tema="luna"] #rapido-lista li.sel { color: #fff; }
+[data-tema="luna"] .grande { background: linear-gradient(#5fc35f, #2f9e2f); color: #fff; border-radius: 10px; }
+[data-tema="mensageiro"] {
+  --fundo: #dbe8f7; --painel: #ffffff; --painel2: #f4f8fd; --texto: #1d2c44; --fraco: #6b7f9c;
+  --destaque: #2e7d32; --borda: #a9c3e6; --sel: #d3ebc9; --tela-borda: #7fa6d9; --raio: 10px; --brilho: 0 6px 20px #2a4a7a33;
+  --fundo-img: linear-gradient(#e9f2fc, #c9dcf2);
+}
+[data-tema="mensageiro"] .titulo-j { background: linear-gradient(90deg, #4f8fd8, #7cc46a); color: #fff; }
+[data-tema="mensageiro"] .grande { color: #fff; }
+[data-tema="rosa2004"] {
+  --fundo: #d4dded; --painel: #ffffff; --painel2: #f5f7fb; --texto: #333; --fraco: #6d7a91;
+  --destaque: #c4237f; --borda: #b8c6e0; --sel: #fbe1ef; --tela-borda: #a8b8d8; --raio: 6px; --brilho: 0 4px 14px #4b5b8a33;
+  --fonte: Verdana, Tahoma, sans-serif;
+}
+[data-tema="rosa2004"] #menu { background: #a9bce0; }
+[data-tema="rosa2004"] .titulo-j { background: #e8eefa; color: #c4237f; }
+[data-tema="rosa2004"] .grande { color: #fff; }
+[data-tema="terminal"] {
+  --fundo: #000; --painel: #020a02; --painel2: #031003; --texto: #33ff66; --fraco: #1fa847;
+  --destaque: #66ff99; --borda: #1a6b30; --sel: #0c3a18; --tela-borda: #1a6b30;
+  --fonte: "Lucida Console", "Courier New", monospace; --raio: 0; --brilho: 0 0 14px #33ff6633;
+}
+[data-tema="terminal"] body, [data-tema="terminal"] .janela, [data-tema="terminal"] #menu { text-shadow: 0 0 4px #33ff6699; }
+[data-tema="terminal"] .grande { color: #000; text-shadow: none; }
+[data-tema="vapor"] {
+  --fundo: #1a0933; --painel: #2b0f52; --painel2: #3a1468; --texto: #fff0fb; --fraco: #f3a6e0;
+  --destaque: #00f0ff; --borda: #ff71ce; --sel: #6b2a9e; --tela-borda: #ff71ce; --raio: 0; --brilho: 0 0 24px #ff71ce55;
+  --fundo-img: linear-gradient(transparent 60%, #ff71ce22 60%), repeating-linear-gradient(90deg, transparent 0 46px, #ff71ce33 46px 48px), linear-gradient(#2b0a4f, #b0368f 62%, #1a0933 62%);
+}
+[data-tema="vapor"] .titulo-j { background: linear-gradient(90deg, #ff71ce, #01cdfe); color: #1a0933; letter-spacing: 2px; }
+[data-tema="web1"] {
+  --fundo: #000010; --painel: #000080; --painel2: #000033; --texto: #ffff66; --fraco: #00ff00;
+  --destaque: #ff00ff; --borda: #00ffff; --sel: #400060; --tela-borda: #c0c0c0;
+  --fonte: "Comic Sans MS", "Comic Neue", cursive; --raio: 0; --brilho: none;
+  --fundo-img: radial-gradient(1px 1px at 10% 20%, #fff, transparent), radial-gradient(1px 1px at 70% 40%, #fff, transparent), radial-gradient(1.5px 1.5px at 40% 80%, #fff, transparent), radial-gradient(1px 1px at 90% 90%, #fff, transparent), radial-gradient(1px 1px at 25% 60%, #fff, transparent);
+}
+[data-tema="web1"] body { background-size: 140px 140px; }
+[data-tema="web1"] .titulo-j { background: repeating-linear-gradient(90deg, #f00 0 20px, #ff0 0 40px, #0f0 0 60px, #0ff 0 80px, #00f 0 100px, #f0f 0 120px); color: #000; }
+[data-tema="web1"] .janela, [data-tema="web1"] #rapido { border: 3px ridge #c0c0c0; }
+/* --- anime (só as cores) --- */
+[data-tema="esferas"] {
+  --fundo: #13233f; --painel: #1d3561; --painel2: #24427a; --texto: #fff6e6; --fraco: #a9bde0;
+  --destaque: #ff8a00; --borda: #f2a93b; --sel: #7a3d0a; --tela-borda: #ff8a00; --raio: 10px;
+}
+[data-tema="esferas"] .titulo-j { background: linear-gradient(90deg, #ff8a00, #ffb347); color: #13233f; }
+[data-tema="esferas"] .titulo-j::before { content: "★ "; color: #c4161c; }
+[data-tema="unidade01"] {
+  --fundo: #120a1c; --painel: #2a1840; --painel2: #34204f; --texto: #f0eaff; --fraco: #a993cc;
+  --destaque: #7dff4f; --borda: #6b3fa0; --sel: #3f2a12; --tela-borda: #7dff4f; --raio: 2px; --caixa: uppercase;
+}
+[data-tema="unidade01"] .titulo-j { border-bottom: 2px solid #ff8c1a; }
+[data-tema="lua"] {
+  --fundo: #121a3a; --painel: #1e2a5a; --painel2: #26346c; --texto: #fff1f6; --fraco: #b4bde6;
+  --destaque: #ff6fa8; --borda: #e23b4f; --sel: #4b2a5c; --tela-borda: #ffd34d; --raio: 16px;
+  --fundo-img: radial-gradient(circle at 85% 15%, #ffd34d55 0 40px, transparent 41px);
+}
+[data-tema="dourado"] {
+  --fundo: #0b1026; --painel: #141c3d; --painel2: #1b2550; --texto: #fff4d6; --fraco: #c9b98a;
+  --destaque: #f5c542; --borda: #b8892a; --sel: #3a3214; --tela-borda: #f5c542; --raio: 4px;
+  --fundo-img: radial-gradient(1px 1px at 20% 30%, #fff8, transparent), radial-gradient(1px 1px at 60% 70%, #fff8, transparent), radial-gradient(1px 1px at 85% 25%, #fff8, transparent);
+}
+[data-tema="dourado"] .titulo-j { background: linear-gradient(90deg, #b8892a, #f5c542, #b8892a); color: #0b1026; }
+[data-tema="pokebola"] {
+  --fundo: #b81d24; --painel: #f4f4f4; --painel2: #ffffff; --texto: #1d1d1d; --fraco: #6a6a6a;
+  --destaque: #e3262e; --borda: #1d1d1d; --sel: #ffe0e0; --tela-borda: #1d1d1d; --raio: 14px;
+}
+[data-tema="pokebola"] #menu { background: #e3262e; color: #fff; border-bottom: 4px solid #1d1d1d; }
+[data-tema="pokebola"] .sub { color: #1d1d1d; }
+[data-tema="pokebola"] .titulo-j { background: #e3262e; color: #fff; border-bottom: 4px solid #1d1d1d; }
+[data-tema="pokebola"] .grande { color: #fff; }
+[data-tema="floresta"] {
+  --fundo: #dfe6d0; --painel: #f6f1e3; --painel2: #fbf8ef; --texto: #33402a; --fraco: #75806a;
+  --destaque: #4f7a3a; --borda: #c5ccb0; --sel: #e2ead0; --tela-borda: #a3ae88; --raio: 14px; --brilho: 0 8px 26px #33402a22;
+  --fundo-img: linear-gradient(#cfe0e8, #dfe6d0 55%, #b9c99d);
+}
+[data-tema="floresta"] .grande { color: #fff; }
+/* --- bem brasileiro --- */
+[data-tema="desenho"] {
+  --fundo: #1e5bd8; --painel: #ffd23f; --painel2: #fff4c2; --texto: #1a1a1a; --fraco: #5a4a10;
+  --destaque: #e8262c; --borda: #1a1a1a; --sel: #ffffff; --tela-borda: #e8262c; --raio: 18px; --brilho: 6px 6px 0 #1a1a1a;
+  --fonte: "Comic Sans MS", "Comic Neue", "Segoe UI", sans-serif;
+}
+[data-tema="desenho"] .grande { color: #fff; }
+[data-tema="desenho"] .janela, [data-tema="desenho"] #rapido { border: 3px solid #1a1a1a; }
+[data-tema="camelo"] {
+  --fundo: #0033cc; --painel: #002080; --painel2: #0a2aa0; --texto: #ffffff; --fraco: #a8c0ff;
+  --destaque: #ffea00; --borda: #ff3d00; --sel: #6a00b8; --tela-borda: #ffea00;
+  --fonte: Impact, "Arial Black", sans-serif; --caixa: uppercase; --raio: 0; --brilho: 4px 4px 0 #000;
+}
+[data-tema="camelo"] .titulo-j { background: linear-gradient(90deg, #ff0000, #ff8800, #ffee00, #00cc44, #0088ff, #aa00ff); color: #fff; text-shadow: 2px 2px 0 #000; }
+[data-tema="brasil"] {
+  --fundo: #00702f; --painel: #004d21; --painel2: #0b5e2c; --texto: #ffffff; --fraco: #bfe3c9;
+  --destaque: #ffdf00; --borda: #2a4fa8; --sel: #1f3f8a; --tela-borda: #ffdf00; --raio: 10px;
+}
+[data-tema="brasil"] .titulo-j { background: #002776; color: #ffdf00; }
+
+/* Galeria de temas: cada cartão é uma prévia (o data-tema vale só pra ele) */
+#temas { width: min(900px, 96vw); max-height: 88vh; display: flex; flex-direction: column; text-align: left; }
+#grade-temas { overflow-y: auto; padding: 4px; }
+#grade-temas h3 { margin: 10px 0 6px; font-size: 13px; color: var(--fraco); text-transform: uppercase; letter-spacing: 1px; }
+.temas-grupo { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.previa {
+  display: block; padding: 0; text-align: left; overflow: hidden; cursor: pointer;
+  background: var(--fundo); background-image: var(--fundo-img); background-size: cover;
+  border: 2px solid var(--borda); border-radius: var(--raio); font-family: var(--fonte); color: var(--texto);
+}
+.previa:hover { transform: translateY(-2px); }
+.previa.ativo { outline: 3px solid var(--destaque); outline-offset: 2px; }
+.previa .pv-barra { display: block; height: 10px; background: var(--painel); border-bottom: 1px solid var(--borda); }
+.previa .pv-corpo { display: block; margin: 10px; padding: 8px; background: var(--painel2); border: 1px solid var(--borda); border-radius: var(--raio); }
+.previa .pv-nome { display: block; font-size: 13px; font-weight: 700; text-transform: var(--caixa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.previa .pv-bot { display: inline-block; margin-top: 6px; width: 48px; height: 10px; border-radius: var(--raio); background: var(--destaque); }
+
+/* Estatísticas */
+#estatisticas { width: min(820px, 96vw); max-height: 88vh; overflow-y: auto; text-align: left; }
+#corpo-estat h3 { margin: 16px 0 8px; font-size: 13px; color: var(--fraco); text-transform: uppercase; letter-spacing: 1px; }
+.est-caixas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.est-caixa { background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); padding: 10px 12px; min-width: 0; }
+.est-caixa small { display: block; color: var(--fraco); font-size: 12px; }
+.est-caixa b { display: block; font-size: 20px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.est-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; height: 150px; }
+.est-dia { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.est-val { font-size: 11px; color: var(--fraco); height: 14px; white-space: nowrap; }
+.est-coluna { flex: 1; width: 60%; display: flex; align-items: flex-end; border-bottom: 1px solid var(--borda); }
+.est-coluna i { display: block; width: 100%; background: var(--destaque); border-radius: 4px 4px 0 0; min-height: 0; }
+.est-dia small { color: var(--fraco); font-size: 12px; text-transform: capitalize; }
+.est-tab { width: 100%; border-collapse: collapse; font-size: 13px; }
+.est-tab th, .est-tab td { padding: 6px 8px; border-bottom: 1px solid var(--borda); text-align: left; white-space: nowrap; }
+.est-tab th { color: var(--fraco); font-weight: 600; }
+.est-tab td:first-child { white-space: normal; }
+.est-barra { display: inline-block; vertical-align: middle; width: 90px; height: 8px; margin-right: 8px; background: var(--painel); border-radius: 4px; overflow: hidden; }
+.est-barra i { display: block; height: 100%; background: var(--destaque); border-radius: 0 4px 4px 0; }
+/* a coluna da direita rola em vez de esmagar os botões (janela baixa, fonte larga) */
+.bib-dir > * { flex-shrink: 0; }
+.bib-dir > .capa { flex-shrink: 1; min-height: 120px; }

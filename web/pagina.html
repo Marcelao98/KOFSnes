@@ -15,6 +15,7 @@
     <button data-acao="biblioteca">Biblioteca<kbd>Ctrl+L</kbd></button>
     <button data-acao="pasta">Escolher pasta de ROMs…</button>
     <button data-acao="abrir">Adicionar arquivo…<kbd>Ctrl+O</kbd></button>
+    <button data-acao="estatisticas">📊 Estatísticas</button>
     <hr>
     <button data-acao="reiniciar">Reiniciar<kbd>F1</kbd></button>
   </div></div>
@@ -61,6 +62,8 @@
     <button data-tema="escuro">🌙 Escuro</button>
     <button data-tema="claro">☀️ Claro</button>
     <button data-tema="zsnes">🕹️ ZSNES</button>
+    <hr>
+    <button data-acao="temas">🎨 Todos os temas (28)…</button>
   </div></div>
   <div class="m"><button>Ajuda</button><div class="sub">
     <button data-acao="controles">Controles</button>
@@ -93,6 +96,7 @@
     <div class="bib-rodape">
       <button class="sec" data-acao="pasta">📁 Escolher pasta de ROMs</button>
       <button class="sec" data-acao="abrir">＋ Adicionar arquivo</button>
+      <button class="sec" data-acao="estatisticas">📊 Estatísticas</button>
       <button class="sec" data-acao="capas">🖼 Capas oficiais: ligadas</button>
       <span class="dica">setas navegam · Enter joga · Shift+Enter do zero · E estados · controle: A joga, X estados, Select sofá</span>
     </div>
@@ -117,6 +121,16 @@
     <p class="dica" id="teclas-dica">Clique num botão e aperte a tecla que quiser.</p>
     <div id="grade-teclas"></div>
     <button class="grande sec" data-acao="teclas-padrao">Restaurar padrão</button>
+  </section>
+
+  <section id="temas" class="janela" hidden>
+    <div class="titulo-j">🎨 Temas <button class="x" data-acao="fechar-temas">×</button></div>
+    <div id="grade-temas"></div>
+  </section>
+
+  <section id="estatisticas" class="janela" hidden>
+    <div class="titulo-j">📊 Estatísticas <button class="x" data-acao="fechar-estat">×</button></div>
+    <div id="corpo-estat"></div>
   </section>
 
   <section id="rapido" hidden>

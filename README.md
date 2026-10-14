@@ -84,6 +84,9 @@ Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
 - **Conforto**: proporção 4:3 como na TV (ou 8:7, esticar) no menu Imagem; volume
   (- e =) no menu Som; menu rápido no jogo com Select+Start (ou F2); Select+L/R
   salva e carrega pelo controle; pausa sozinho quando você sai da janela.
+- **28 temas** com galeria de prévias (consoles, computador e internet antiga, anime,
+  bem brasileiro) e **estatísticas**: tempo jogado, sessões, primeira e última vez
+  por jogo, e o gráfico dos últimos 7 dias.
 
 Pra compilar, o alvo JS do Kof 0.6.3 precisou de 4 correções no compilador
 (`web/kof-js-correcoes.patch`, aplicar no Kof4j): sem elas o núcleo nem

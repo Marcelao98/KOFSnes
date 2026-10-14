@@ -315,7 +315,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'F8') { e.preventDefault(); acao('carregar-ultimo'); return; }
   if (e.code === 'F11') { e.preventDefault(); acao('cheia'); return; }
   if (!$('#biblioteca').hidden) { listaTecla(e); return; }
-  const aberta = ['estados', 'ajuda', 'teclas'].some((id) => !$('#' + id).hidden);
+  const aberta = ['estados', 'ajuda', 'teclas', 'temas', 'estatisticas'].some((id) => !$('#' + id).hidden);
   if (e.code === 'Escape' && aberta) { fecharJanelas(); return; }
   if (e.code === 'F1') { e.preventDefault(); acao('reiniciar'); return; }
   if (e.code === 'KeyP' || e.code === 'Escape') { acao('pausar'); return; }
@@ -334,7 +334,9 @@ let ultimo = 0, sobra = 0, contados = 0, marco = 0;
 function laco(t) {
   requestAnimationFrame(laco);
   if (!snes || pausado) { ultimo = t; return; }
-  sobra += Math.min(t - ultimo, 100); ultimo = t;
+  const dt = Math.min(t - ultimo, 100);
+  sobra += dt; ultimo = t;
+  if (!document.hidden) jogando += dt;   // estatística: só o tempo rodando de verdade
   let vezes = 0;
   try {
     if (turbo) {
@@ -390,13 +392,14 @@ let bd = null;
 function abrirBanco() {
   if (bd) return bd;
   bd = new Promise((ok, falha) => {
-    const r = indexedDB.open('kofnes', 3);
+    const r = indexedDB.open('kofnes', 4);
     r.onupgradeneeded = () => {
       const b = r.result;
       if (!b.objectStoreNames.contains('c')) b.createObjectStore('c');
       if (!b.objectStoreNames.contains('jogos')) b.createObjectStore('jogos', { keyPath: 'id' });
       if (!b.objectStoreNames.contains('estados')) b.createObjectStore('estados', { keyPath: 'n', autoIncrement: true }).createIndex('jogo', 'jogo');
       if (!b.objectStoreNames.contains('capas')) b.createObjectStore('capas');   // nome do jogo -> capa (Blob) ou {falhou}
+      if (!b.objectStoreNames.contains('stats')) b.createObjectStore('stats', { keyPath: 'id' });   // tempo jogado, sessões, por dia
     };
     r.onsuccess = () => ok(r.result);
     r.onerror = () => falha(r.error);
@@ -417,8 +420,9 @@ const bdGuardar = (loja, v) => bdOp(loja, 'readwrite', (o) => o.put(v));
 const bdApagar = (loja, k) => bdOp(loja, 'readwrite', (o) => o.delete(k));
 // lê, muda e grava o registro de um jogo NUMA transação só: o estado automático,
 // a capa baixada e a troca de jogo podem chegar juntos, e um não apaga o outro
-function bdMudarJogo(id, f) {
-  return bdOp('jogos', 'readwrite', (o) => {
+const bdMudarJogo = (id, f) => bdMudar('jogos', id, f);
+function bdMudar(loja, id, f) {
+  return bdOp(loja, 'readwrite', (o) => {
     const q = o.get(id);
     q.onsuccess = () => { const novo = f(q.result); if (novo) o.put(novo); };
     return q;
@@ -451,7 +455,7 @@ async function abrirArquivo(arq) {
 }
 async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   if (bytes.length < 0x8000) throw new Error('isso não parece uma ROM de SNES');
-  salvarSram(); await salvarAuto();
+  registrarTempo(); salvarSram(); await salvarAuto();
   const s = new KofNucleo.Snes(Int32Array.from(bytes));
   romNome = nome.replace(/\.[^.]+$/, '');
   jogoId = s.cart.title.trim() + '|' + bytes.length;
@@ -474,6 +478,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
     await bdMudarJogo(jogoId, (antigo) => ({ ...(antigo || {}), ...novo, rom: guardarNaBiblioteca || !antigo ? bytes : antigo.rom }));
     autoAntes = Date.now();
   } catch (e) { console.warn('biblioteca indisponível', e); }
+  contarSessao(jogoId, romNome);
 }
 async function atualizarCapa() {   // print do jogo atual vira a capa dele na biblioteca
   if (!snes || !jogoId) return;
@@ -493,8 +498,72 @@ function salvarSram() {
   const t = textoSram();
   if (t && t !== sramAntes) { guardar(chaveSram, btoa(t)); sramAntes = t; }
 }
-addEventListener('pagehide', () => { salvarSram(); salvarAuto(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { salvarSram(); salvarAuto(); } });
+addEventListener('pagehide', () => { registrarTempo(); salvarSram(); salvarAuto(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { registrarTempo(); salvarSram(); salvarAuto(); } });
+
+// ---------------- estatísticas ----------------
+// por jogo: tempo jogado (só com o jogo rodando), sessões, primeira e última vez,
+// e o tempo de cada dia (pro gráfico dos últimos dias)
+let jogando = 0, estat = {};
+const hoje = (t) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+function registrarTempo() {
+  if (!jogoId || jogando < 1000) return;
+  const ms = Math.round(jogando), id = jogoId, nome = romNome, dia = hoje(Date.now()); jogando = 0;
+  bdMudar('stats', id, (e) => {
+    e = e || { id, nome, tempo: 0, sessoes: 1, primeiro: Date.now(), dias: {} };
+    e.tempo += ms; e.ultimo = Date.now(); e.nome = nome;
+    e.dias[dia] = (e.dias[dia] || 0) + ms;
+    const dias = Object.keys(e.dias).sort();                        // guarda ~1 ano de dias
+    while (dias.length > 400) delete e.dias[dias.shift()];
+    estat[id] = e; return e;
+  }).catch(() => {});
+}
+function contarSessao(id, nome) {
+  bdMudar('stats', id, (e) => {
+    e = e || { id, nome, tempo: 0, sessoes: 0, primeiro: Date.now(), dias: {} };
+    e.sessoes++; e.ultimo = Date.now(); e.nome = nome; estat[id] = e; return e;
+  }).catch(() => {});
+}
+setInterval(registrarTempo, 10000);
+function duracao(ms) {
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return ms > 0 ? 'menos de 1 min' : '0 min';
+  return m < 60 ? m + ' min' : Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'min';
+}
+async function carregarEstat() {
+  registrarTempo();
+  try { estat = {}; (await bdTodos('stats')).forEach((e) => { estat[e.id] = e; }); } catch (e) { /* sem banco */ }
+}
+async function mostrarEstat() {
+  fecharJanelas(); $('#estatisticas').hidden = false;
+  await new Promise((ok) => setTimeout(ok, 50));   // deixa o registrarTempo gravar
+  await carregarEstat();
+  const lista = Object.values(estat).filter((e) => e.sessoes || e.tempo).sort((a, b) => b.tempo - a.tempo);
+  const total = lista.reduce((t, e) => t + e.tempo, 0), sess = lista.reduce((t, e) => t + e.sessoes, 0);
+  const cx = (rot, val) => `<div class="est-caixa"><small>${rot}</small><b>${val}</b></div>`;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let h = '<div class="est-caixas">' + cx('Tempo total', duracao(total)) + cx('Jogos', lista.length) + cx('Sessões', sess)
+    + cx('Mais jogado', lista[0] ? esc(lista[0].nome) : '—') + '</div>';
+  // últimos 7 dias, todos os jogos somados
+  const dias = [];
+  for (let i = 6; i >= 0; i--) { const t = Date.now() - i * 864e5; dias.push([hoje(t), new Date(t)]); }
+  const porDia = dias.map(([k]) => lista.reduce((t, e) => t + ((e.dias || {})[k] || 0), 0));
+  const maxD = Math.max(60000, ...porDia);
+  h += '<h3>Últimos 7 dias</h3><div class="est-dias">' + dias.map(([, d], i) => {
+    const sem = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+    return `<div class="est-dia" title="${d.toLocaleDateString('pt-BR')}: ${duracao(porDia[i])}"><span class="est-val">${porDia[i] >= 60000 ? duracao(porDia[i]) : ''}</span>`
+      + `<span class="est-coluna"><i style="height:${(porDia[i] / maxD * 100).toFixed(1)}%"></i></span><small>${sem}</small></div>`;
+  }).join('') + '</div>';
+  h += '<h3>Por jogo</h3>';
+  if (!lista.length) h += '<p class="dica">Ainda não tem nada aqui: jogue um pouco e volte.</p>';
+  else {
+    const maxT = Math.max(1, lista[0].tempo);
+    h += '<table class="est-tab"><tr><th>Jogo</th><th>Tempo jogado</th><th>Sessões</th><th>Última vez</th><th>Primeira vez</th></tr>'
+      + lista.map((e) => `<tr><td>${esc(e.nome)}</td><td><span class="est-barra" title="${duracao(e.tempo)}"><i style="width:${(e.tempo / maxT * 100).toFixed(1)}%"></i></span>${duracao(e.tempo)}</td>`
+        + `<td>${e.sessoes}</td><td>${e.ultimo ? quando(e.ultimo) : '—'}</td><td>${e.primeiro ? quando(e.primeiro) : '—'}</td></tr>`).join('') + '</table>';
+  }
+  $('#corpo-estat').innerHTML = h;
+}
 
 $('#arquivo').addEventListener('change', (e) => { if (e.target.files[0]) abrirArquivo(e.target.files[0]); e.target.value = ''; });
 addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('arrastando'); });
@@ -621,6 +690,7 @@ async function lerPasta(pedir) {
 }
 async function montarItens(pedir) {
   let jogos = [];
+  await carregarEstat();
   try { jogos = await bdTodos('jogos'); contagem = {}; (await bdTodos('estados')).forEach((e) => { contagem[e.jogo] = (contagem[e.jogo] || 0) + 1; }); } catch (e) { /* sem banco */ }
   const daPasta = await lerPasta(pedir);
   const ja = new Set(jogos.map((j) => (j.arquivo || '').toLowerCase()));
@@ -745,7 +815,8 @@ function mostrarInfo() {
   $('#info-nome').textContent = r.nome;
   if (r.jogo) {
     const n = contagem[r.jogo.id] || 0;
-    $('#info-det').textContent = `jogado ${quando(r.jogo.ultimo)} · ${n} ${n === 1 ? 'estado salvo' : 'estados salvos'} · ${(r.jogo.tamanho / 1048576).toFixed(1)} MB`;
+    const e = estat[r.jogo.id], tempo = e && e.tempo ? ` · ${duracao(e.tempo)} no total em ${e.sessoes} ${e.sessoes === 1 ? 'sessão' : 'sessões'}` : '';
+    $('#info-det').textContent = `jogado ${quando(r.jogo.ultimo)}${tempo} · ${n} ${n === 1 ? 'estado salvo' : 'estados salvos'} · ${(r.jogo.tamanho / 1048576).toFixed(1)} MB`;
   } else $('#info-det').textContent = 'na pasta de ROMs · ainda não jogado';
   const auto = autoSalvar && !!(r.jogo && r.jogo.auto);
   $('[data-acao="jogar"]').textContent = auto ? '▶ Continuar' : '▶ Jogar';
@@ -788,7 +859,7 @@ async function mostrarBiblioteca(pedir) {
   selecionada = k >= 0 ? k : 0;
   montarLista();
 }
-function fecharJanelas() { for (const id of ['biblioteca', 'estados', 'ajuda', 'teclas']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
+function fecharJanelas() { for (const id of ['biblioteca', 'estados', 'ajuda', 'teclas', 'temas', 'estatisticas']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
 // controle também navega na biblioteca
 let padAntes = 0;
 setInterval(() => {
@@ -893,7 +964,34 @@ function avisar(t, ms) {
   const a = $('#aviso'); a.textContent = t; a.hidden = false;
   clearTimeout(avisar.t); avisar.t = setTimeout(() => { a.hidden = true; }, ms || 1800);
 }
+const TEMAS = [
+  ['Clássicos do KOFnes', [['cafe', '☕ Café queimado'], ['escuro', '🌙 Escuro'], ['claro', '☀️ Claro'], ['zsnes', '🕹️ ZSNES']]],
+  ['Consoles', [['super16', 'Super 16-bit'], ['portatil', 'Portátil verde'], ['atomico', 'Roxo atômico'], ['blast16', 'Blast 16'],
+    ['cinza32', 'Cinza 32-bit'], ['branco', 'Branco console'], ['laminas', 'Verde lâminas'], ['neon', 'Fliperama neon']]],
+  ['Computador e internet antiga', [['classico98', 'Clássico 98'], ['luna', 'Azul Luna'], ['mensageiro', 'Mensageiro'], ['rosa2004', 'Rede social 2004'],
+    ['terminal', 'Terminal'], ['vapor', 'Vaporwave'], ['web1', 'Web 1.0']]],
+  ['Anime', [['esferas', 'Esferas do dragão'], ['unidade01', 'Unidade 01'], ['lua', 'Guerreira da lua'], ['dourado', 'Cavaleiro dourado'],
+    ['pokebola', 'Caçador de monstrinhos'], ['floresta', 'Floresta encantada']]],
+  ['Bem brasileiro', [['desenho', 'Manhã de desenho'], ['camelo', 'Console de camelô'], ['brasil', 'Brasil']]],
+];
+const TODOS_TEMAS = TEMAS.flatMap(([, l]) => l);
+function montarTemas() {
+  const g = $('#grade-temas'); g.innerHTML = '';
+  for (const [grupo, lista] of TEMAS) {
+    const h = document.createElement('h3'); h.textContent = grupo; g.appendChild(h);
+    const d = document.createElement('div'); d.className = 'temas-grupo';
+    for (const [id, nome] of lista) {
+      const b = document.createElement('button'); b.className = 'previa'; b.dataset.tema = id; b.title = nome;
+      b.innerHTML = '<span class="pv-barra"></span><span class="pv-corpo"><span class="pv-nome"></span><span class="pv-bot"></span></span>';
+      b.querySelector('.pv-nome').textContent = nome;
+      b.classList.toggle('ativo', document.documentElement.dataset.tema === id);
+      d.appendChild(b);
+    }
+    g.appendChild(d);
+  }
+}
 function tema(nome) {
+  if (!TODOS_TEMAS.some(([k]) => k === nome)) nome = 'cafe';
   document.documentElement.dataset.tema = nome; guardar('tema', nome);
   document.querySelectorAll('[data-tema]').forEach((b) => { if (b.tagName === 'BUTTON') b.classList.toggle('ativo', b.dataset.tema === nome); });
 }
@@ -929,6 +1027,10 @@ async function acao(a) {
       pausaAuto = !pausaAuto; guardar('pausaAuto', pausaAuto ? '1' : '0'); marcarSom();
       avisar(pausaAuto ? 'pausa ao sair da janela ligada' : 'pausa ao sair da janela desligada'); break;
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
+    case 'temas': fecharJanelas(); montarTemas(); $('#temas').hidden = false; break;
+    case 'fechar-temas': $('#temas').hidden = true; if (!snes) mostrarBiblioteca(false); break;
+    case 'estatisticas': await mostrarEstat(); break;
+    case 'fechar-estat': $('#estatisticas').hidden = true; if (!snes) mostrarBiblioteca(false); break;
     case 'controles': fecharJanelas(); montarAjuda(); $('#ajuda').hidden = false; break;
     case 'teclas': fecharJanelas(); montarGrade(); $('#teclas').hidden = false; break;
     case 'fechar-teclas': capturando = null; $('#teclas').hidden = true; if (!snes) mostrarBiblioteca(false); break;
@@ -950,7 +1052,7 @@ addEventListener('click', (e) => {
   if (!b) { if (!e.target.closest('.janela')) fecharMenus(); return; }
   if (b.dataset.acao) acao(b.dataset.acao);
   else if (b.dataset.escala) { escala = +b.dataset.escala; guardar('escala', escala); ajustarEscala(); fecharMenus(); }
-  else if (b.dataset.tema && b.closest('.sub')) { tema(b.dataset.tema); fecharMenus(); }
+  else if (b.dataset.tema && b.closest('.sub, #temas')) { tema(b.dataset.tema); fecharMenus(); }
   else if (b.dataset.filtro) { aplicarFiltro(b.dataset.filtro); fecharMenus(); }
   else if (b.dataset.prop) { mudarProporcao(b.dataset.prop); fecharMenus(); }
 });
@@ -968,6 +1070,6 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"]').forEach((b) => { b.hidden = true; });
 mostrarBiblioteca(false);
 window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
-  volume: () => volume, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
+  volume: () => volume, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
   assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
 })();

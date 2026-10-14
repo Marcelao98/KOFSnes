@@ -7,7 +7,8 @@ Também dá pra abrir o KOFnes.html direto no Chrome ou no Edge.
 F5 salva o estado, F8 carrega o último, F6 abre os estados salvos.
 Ctrl+O abre uma ROM (.sfc, .smc ou .zip), ou arraste a ROM pra janela.
 Arquivo > Escolher pasta de ROMs: a lista aparece dentro do emulador (Ctrl+L).
-Tema: Café queimado, Escuro, Claro e ZSNES.
+Tema: 28 temas (Tema > Todos os temas…): consoles, Windows antigo, internet,
+anime e bem brasileiro. Arquivo > Estatísticas: tempo jogado por jogo.
 
 Emulação > Configurar teclas: escolha a tecla de cada botão.
 Padrão: setas = direcional · Z/X = B/A · A/S = Y/X · Q/W = L/R
