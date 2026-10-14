@@ -20,7 +20,7 @@
   </div></div>
   <div class="m"><button>Emulação</button><div class="sub">
     <button data-acao="pausar">Pausar / continuar<kbd>P</kbd></button>
-    <button data-acao="mudo">Som ligado / mudo<kbd>M</kbd></button>
+    <button data-acao="rapido">Menu rápido<kbd>F2</kbd></button>
     <hr>
     <button data-acao="salvar-estado">Salvar estado<kbd>F5</kbd></button>
     <button data-acao="carregar-ultimo">Carregar último estado<kbd>F8</kbd></button>
@@ -29,11 +29,15 @@
     <hr>
     <button data-acao="teclas">Configurar teclas…</button>
   </div></div>
-  <div class="m"><button>Tela</button><div class="sub">
+  <div class="m"><button>Imagem</button><div class="sub">
     <button data-escala="2">Escala 2×</button>
     <button data-escala="3">Escala 3×</button>
     <button data-escala="4">Escala 4×</button>
     <button data-escala="0">Encaixar na janela</button>
+    <hr>
+    <button data-prop="43">Proporção 4:3 (como na TV)</button>
+    <button data-prop="87">Pixel perfeito (8:7)</button>
+    <button data-prop="esticar">Esticar</button>
     <hr>
     <button data-filtro="nitido">Filtro: Nítido</button>
     <button data-filtro="suave">Filtro: Suave</button>
@@ -45,6 +49,12 @@
     <hr>
     <button data-acao="cheia">Tela cheia<kbd>F11</kbd></button>
     <button data-acao="sofa">Modo sofá (tela cheia, controle)</button>
+  </div></div>
+  <div class="m"><button>Som</button><div class="sub">
+    <div class="volume"><button data-acao="vol-menos" title="diminuir (-)">−</button><span id="vol-valor">100%</span><button data-acao="vol-mais" title="aumentar (=)">+</button></div>
+    <button data-acao="mudo">Mudo<kbd>M</kbd></button>
+    <hr>
+    <button data-acao="pausa-auto">Pausar ao sair da janela: ligado</button>
   </div></div>
   <div class="m"><button>Tema</button><div class="sub">
     <button data-tema="cafe">☕ Café queimado</button>
@@ -107,6 +117,12 @@
     <p class="dica" id="teclas-dica">Clique num botão e aperte a tecla que quiser.</p>
     <div id="grade-teclas"></div>
     <button class="grande sec" data-acao="teclas-padrao">Restaurar padrão</button>
+  </section>
+
+  <section id="rapido" hidden>
+    <div class="titulo-j">☕ Menu rápido</div>
+    <ul id="rapido-lista"></ul>
+    <p class="dica">↑↓ escolhe · ◀▶ ajusta · Enter/A confirma · Esc/B fecha</p>
   </section>
 
   <div id="aviso" hidden></div>

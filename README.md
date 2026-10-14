@@ -80,7 +80,10 @@ Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
 - **7 filtros** na placa de vídeo (Tela): nítido, suave, **TV de tubo (CRT)**,
   fliperama, Game Boy, café (sépia) e LCD.
 - **Teclas configuráveis** (Emulação → Configurar teclas…), saves de bateria
-  automáticos, controle USB/Xbox, tela cheia (F11), mudo (M).
+  automáticos, controle USB/Xbox, tela cheia de verdade (F11 ou duplo clique), mudo (M).
+- **Conforto**: proporção 4:3 como na TV (ou 8:7, esticar) no menu Imagem; volume
+  (- e =) no menu Som; menu rápido no jogo com Select+Start (ou F2); Select+L/R
+  salva e carrega pelo controle; pausa sozinho quando você sai da janela.
 
 Pra compilar, o alvo JS do Kof 0.6.3 precisou de 4 correções no compilador
 (`web/kof-js-correcoes.patch`, aplicar no Kof4j): sem elas o núcleo nem

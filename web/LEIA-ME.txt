@@ -12,7 +12,10 @@ Tema: Café queimado, Escuro, Claro e ZSNES.
 Emulação > Configurar teclas: escolha a tecla de cada botão.
 Padrão: setas = direcional · Z/X = B/A · A/S = Y/X · Q/W = L/R
 Enter = Start · Shift = Select · P = pausa · F1 = reiniciar · Tab = turbo
-F11 = tela cheia · M = mudo. Controle USB/Xbox também funciona.
+F11 ou duplo clique = tela cheia · M = mudo · - e = = volume.
+Select+Start (ou F2) = menu rápido no meio do jogo: salvar, carregar,
+filtro, proporção 4:3, volume. No controle: Select+L salva, Select+R carrega.
+Controle USB/Xbox também funciona.
 
 Os saves de bateria ficam guardados sozinhos no perfil do KOFnes
 (%LOCALAPPDATA%\KOFnes\navegador).

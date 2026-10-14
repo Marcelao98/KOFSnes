@@ -197,3 +197,33 @@ body.sofa .bib-dir h2 { font-size: 22px; }
 .bib-dir { overflow-y: auto; min-height: 0; padding-right: 2px; }
 .capa { width: 272px; height: 238px; flex-shrink: 0; }
 .bib-botoes .grande { padding: 9px; margin: 4px 0; }
+
+/* Tela cheia de verdade: só o jogo; o menu aparece ao encostar o mouse no topo */
+body.cheia #menu, body.cheia #status { display: none; }
+body.cheia.mostrar-menu #menu { display: flex; position: fixed; top: 0; left: 0; right: 0; z-index: 20; }
+body.cheia #palco { background: #000; }
+body.cheia #tela { border: 0; border-radius: 0; box-shadow: none; }
+body.cheia.cursor-oculto, body.cheia.cursor-oculto * { cursor: none; }
+
+/* Menu Som: − 100% + */
+.sub .volume { display: flex; align-items: center; gap: 4px; padding: 4px 10px; }
+.sub .volume button { width: auto; flex: 0 0 34px; justify-content: center; border: 1px solid var(--borda); border-radius: var(--raio); padding: 4px 0; }
+.sub .volume span { flex: 1; text-align: center; font-weight: 700; }
+
+/* Menu rápido (Select+Start / F2), por cima do jogo */
+#rapido {
+  position: absolute; z-index: 10; width: min(380px, 92vw); padding: 18px 22px 10px;
+  background: var(--painel2); border: 1px solid var(--borda); border-radius: var(--raio); box-shadow: var(--brilho);
+}
+#rapido-lista { list-style: none; margin: 0; padding: 0; }
+#rapido-lista li {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: var(--raio); cursor: pointer; text-transform: var(--caixa);
+}
+#rapido-lista li:hover { background: var(--sel); }
+#rapido-lista li.sel { background: var(--sel); outline: 1px solid var(--destaque); }
+#rapido .ajuste { display: flex; align-items: center; gap: 6px; }
+#rapido .ajuste b { min-width: 120px; text-align: center; color: var(--destaque); font-weight: 700; }
+#rapido .ajuste button { background: none; border: 1px solid var(--borda); border-radius: var(--raio); padding: 0 7px; }
+#rapido .dica { text-align: center; margin: 10px 0 0; }
+#aviso { z-index: 15; }
