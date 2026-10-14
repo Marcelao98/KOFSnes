@@ -314,6 +314,11 @@ class Snes implements CpuBus {
             if (hasGsu && off >= 0x6000 && off < 0x8000) {
                 return cart.gsuRam[(off - 0x6000) & cart.gsuRamMask]
             }
+            // HiROM: a SRAM do cartucho fica em $20-$3F/$A0-$BF:6000-7FFF
+            if (off >= 0x6000 && off < 0x8000) {
+                var ms = cart.map(addr)
+                if (ms <= -2) { return cart.sram[-2 - ms] }
+            }
             if (off < 0x8000) { return readIo(off) }
         }
         if (hasGsu) { return readGsuCart(bank, off) }
@@ -343,6 +348,13 @@ class Snes implements CpuBus {
             if (hasGsu && off >= 0x6000 && off < 0x8000) {
                 cart.gsuRam[(off - 0x6000) & cart.gsuRamMask] = vl
                 return
+            }
+            if (off >= 0x6000 && off < 0x8000) {
+                var mw = cart.map(addr)
+                if (mw <= -2) {
+                    cart.sram[-2 - mw] = vl
+                    return
+                }
             }
             if (off < 0x8000) {
                 writeIo(off, vl)
