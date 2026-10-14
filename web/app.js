@@ -281,7 +281,8 @@ function montarAjuda() {
     ['L · R', `${t('L')} · ${t('R')}`, 'Reiniciar', 'F1'],
     ['Start · Select', `${t('Start')} · ${t('Select')}`, 'Turbo', 'Tab (segurar)'],
     ['Controle USB/Xbox', 'também funciona', 'Tela cheia', 'F11 · duplo clique'],
-    ['Menu rápido', 'Select+Start · F2', 'Volume', '- / ='],
+    ['Menu rápido', 'Select+Start · F2', 'Menu rápido', 'botão direito do mouse'],
+    ['', '', 'Volume', '- / ='],
     ['Salvar · carregar', 'Select+L · Select+R', 'Sair da tela cheia', 'Esc'],
     ['Rebobinar (segurar)', 'Select+Y', 'Rebobinar (segurar)', 'Backspace'],
     ['', '', 'Reportar bug', 'F9'],
@@ -1120,6 +1121,16 @@ function fecharRapido() {
   if (!rapidoAberto) return;
   rapidoAberto = false; $('#rapido').hidden = true; pausado = pausadoAntesRapido; sobra = 0;
 }
+// botão direito do mouse abre/fecha o menu rápido (o menu do navegador quebra a
+// imersão); nas caixas de texto o menu do navegador continua, pra colar
+addEventListener('contextmenu', (e) => {
+  if (e.target.closest('input, textarea')) return;
+  e.preventDefault();
+  if (rapidoAberto) fecharRapido();
+  else if (snes && $('#biblioteca').hidden && ['estados', 'ajuda', 'teclas', 'temas', 'estatisticas', 'bug'].every((id) => $('#' + id).hidden)) abrirRapido();
+});
+// clique fora do menu rápido fecha ele
+addEventListener('mousedown', (e) => { if (rapidoAberto && e.button === 0 && !e.target.closest('#rapido')) fecharRapido(); });
 function rapidoTecla(e) {
   const it = ITENS_RAPIDO[selR];
   if (e.repeat && e.code === 'Enter') { e.preventDefault(); return; }   // Enter ainda segurado do Select+Start
