@@ -442,3 +442,14 @@ body { background-image: var(--fundo-img); background-size: cover; }
 /* a coluna da direita rola em vez de esmagar os botões (janela baixa, fonte larga) */
 .bib-dir > * { flex-shrink: 0; }
 .bib-dir > .capa { flex-shrink: 1; min-height: 120px; }
+
+/* Galeria de temas como pop-up: véu escuro atrás, cartões maiores */
+#veu { position: fixed; inset: 0; background: #0009; z-index: 8; backdrop-filter: blur(2px); }
+#temas { z-index: 9; }
+#temas .titulo-j small { font-weight: 400; margin-left: 6px; text-transform: none; color: inherit; opacity: .8; }
+#temas > .dica { margin: 10px 0 0; text-align: center; }
+.temas-grupo { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
+.previa { transition: transform .12s; }
+.previa:focus-visible, .previa:focus { outline: 3px solid var(--texto); outline-offset: 2px; }
+.previa.ativo .pv-nome::after { content: " ✓"; color: var(--destaque); }
+.previa .pv-tela { display: block; height: 34px; margin-top: 6px; background: #000; border: 2px solid var(--tela-borda); border-radius: calc(var(--raio) / 2); }

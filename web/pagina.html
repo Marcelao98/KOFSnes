@@ -57,14 +57,7 @@
     <hr>
     <button data-acao="pausa-auto">Pausar ao sair da janela: ligado</button>
   </div></div>
-  <div class="m"><button>Tema</button><div class="sub">
-    <button data-tema="cafe">☕ Café queimado</button>
-    <button data-tema="escuro">🌙 Escuro</button>
-    <button data-tema="claro">☀️ Claro</button>
-    <button data-tema="zsnes">🕹️ ZSNES</button>
-    <hr>
-    <button data-acao="temas">🎨 Todos os temas (28)…</button>
-  </div></div>
+  <div class="m"><button data-acao="temas" title="galeria de temas">Tema</button></div>
   <div class="m"><button>Ajuda</button><div class="sub">
     <button data-acao="controles">Controles</button>
   </div></div>
@@ -123,9 +116,11 @@
     <button class="grande sec" data-acao="teclas-padrao">Restaurar padrão</button>
   </section>
 
+  <div id="veu" hidden></div>
   <section id="temas" class="janela" hidden>
-    <div class="titulo-j">🎨 Temas <button class="x" data-acao="fechar-temas">×</button></div>
+    <div class="titulo-j"><span>🎨 Temas <small id="tema-nome" class="dica"></small></span><button class="x" data-acao="fechar-temas">×</button></div>
     <div id="grade-temas"></div>
+    <p class="dica">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p>
   </section>
 
   <section id="estatisticas" class="janela" hidden>
