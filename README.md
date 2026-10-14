@@ -88,6 +88,10 @@ Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
   meio; funciona pausado, pra voltar ao ponto exato e salvar ali (F5). Guarda só o que
   mudou entre os quadros (~3 KB por foto, 30 por segundo) e volta bit a bit igual.
 - **Molduras**: TV de madeira dos anos 80, TV de tubo dos anos 90 ou fliperama.
+- **Caçador de bugs**: F9, ou sozinho quando o emulador quebra, abre a issue no GitHub
+  já preenchida (jogo, SHA-1, versão, navegador, erro) e baixa um pacote com o
+  savestate de segundos antes + os botões quadro a quadro. `node bugs/reproduzir.cjs`
+  roda o pacote e chega exatamente na mesma imagem (a ROM não vai no pacote).
 - **28 temas** com galeria de prévias (consoles, computador e internet antiga, anime,
   bem brasileiro) e **estatísticas**: tempo jogado, sessões, primeira e última vez
   por jogo, e o gráfico dos últimos 7 dias.

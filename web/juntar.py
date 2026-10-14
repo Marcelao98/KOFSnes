@@ -18,6 +18,17 @@ import sys
 
 saida_kof, web, icone, destino = (pathlib.Path(a) for a in sys.argv[1:5])
 
+
+def versao():
+    """commit do git + data do build: vai no relatório de bug"""
+    import datetime
+    import subprocess
+    try:
+        c = subprocess.run(["git", "-C", str(web), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    except OSError:
+        c = ""
+    return (c or "sem-git") + " · " + datetime.date.today().isoformat()
+
 runtime = (saida_kof / "kof-runtime.mjs").read_text()
 runtime = re.sub(r"^export (function|const|let|class) ", r"\1 ", runtime, flags=re.M)
 for nome, rapido in [
@@ -44,6 +55,7 @@ partes = {
     "{{NUCLEO}}": script,
     "{{APP}}": (web / "estado.js").read_text() + "\n" + (web / "app.js").read_text(),
     "{{ICONE}}": "data:image/png;base64," + base64.b64encode(icone.read_bytes()).decode(),
+    "{{VERSAO}}": versao(),
 }
 for k, v in partes.items():
     # </script> dentro do código fecharia a tag antes da hora

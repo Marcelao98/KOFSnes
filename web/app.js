@@ -217,7 +217,7 @@ const BOTOES_SNES = [
   ['L', 0x0020, 'KeyQ'], ['R', 0x0010, 'KeyW'], ['Start', 0x1000, 'Enter'], ['Select', 0x2000, 'ShiftLeft'],
 ];
 // atalhos do emulador: não podem virar botão do jogo
-const RESERVADAS = ['Escape', 'Tab', 'Backspace', 'F1', 'F2', 'F5', 'F6', 'F8', 'F11', 'KeyP', 'KeyM', 'Minus', 'Equal', 'NumpadSubtract', 'NumpadAdd'];
+const RESERVADAS = ['Escape', 'Tab', 'Backspace', 'F9', 'F1', 'F2', 'F5', 'F6', 'F8', 'F11', 'KeyP', 'KeyM', 'Minus', 'Equal', 'NumpadSubtract', 'NumpadAdd'];
 let mapa = {};   // nome do botão -> código da tecla (KeyboardEvent.code)
 let TECLAS = {}; // código da tecla -> bit
 function carregarMapa() {
@@ -284,6 +284,7 @@ function montarAjuda() {
     ['Menu rápido', 'Select+Start · F2', 'Volume', '- / ='],
     ['Salvar · carregar', 'Select+L · Select+R', 'Sair da tela cheia', 'Esc'],
     ['Rebobinar (segurar)', 'Select+Y', 'Rebobinar (segurar)', 'Backspace'],
+    ['', '', 'Reportar bug', 'F9'],
   ];
   const tab = $('#tab-ajuda');
   tab.innerHTML = '<tr><th>SNES</th><th>Teclado</th><th>Emulador</th><th>Teclado</th></tr>';
@@ -316,7 +317,9 @@ function semCombo(b) {
 addEventListener('keydown', (e) => {
   ligarSom();
   if (capturando) { capturar(e); return; }
+  if (!$('#bug').hidden) { if (e.code === 'Escape') fecharBug(); return; }   // digitando a descrição
   if (rapidoAberto) { rapidoTecla(e); return; }
+  if (e.code === 'F9') { e.preventDefault(); abrirBug(); return; }
   if (!$('#temas').hidden) {
     if (e.code === 'Escape') { acao('fechar-temas'); return; }
     if (temasTecla(e)) return;
@@ -352,24 +355,26 @@ addEventListener('blur', () => { teclado = 0; turbo = false; voltandoTecla = fal
 let ultimo = 0, sobra = 0, contados = 0, marco = 0;
 function laco(t) {
   requestAnimationFrame(laco);
-  if (snes && voltando() && !rapidoAberto && $('#biblioteca').hidden) { rebobinarPasso(); ultimo = t; return; }
+  if (snes && voltando() && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden) { rebobinarPasso(); ultimo = t; return; }
   if (rebobinou) terminarRebobinar();
-  if (!snes || pausado) { ultimo = t; return; }
+  if (!snes || pausado || !$('#biblioteca').hidden || !$('#estados').hidden) { ultimo = t; return; }
   const dt = Math.min(t - ultimo, 100);
   sobra += dt; ultimo = t;
   if (!document.hidden) jogando += dt;   // estatística: só o tempo rodando de verdade
   let vezes = 0;
   try {
     if (turbo) {
-      for (let k = 0; k < 4; k++) { snes.pad[0] = semCombo(estado()); snes.runFrame(); snes.apu.dsp.outCount = 0; }
+      for (let k = 0; k < 4; k++) { rodarQuadro(); snes.apu.dsp.outCount = 0; }
       vezes = 4; sobra = 0;
     } else {
       while (sobra >= QUADRO_MS && vezes < 4) {
-        snes.pad[0] = semCombo(estado()); snes.runFrame(); empurrarSom(); sobra -= QUADRO_MS; vezes++;
+        rodarQuadro(); empurrarSom(); sobra -= QUADRO_MS; vezes++;
       }
     }
   } catch (e) {
-    pausado = true; avisar('erro no emulador: ' + e.message, 6000); console.error(e); return;
+    pausado = true; avisar('erro no emulador: ' + e.message, 6000); console.error(e);
+    if (cacador) abrirBug(e);
+    return;
   }
   if (vezes) desenhar();
   desdeFoto += vezes;
@@ -382,13 +387,94 @@ function laco(t) {
 }
 requestAnimationFrame(laco);
 
+// ---------------- caçador de bugs ----------------
+// Pra reproduzir um bug exatamente: a cada 10 s o KOFnes tira uma foto do
+// estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
+// do bug leva o marco anterior + os botões até agora: rodando de novo, o
+// núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
+const VERSAO = '{{VERSAO}}', REPO = 'Marcelao98/KOFSnes';
+let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
+function rodarQuadro() {
+  const b = semCombo(estado());
+  snes.pad[0] = b; snes.runFrame();
+  if (marcoBug) { marcoBug.entradas.push(b); if (marcoBug.entradas.length >= 600) novoMarco(); }
+}
+function novoMarco(zerar) {
+  if (zerar) marcoBugAnt = null; else marcoBugAnt = marcoBug;
+  marcoBug = cacador && snes ? { estado: KofEstado.capturar(snes), entradas: [] } : null;
+}
+function marcarCacador() {
+  const b = $('[data-acao="cacador-toggle"]');
+  b.textContent = 'Caçador de bugs: ' + (cacador ? 'ligado' : 'desligado'); b.classList.toggle('ativo', cacador);
+}
+let erroBug = null, pausadoAntesBug = false;
+function abrirBug(erro) {
+  if (!$('#bug').hidden) return;
+  erroBug = erro || null;
+  pausadoAntesBug = pausado; pausado = true;
+  fecharJanelas(); fecharMenus();
+  $('#bug-erro').hidden = !erro;
+  $('#bug-erro').textContent = erro ? '💥 ' + (erro.message || erro) : '';
+  $('#bug-titulo').textContent = erro ? '💥 O emulador quebrou: reportar?' : '🐞 Reportar bug';
+  $('#bug-desc').value = '';
+  $('#bug-pacote').disabled = !snes; $('#bug-pacote').checked = !!snes;
+  $('#bug').hidden = false; $('#bug-desc').focus();
+}
+function fecharBug() { if ($('#bug').hidden) return; $('#bug').hidden = true; pausado = pausadoAntesBug; sobra = 0; }
+async function sha1(bytes) {
+  try { return [...new Uint8Array(await crypto.subtle.digest('SHA-1', bytes))].map((x) => x.toString(16).padStart(2, '0')).join(''); } catch (e) { return '?'; }
+}
+function b64(u8) { let t = ''; for (let i = 0; i < u8.length; i += 0x8000) t += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(t); }
+async function enviarBug() {
+  const desc = $('#bug-desc').value.trim() || '(sem descrição)', comPacote = $('#bug-pacote').checked && snes;
+  const agora = new Date(), data = agora.toISOString().slice(0, 16).replace(/[-:T]/g, '');
+  const jogo = snes ? { nome: romNome, titulo: snes.cart.title.trim(), tamanho: romAtual ? romAtual.length : 0, sha1: romAtual ? await sha1(romAtual) : '?', mapeamento: ['LoROM', 'HiROM', 'ExHiROM'][snes.cart.mapper] || '?', superfx: !!snes.cart.superfx } : null;
+  const opcoes = `tema ${temaSalvo} · filtro ${filtro} · proporção ${proporcao} · moldura ${moldura} · rebobinar ${rebobLigado ? 'sim' : 'não'}`;
+  const erro = erroBug ? { mensagem: String(erroBug.message || erroBug), pilha: String(erroBug.stack || '').slice(0, 1500) } : null;
+  let arquivo = '';
+  if (comPacote) {
+    const base = marcoBugAnt || marcoBug;
+    const entradas = base ? (marcoBugAnt ? marcoBugAnt.entradas.concat(marcoBug ? marcoBug.entradas : []) : base.entradas) : [];
+    const pacote = {
+      formato: 'kofbug', versao: 1, kofnes: VERSAO, quando: agora.toISOString(), descricao: desc, jogo, erro,
+      ambiente: { navegador: navigator.userAgent, opcoes },
+      replay: base ? { estado: base.estado, entradas: b64(new Uint8Array(Uint16Array.from(entradas).buffer)), quadros: entradas.length } : null,
+      agora: { estado: KofEstado.capturar(snes), assinatura: assinatura() },
+      print: foto(256),
+    };
+    arquivo = `kofbug-${(romNome || 'jogo').replace(/[^\w-]+/g, '_').slice(0, 40)}-${data}.json.gz`;
+    const blob = await comprimir(JSON.stringify(pacote));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = arquivo;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  }
+  const L = [];
+  L.push('### O que aconteceu', '', desc, '');
+  if (jogo) L.push('### Jogo', '', `- **ROM:** ${jogo.nome}`, `- **Título interno:** ${jogo.titulo || '?'} · ${jogo.mapeamento}${jogo.superfx ? ' · Super FX' : ''} · ${Math.round(jogo.tamanho / 1024)} KB`, `- **SHA-1:** \`${jogo.sha1}\``, '');
+  L.push('### Ambiente', '', `- **KOFnes:** ${VERSAO}`, `- **Navegador:** ${navigator.userAgent}`, `- **Opções:** ${opcoes}`, '');
+  if (erro) L.push('### Erro do emulador', '', '```', erro.mensagem, erro.pilha.slice(0, 1200), '```', '');
+  if (arquivo) L.push('### Pacote pra reproduzir', '', `📎 **Arraste aqui o arquivo \`${arquivo}\`**, que o KOFnes acabou de baixar (pasta Downloads).`, 'Ele tem o savestate de alguns segundos antes e os botões apertados, pra reproduzir o bug quadro a quadro. A ROM **não** vai junto.', '');
+  L.push('---', '_Reportado pelo modo caçador de bugs do KOFnes_');
+  const titulo = `[bug] ${jogo ? jogo.nome + ': ' : ''}${desc.split('\n')[0].slice(0, 70)}`;
+  const url = `https://github.com/${REPO}/issues/new?labels=bug&title=${encodeURIComponent(titulo)}&body=${encodeURIComponent(L.join('\n')).slice(0, 7000)}`;
+  window.open(url, '_blank');
+  fecharBug();
+  avisar(arquivo ? '🐞 issue aberta no GitHub: arraste o pacote baixado pra dentro dela' : '🐞 issue aberta no GitHub', 6000);
+}
+function assinatura() { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; }
+// erro na interface (fora do núcleo): oferece reportar, no máximo uma vez por minuto
+let ultimoErroUi = 0;
+addEventListener('error', (e) => {
+  if (!cacador || Date.now() - ultimoErroUi < 60000 || !e.error) return;
+  ultimoErroUi = Date.now(); abrirBug(e.error);
+});
+
 // ---------------- rebobinar ----------------
 // segura Backspace (ou Select+Y no controle) e o jogo volta no tempo, 2x mais
 // rápido que o normal; funciona pausado também: volta até o ponto certo e
 // aperta F5 pra guardar aquele momento num savestate
 let rebob = null, rebobLigado = ler('rebobinar') !== '0', desdeFoto = 0, voltandoTecla = false, rebobinou = 0;
 const voltando = () => voltandoTecla || (estado() & 0x6000) === 0x6000;
-function novoRebob() { rebob = rebobLigado && snes ? KofEstado.Rebobinador(snes, 48 << 20) : null; desdeFoto = 0; }
+function novoRebob() { rebob = rebobLigado && snes ? KofEstado.Rebobinador(snes, 48 << 20) : null; desdeFoto = 0; novoMarco(true); }
 function mostrarRebob() {
   const s = (rebobinou * 2 / 60).toFixed(1).replace('.', ',');
   avisar(`⏪ −${s} s · ${rebob.fotos ? 'segure pra voltar mais' : 'não dá pra voltar mais'} · F5 salva este momento`, 1500);
@@ -399,12 +485,12 @@ function rebobinarPasso() {
   snes.pad[0] = 0; snes.runFrame(); snes.apu.dsp.outCount = 0;    // um quadro pra ter a imagem daquele momento
   desenhar(); mostrarRebob();
 }
-function terminarRebobinar() { rebobinou = 0; ini = fim = 0; sobra = 0; desdeFoto = 0; }
+function terminarRebobinar() { rebobinou = 0; ini = fim = 0; sobra = 0; desdeFoto = 0; novoMarco(true); }
 function voltarSegundos(seg) {   // do menu rápido: volta e fica pausado
   if (!rebob) { avisar('rebobinar está desligado (Emulação → Rebobinar)'); return; }
   let n = 0;
   for (let i = 0; i < seg * 30 && rebob.voltar(); i++) n++;
-  snes.pad[0] = 0; snes.runFrame(); snes.apu.dsp.outCount = 0; desenhar();
+  snes.pad[0] = 0; snes.runFrame(); snes.apu.dsp.outCount = 0; desenhar(); novoMarco(true);
   avisar(n ? `⏪ voltou ${(n * 2 / 60).toFixed(1).replace('.', ',')} s` : 'não dá pra voltar mais');
 }
 function marcarRebob() {
@@ -439,20 +525,35 @@ async function lerZip(buf) {
   throw new Error('o zip não tem .sfc/.smc dentro');
 }
 // ---------------- banco interno (IndexedDB) ----------------
-// c: configurações (a pasta de ROMs) · jogos: ROM + print da última vez ·
-// estados: savestates (comprimidos) com o print do momento
+// c: configurações (a pasta de ROMs) · jogos: nome, prints, quando jogou ·
+// roms: a ROM de cada jogo · autos: o estado automático de cada jogo ·
+// estados: savestates (comprimidos) com o print do momento. ROM e estado
+// automático ficam fora de "jogos": abrir a biblioteca lê só o que mostra.
 let bd = null;
 function abrirBanco() {
   if (bd) return bd;
   bd = new Promise((ok, falha) => {
-    const r = indexedDB.open('kofnes', 4);
-    r.onupgradeneeded = () => {
+    const r = indexedDB.open('kofnes', 5);
+    r.onupgradeneeded = (ev) => {
       const b = r.result;
       if (!b.objectStoreNames.contains('c')) b.createObjectStore('c');
       if (!b.objectStoreNames.contains('jogos')) b.createObjectStore('jogos', { keyPath: 'id' });
       if (!b.objectStoreNames.contains('estados')) b.createObjectStore('estados', { keyPath: 'n', autoIncrement: true }).createIndex('jogo', 'jogo');
       if (!b.objectStoreNames.contains('capas')) b.createObjectStore('capas');   // nome do jogo -> capa (Blob) ou {falhou}
       if (!b.objectStoreNames.contains('stats')) b.createObjectStore('stats', { keyPath: 'id' });   // tempo jogado, sessões, por dia
+      if (!b.objectStoreNames.contains('roms')) b.createObjectStore('roms');
+      if (!b.objectStoreNames.contains('autos')) b.createObjectStore('autos');
+      if (ev.oldVersion >= 1 && ev.oldVersion < 5) {   // versão antiga: tira ROM e estado automático de dentro de "jogos"
+        const t = r.transaction, roms = t.objectStore('roms'), autos = t.objectStore('autos');
+        t.objectStore('jogos').openCursor().onsuccess = (e) => {
+          const c = e.target.result; if (!c) return;
+          const j = c.value;
+          if (j.rom) roms.put(j.rom, j.id);
+          if (j.auto) autos.put(j.auto, j.id);
+          j.temAuto = !!j.auto; delete j.rom; delete j.auto;
+          c.update(j); c.continue();
+        };
+      }
     };
     r.onsuccess = () => ok(r.result);
     r.onerror = () => falha(r.error);
@@ -471,6 +572,7 @@ const bdPegar = (loja, k) => bdOp(loja, 'readonly', (o) => o.get(k));
 const bdPor = (loja, k, v) => bdOp(loja, 'readwrite', (o) => o.put(v, k));
 const bdGuardar = (loja, v) => bdOp(loja, 'readwrite', (o) => o.put(v));
 const bdApagar = (loja, k) => bdOp(loja, 'readwrite', (o) => o.delete(k));
+const bdTem = (loja, k) => bdOp(loja, 'readonly', (o) => o.count(k)).then((n) => n > 0);
 // lê, muda e grava o registro de um jogo NUMA transação só: o estado automático,
 // a capa baixada e a troca de jogo podem chegar juntos, e um não apaga o outro
 const bdMudarJogo = (id, f) => bdMudar('jogos', id, f);
@@ -519,7 +621,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
     for (let i = 0; i < b.length && i < s.cart.sram.length; i++) s.cart.sram[i] = b.charCodeAt(i);
   }
   s.reset();
-  snes = s; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob();
+  snes = s; romAtual = bytes; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob();
   document.body.classList.remove('vazio');
   fecharJanelas();
   $('#st-jogo').textContent = romNome + ' · ' + (s.cart.title.trim() || '?');
@@ -528,7 +630,9 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   // a ROM vai pra biblioteca: da próxima vez abre sem diálogo nenhum
   try {
     const novo = { id: jogoId, nome: romNome, arquivo: nome, titulo: s.cart.title.trim(), tamanho: bytes.length, ultimo: Date.now() };
-    await bdMudarJogo(jogoId, (antigo) => ({ ...(antigo || {}), ...novo, rom: guardarNaBiblioteca || !antigo ? bytes : antigo.rom }));
+    const id = jogoId;
+    await bdMudarJogo(id, (antigo) => ({ ...(antigo || {}), ...novo }));
+    if (guardarNaBiblioteca || !(await bdTem('roms', id))) await bdPor('roms', id, bytes);
     autoAntes = Date.now();
   } catch (e) { console.warn('biblioteca indisponível', e); }
   contarSessao(jogoId, romNome);
@@ -638,7 +742,9 @@ async function salvarAuto() {
   try {
     const texto = JSON.stringify(KofEstado.capturar(snes)), capa = foto(256);
     const quandoAgora = Date.now();
-    await bdMudarJogo(jogoId, (j) => j && Object.assign(j, { auto: texto, autoQuando: quandoAgora, autoCapa: capa, capa, ultimo: quandoAgora }));
+    const id = jogoId;
+    await bdPor('autos', id, texto);
+    await bdMudarJogo(id, (j) => j && Object.assign(j, { temAuto: true, autoQuando: quandoAgora, autoCapa: capa, capa, ultimo: quandoAgora }));
     autoAntes = Date.now();
   } catch (e) { console.warn('auto-save falhou', e); }
 }
@@ -658,9 +764,9 @@ async function salvarEstado() {
 async function carregarEstado(est) {
   try {
     if (est.jogo !== jogoId) {          // estado de outro jogo: abre o jogo antes
-      const j = await bdPegar('jogos', est.jogo);
-      if (!j || !j.rom) { avisar('a ROM desse jogo não está na biblioteca', 4000); return; }
-      await abrirBytes(j.arquivo || j.nome, j.rom, false);
+      const j = await bdPegar('jogos', est.jogo), rom = await bdPegar('roms', est.jogo);
+      if (!j || !rom) { avisar('a ROM desse jogo não está na biblioteca', 4000); return; }
+      await abrirBytes(j.arquivo || j.nome, rom, false);
     }
     KofEstado.restaurar(snes, JSON.parse(await descomprimir(est.dados)));
     snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0; pausado = false; novoRebob();
@@ -670,9 +776,12 @@ async function carregarEstado(est) {
   } catch (e) { avisar('não consegui carregar: ' + e.message, 4000); }
 }
 async function continuar(j) {
-  await abrirBytes(j.arquivo || j.nome, j.rom, false);
-  if (!j.auto) return;
-  KofEstado.restaurar(snes, JSON.parse(j.auto));
+  const rom = await bdPegar('roms', j.id);
+  if (!rom) throw new Error('a ROM desse jogo não está na biblioteca');
+  const auto = j.temAuto ? await bdPegar('autos', j.id) : null;
+  await abrirBytes(j.arquivo || j.nome, rom, false);
+  if (!auto) return;
+  KofEstado.restaurar(snes, JSON.parse(auto));
   snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0; novoRebob();
   snes.runFrame(); snes.apu.dsp.outCount = 0; desenhar();
   avisar('continuando de ' + quando(j.autoQuando));
@@ -698,7 +807,7 @@ async function mostrarEstados(id) {
   const lista = todos.filter((e) => e.jogo === atual).sort((a, b) => b.quando - a.quando);
   const g = $('#grade-estados'); g.innerHTML = '';
   const jAuto = jogos.find((j) => j.id === atual);
-  if (jAuto && jAuto.auto) {
+  if (jAuto && jAuto.temAuto) {
     const c = document.createElement('div'); c.className = 'cartao auto';
     const im = document.createElement('img'); im.src = jAuto.autoCapa; im.alt = '';
     const rot = document.createElement('div'); rot.className = 'cartao-rot'; rot.textContent = '⟳ automático · ' + quando(jAuto.autoQuando);
@@ -715,7 +824,7 @@ async function mostrarEstados(id) {
     c.append(im, rot); c.onclick = () => carregarEstado(e);
     g.appendChild(c);
   }
-  $('#estados-vazio').hidden = lista.length > 0 || !!(jAuto && jAuto.auto);
+  $('#estados-vazio').hidden = lista.length > 0 || !!(jAuto && jAuto.temAuto);
 }
 $('#estados-jogo').addEventListener('change', (e) => mostrarEstados(e.target.value));
 
@@ -794,17 +903,34 @@ async function capaPorNome(nome) {
   if (!capasMem.has(nome)) {
     const guardada = await bdPegar('capas', nome).catch(() => null) || null;
     capasMem.set(nome, guardada);
-    if (guardada instanceof Blob) { montarLista(); return; }   // veio do cache: redesenha com ela
+    if (guardada instanceof Blob) { capaChegou(nome); return; }   // veio do cache: põe ela no lugar
   }
   const c = capasMem.get(nome);
   if (c instanceof Blob || (c && c.falhou && Date.now() - c.falhou < 7 * 864e5)) return;
   buscando.add(nome);
+  await vagaCapa();
   try {
     const blob = await baixarCapa(nome);
     const v = blob || { falhou: Date.now() };
     capasMem.set(nome, v); await bdPor('capas', nome, v).catch(() => {});
-    if (blob) montarLista();
-  } finally { buscando.delete(nome); }
+    if (blob) capaChegou(nome);
+  } finally { buscando.delete(nome); liberarCapa(); }
+}
+let baixandoCapas = 0;
+const filaCapas = [];
+const vagaCapa = () => new Promise((ok) => { if (baixandoCapas < 3) { baixandoCapas++; ok(); } else filaCapas.push(ok); });
+function liberarCapa() { const p = filaCapas.shift(); if (p) p(); else baixandoCapas--; }
+// uma capa ficou pronta: troca só a miniatura daquele jogo (e o painel, se ele está selecionado)
+function capaChegou(nome) {
+  if ($('#biblioteca').hidden) return;
+  lis.forEach((li, i) => {
+    const r = visiveis[i];
+    if (!r || r.nome !== nome || !sofa) return;
+    const fig = li.querySelector('.mini'), src = srcCapa(r);
+    if (fig && src) { fig.textContent = ''; const im = document.createElement('img'); im.src = src; im.alt = ''; fig.appendChild(im); }
+  });
+  const sel = visiveis[selecionada];
+  if (sel && sel.nome === nome) mostrarInfo();
 }
 function srcCapa(r) {   // capa oficial (do cache), senão o print de quando parou
   const c = r && capasNet ? capasMem.get(r.nome) : null;
@@ -834,16 +960,27 @@ function colunas() {
   return Math.max(1, n);
 }
 
+// a lista é construída uma vez (abrir, filtrar, trocar de modo); andar com as
+// setas só troca a seleção (marcarSel). No sofá, cada capa só é pedida quando
+// o cartão aparece na tela.
+let lis = [];
+const olhoCapas = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach((e) => {
+  if (!e.isIntersecting) return;
+  olhoCapas.unobserve(e.target);
+  const r = visiveis[+e.target.dataset.i]; if (r) capaPorNome(r.nome).catch(() => {});
+}), { root: $('#roms'), rootMargin: '200px' }) : null;
 function montarLista() {
   const f = $('#filtro').value.toLowerCase(), ul = $('#roms');
   visiveis = itens.filter((r) => r.nome.toLowerCase().includes(f));
   selecionada = Math.max(0, Math.min(selecionada, visiveis.length - 1));
-  ul.innerHTML = '';
+  if (olhoCapas) olhoCapas.disconnect();
+  ul.innerHTML = ''; lis = [];
+  const frag = document.createDocumentFragment();
   visiveis.forEach((r, i) => {
-    const li = document.createElement('li');
+    const li = document.createElement('li'); li.dataset.i = i;
     if (sofa) {
       const src = srcCapa(r), fig = document.createElement('div'); fig.className = 'mini';
-      capaPorNome(r.nome).catch(() => {});
+      if (olhoCapas) olhoCapas.observe(li); else capaPorNome(r.nome).catch(() => {});
       if (src) { const im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; fig.appendChild(im); } else fig.textContent = '☕';
       li.appendChild(fig);
     }
@@ -851,15 +988,21 @@ function montarLista() {
     const sm = document.createElement('small');
     sm.textContent = r.jogo ? (contagem[r.jogo.id] ? '💾 ' + contagem[r.jogo.id] : '★') : r.ext;
     li.appendChild(sm);
-    if (i === selecionada) li.className = 'sel';
-    li.onclick = () => { if (selecionada === i) jogar(); else { selecionada = i; montarLista(); } };
-    ul.appendChild(li);
+    li.onclick = () => { if (selecionada === i) jogar(); else marcarSel(i); };
+    lis.push(li); frag.appendChild(li);
   });
+  ul.appendChild(frag);
   $('#lista-vazia').hidden = itens.length > 0;
   $('#lista-vazia').innerHTML = temPasta
     ? 'Nenhum jogo ainda. Escolha a <b>pasta de ROMs</b> (só uma vez) ou arraste uma ROM pra cá.'
     : 'Nenhum jogo ainda. Arraste uma ROM pra cá ou use <b>Adicionar arquivo</b>.';
-  const sel = ul.querySelector('.sel'); if (sel) sel.scrollIntoView({ block: 'nearest' });
+  marcarSel(selecionada);
+}
+function marcarSel(i) {
+  if (lis[selecionada]) lis[selecionada].classList.remove('sel');
+  selecionada = Math.max(0, Math.min(i, visiveis.length - 1));
+  const li = lis[selecionada];
+  if (li) { li.classList.add('sel'); li.scrollIntoView({ block: 'nearest' }); }
   mostrarInfo();
 }
 function mostrarInfo() {
@@ -871,7 +1014,7 @@ function mostrarInfo() {
     const e = estat[r.jogo.id], tempo = e && e.tempo ? ` · ${duracao(e.tempo)} no total em ${e.sessoes} ${e.sessoes === 1 ? 'sessão' : 'sessões'}` : '';
     $('#info-det').textContent = `jogado ${quando(r.jogo.ultimo)}${tempo} · ${n} ${n === 1 ? 'estado salvo' : 'estados salvos'} · ${(r.jogo.tamanho / 1048576).toFixed(1)} MB`;
   } else $('#info-det').textContent = 'na pasta de ROMs · ainda não jogado';
-  const auto = autoSalvar && !!(r.jogo && r.jogo.auto);
+  const auto = autoSalvar && !!(r.jogo && r.jogo.temAuto);
   $('[data-acao="jogar"]').textContent = auto ? '▶ Continuar' : '▶ Jogar';
   $('[data-acao="do-zero"]').hidden = !auto;
   if (auto) $('#info-det').textContent += ` · parou em ${quando(r.jogo.autoQuando)}`;
@@ -886,8 +1029,12 @@ async function jogar(doZero) {
   const r = visiveis[selecionada];
   if (!r) return;
   try {
-    if (autoSalvar && r.jogo && r.jogo.auto && !doZero) await continuar(r.jogo);
-    else if (r.jogo) await abrirBytes(r.jogo.arquivo || r.nome, r.jogo.rom, false);
+    if (autoSalvar && r.jogo && r.jogo.temAuto && !doZero) await continuar(r.jogo);
+    else if (r.jogo) {
+      const rom = await bdPegar('roms', r.jogo.id);
+      if (!rom) throw new Error('a ROM desse jogo não está na biblioteca');
+      await abrirBytes(r.jogo.arquivo || r.nome, rom, false);
+    }
     else await abrirArquivo(await r.h.getFile());
   } catch (e) { avisar(e.message, 4000); }
 }
@@ -895,8 +1042,7 @@ function listaTecla(e) {
   if (e.code === 'Escape') { if (snes) fecharJanelas(); return true; }
   const passo = { ArrowDown: colunas(), ArrowUp: -colunas(), ArrowRight: sofa ? 1 : 0, ArrowLeft: sofa ? -1 : 0 }[e.code];
   if (passo) {
-    e.preventDefault(); selecionada = Math.max(0, Math.min(visiveis.length - 1, selecionada + passo));
-    montarLista(); return true;
+    e.preventDefault(); marcarSel(selecionada + passo); return true;
   }
   if (e.code === 'Enter') { e.preventDefault(); jogar(!!e.shiftKey); return true; }
   if (e.code === 'F6' || (e.code === 'KeyE' && e.target !== $('#filtro'))) { e.preventDefault(); acao('estados-do-sel'); return true; }
@@ -938,6 +1084,7 @@ const ITENS_RAPIDO = [
   { t: '💾 Salvar estado', f: () => { fecharRapido(); salvarEstado(); } },
   { t: '⟲ Carregar último estado', f: () => { fecharRapido(); carregarUltimo(); } },
   { t: '⏪ Voltar 5 segundos', f: () => { voltarSegundos(5); } },
+  { t: '🐞 Reportar bug', f: () => { fecharRapido(); abrirBug(); } },
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
   { t: 'Filtro', v: () => FILTROS.find(([k]) => k === filtro)[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, filtro, d)) },
@@ -964,7 +1111,7 @@ function montarRapido() {
   });
 }
 function abrirRapido() {
-  if (!snes || rapidoAberto) return;
+  if (!snes || rapidoAberto || !$('#bug').hidden) return;
   fecharMenus(); fecharJanelas();
   rapidoAberto = true; pausadoAntesRapido = pausado; pausado = true; teclado = 0;
   selR = 0; montarRapido(); $('#rapido').hidden = false;
@@ -1123,6 +1270,12 @@ async function acao(a) {
     case 'rebob-toggle':
       rebobLigado = !rebobLigado; guardar('rebobinar', rebobLigado ? '1' : '0'); novoRebob(); marcarRebob();
       avisar(rebobLigado ? 'rebobinar ligado: segure Backspace (ou Select+Y)' : 'rebobinar desligado'); break;
+    case 'bug': abrirBug(); break;
+    case 'bug-enviar': await enviarBug(); break;
+    case 'bug-fechar': fecharBug(); break;
+    case 'cacador-toggle':
+      cacador = !cacador; guardar('cacador', cacador ? '1' : '0'); novoMarco(true); marcarCacador();
+      avisar(cacador ? '🐞 caçador de bugs ligado: se o emulador quebrar, ele oferece reportar' : 'caçador de bugs desligado'); break;
     case 'vol-menos': mudarVolume(-10); break;
     case 'vol-mais': mudarVolume(10); break;
     case 'rapido': if (rapidoAberto) fecharRapido(); else if (snes) abrirRapido(); else avisar('abra um jogo primeiro'); break;
@@ -1171,12 +1324,16 @@ aplicarFiltro(filtro);
 marcarAuto();
 marcarSom();
 marcarRebob();
+marcarCacador();
 document.body.classList.toggle('sofa', sofa);
 $('[data-acao="capas"]').textContent = capasNet ? '🖼 Capas oficiais: ligadas' : '🖼 Capas oficiais: desligadas';
 ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"]').forEach((b) => { b.hidden = true; });
 mostrarBiblioteca(false);
 window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
-  volume: () => volume, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
+  // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
+  testeLista: (n) => { itens = Array.from({ length: n }, (_, i) => ({ nome: 'Jogo de teste ' + i, ext: 'SFC' })); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
+  forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
+  volume: () => volume, marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
   assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
 })();

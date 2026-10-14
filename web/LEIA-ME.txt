@@ -19,6 +19,9 @@ filtro, proporção 4:3, volume. No controle: Select+L salva, Select+R carrega.
 Segure Backspace (ou Select+Y) pra REBOBINAR: o jogo volta no tempo. Pausado
 também funciona: volte até o ponto certo e aperte F5 pra salvar aquele momento.
 Imagem > Moldura: TV de madeira, TV de tubo ou fliperama em volta do jogo.
+F9 (ou Ajuda > Reportar bug) abre uma issue no GitHub já preenchida, e baixa
+um pacote pra reproduzir o bug: arraste ele pra dentro da issue. Se o emulador
+quebrar, ele mesmo oferece reportar (Ajuda > Caçador de bugs).
 Controle USB/Xbox também funciona.
 
 Os saves de bateria ficam guardados sozinhos no perfil do KOFnes

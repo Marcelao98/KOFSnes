@@ -66,6 +66,9 @@
   <div class="m"><button data-acao="temas" title="galeria de temas">Tema</button></div>
   <div class="m"><button>Ajuda</button><div class="sub">
     <button data-acao="controles">Controles</button>
+    <hr>
+    <button data-acao="bug">🐞 Reportar bug…<kbd>F9</kbd></button>
+    <button data-acao="cacador-toggle">Caçador de bugs: ligado</button>
   </div></div>
 </nav>
 
@@ -120,6 +123,19 @@
     <p class="dica" id="teclas-dica">Clique num botão e aperte a tecla que quiser.</p>
     <div id="grade-teclas"></div>
     <button class="grande sec" data-acao="teclas-padrao">Restaurar padrão</button>
+  </section>
+
+  <section id="bug" class="janela" hidden>
+    <div class="titulo-j"><span id="bug-titulo">🐞 Reportar bug</span><button class="x" data-acao="bug-fechar">×</button></div>
+    <p id="bug-erro" hidden></p>
+    <label class="dica" for="bug-desc">O que aconteceu? (ex.: "travou quando entrei no modo sofá", "o chão some na fase 2")</label>
+    <textarea id="bug-desc" rows="4" placeholder="conte o que você estava fazendo e o que deu errado…"></textarea>
+    <label class="bug-op"><input type="checkbox" id="bug-pacote" checked> incluir o pacote pra reproduzir (savestate de segundos antes + botões apertados; a ROM não vai)</label>
+    <div class="bug-botoes">
+      <button class="grande" data-acao="bug-enviar">Abrir issue no GitHub</button>
+      <button class="grande sec" data-acao="bug-fechar">Agora não</button>
+    </div>
+    <p class="dica">Abre a página de issue do KOFnes já preenchida; o pacote é baixado e você arrasta ele pra dentro da issue.</p>
   </section>
 
   <div id="veu" hidden></div>
