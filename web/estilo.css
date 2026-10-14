@@ -539,3 +539,37 @@ body[data-moldura="fliperama"] .mold-extra::after {    /* painel: alavanca + 6 b
 .bug-op { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
 .bug-botoes { display: flex; gap: 10px; margin-top: 10px; }
 .bug-botoes .grande { width: auto; flex: 1; margin: 0; }
+
+/* Jukebox */
+#jukebox { width: min(940px, 96vw); height: min(620px, 90vh); display: flex; flex-direction: column; text-align: left; }
+.jk { flex: 1; display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; min-height: 0; }
+.jk-tocando { display: flex; flex-direction: column; align-items: center; text-align: center; min-height: 0; overflow-y: auto; }
+.jk-capa { width: 220px; height: 220px; flex-shrink: 0; border-radius: var(--raio); background: var(--painel); border: 1px solid var(--borda); display: grid; place-items: center; overflow: hidden; position: relative; }
+.jk-capa span { font-size: 64px; opacity: .45; }
+.jk-capa img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--fundo); }
+.jk-tocando h2 { margin: 10px 0 2px; font-size: 18px; text-transform: var(--caixa); }
+.jk-tocando .dica { margin: 2px 0; }
+.jk-controles { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+.jk-controles .x { font-size: 20px; opacity: .8; }
+.jk-controles .x.ativo { opacity: 1; color: var(--destaque); text-shadow: 0 0 6px var(--destaque); }
+.jk-play { width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--destaque); color: var(--painel); font-size: 22px; }
+#jk-vozes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; width: 100%; height: 90px; margin-top: 6px; }
+.jk-voz { position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 0; background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; }
+.jk-voz i { display: block; width: 100%; height: 0; background: var(--destaque); transition: height .06s linear; }
+.jk-voz span { position: absolute; left: 0; right: 0; bottom: 2px; font-size: 11px; color: var(--texto); text-shadow: 0 1px 2px #000; }
+.jk-voz.muda { opacity: .35; }
+.jk-voz.muda span::after { content: " ✕"; }
+.jk-lado { display: flex; flex-direction: column; min-height: 0; }
+#jk-lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+.jk-grupo { padding: 10px 8px 4px; font-size: 12px; font-weight: 700; color: var(--fraco); text-transform: uppercase; letter-spacing: 1px; }
+.jk-faixa { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: var(--raio); cursor: pointer; }
+.jk-faixa > span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jk-faixa small { color: var(--fraco); }
+.jk-faixa:hover, .jk-faixa.sel { background: var(--sel); }
+.jk-faixa.sel { outline: 1px solid var(--destaque); }
+.jk-acoes { display: flex; gap: 2px; opacity: 0; }
+.jk-faixa:hover .jk-acoes, .jk-faixa.sel .jk-acoes { opacity: 1; }
+.jk-acoes .x { font-size: 14px; }
+#st-juke { display: flex; align-items: center; gap: 4px; }
+#st-juke .x { font-size: 13px; color: inherit; }
+@media (max-width: 760px) { .jk { grid-template-columns: 1fr; } .jk-capa { width: 140px; height: 140px; } }

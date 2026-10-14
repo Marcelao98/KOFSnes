@@ -170,8 +170,10 @@ function ligarSom() {
     let pos = 0;
     no.onaudioprocess = (ev) => {
       const l = ev.outputBuffer.getChannelData(0), r = ev.outputBuffer.getChannelData(1);
+      const jk = juke.tocando;
+      if (jk) jukeEncher(Math.ceil(l.length * taxa) + 64);
       for (let i = 0; i < l.length; i++) {
-        if (ini === fim || mudo || pausado) { l[i] = r[i] = 0; continue; }
+        if (ini === fim || mudo || (pausado && !jk)) { l[i] = r[i] = 0; continue; }
         l[i] = fila[ini * 2]; r[i] = fila[ini * 2 + 1];
         pos += taxa;
         while (pos >= 1 && ini !== fim) { pos -= 1; ini = (ini + 1) & (FILA - 1); }
@@ -217,7 +219,7 @@ const BOTOES_SNES = [
   ['L', 0x0020, 'KeyQ'], ['R', 0x0010, 'KeyW'], ['Start', 0x1000, 'Enter'], ['Select', 0x2000, 'ShiftLeft'],
 ];
 // atalhos do emulador: não podem virar botão do jogo
-const RESERVADAS = ['Escape', 'Tab', 'Backspace', 'F9', 'F1', 'F2', 'F5', 'F6', 'F8', 'F11', 'KeyP', 'KeyM', 'Minus', 'Equal', 'NumpadSubtract', 'NumpadAdd'];
+const RESERVADAS = ['Escape', 'Tab', 'Backspace', 'F7', 'F9', 'F1', 'F2', 'F5', 'F6', 'F8', 'F11', 'KeyP', 'KeyM', 'Minus', 'Equal', 'NumpadSubtract', 'NumpadAdd'];
 let mapa = {};   // nome do botão -> código da tecla (KeyboardEvent.code)
 let TECLAS = {}; // código da tecla -> bit
 function carregarMapa() {
@@ -286,6 +288,7 @@ function montarAjuda() {
     ['Salvar · carregar', 'Select+L · Select+R', 'Sair da tela cheia', 'Esc'],
     ['Rebobinar (segurar)', 'Select+Y', 'Rebobinar (segurar)', 'Backspace'],
     ['', '', 'Reportar bug', 'F9'],
+    ['', '', 'Guardar a música (jukebox)', 'F7'],
   ];
   const tab = $('#tab-ajuda');
   tab.innerHTML = '<tr><th>SNES</th><th>Teclado</th><th>Emulador</th><th>Teclado</th></tr>';
@@ -321,6 +324,8 @@ addEventListener('keydown', (e) => {
   if (!$('#bug').hidden) { if (e.code === 'Escape') fecharBug(); return; }   // digitando a descrição
   if (rapidoAberto) { rapidoTecla(e); return; }
   if (e.code === 'F9') { e.preventDefault(); abrirBug(); return; }
+  if (e.code === 'F7') { e.preventDefault(); guardarMusica(); return; }
+  if (!$('#jukebox').hidden && e.code === 'Space') { e.preventDefault(); jukeAlternar(); return; }
   if (!$('#temas').hidden) {
     if (e.code === 'Escape') { acao('fechar-temas'); return; }
     if (temasTecla(e)) return;
@@ -336,7 +341,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'F8') { e.preventDefault(); acao('carregar-ultimo'); return; }
   if (e.code === 'F11') { e.preventDefault(); acao('cheia'); return; }
   if (!$('#biblioteca').hidden) { listaTecla(e); return; }
-  const aberta = ['estados', 'ajuda', 'teclas', 'temas', 'estatisticas'].some((id) => !$('#' + id).hidden);
+  const aberta = ['estados', 'ajuda', 'teclas', 'temas', 'estatisticas', 'jukebox'].some((id) => !$('#' + id).hidden);
   if (e.code === 'Escape' && aberta) { fecharJanelas(); return; }
   if (e.code === 'F1') { e.preventDefault(); acao('reiniciar'); return; }
   if (e.code === 'KeyP' || e.code === 'Escape') { acao('pausar'); return; }
@@ -358,7 +363,8 @@ function laco(t) {
   requestAnimationFrame(laco);
   if (snes && voltando() && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden) { rebobinarPasso(); ultimo = t; return; }
   if (rebobinou) terminarRebobinar();
-  if (!snes || pausado || !$('#biblioteca').hidden || !$('#estados').hidden) { ultimo = t; return; }
+  if (!snes || pausado || !$('#biblioteca').hidden || !$('#estados').hidden || !$('#jukebox').hidden) { ultimo = t; return; }
+  if (juke.tocando) jukePausar();
   const dt = Math.min(t - ultimo, 100);
   sobra += dt; ultimo = t;
   if (!document.hidden) jogando += dt;   // estatística: só o tempo rodando de verdade
@@ -387,6 +393,159 @@ function laco(t) {
   }
 }
 requestAnimationFrame(laco);
+
+// ---------------- jukebox ----------------
+// A música do SNES roda num computador à parte (SPC700 + DSP + 64 KB). Guardar
+// uma música = fotografar só esse chip; tocar = rodar só ele, sem CPU nem
+// imagem, num Apu avulso do núcleo. Também abre e exporta arquivos .spc.
+const juke = { lista: [], atual: -1, apu: null, tocando: false, amostras: 0, aleatorio: false, repetir: false, mudas: 0 };
+const PADRAO_SEG = 180, PADRAO_FADE = 8000;
+function jukeEncher(precisa) {
+  let voltas = 0;
+  while (((fim - ini) & (FILA - 1)) < precisa && voltas++ < 64) {
+    juke.apu.run(32 * 256);                          // 256 amostras (32 ciclos do SPC700 por amostra)
+    const d = juke.apu.dsp, n = d.outCount, b = d.outBuf;
+    const f = juke.lista[juke.atual] || {}, seg = juke.repetir ? 0 : (f.segundos || PADRAO_SEG), fade = f.fadeMs || PADRAO_FADE;
+    for (let i = 0; i + 1 < n; i += 2) {
+      let k = 1;
+      if (seg) {
+        const t = juke.amostras / 32000;
+        if (t > seg) k = Math.max(0, 1 - (t - seg) * 1000 / fade);
+      }
+      fila[fim * 2] = b[i] / 32768 * k; fila[fim * 2 + 1] = b[i + 1] / 32768 * k;
+      fim = (fim + 1) & (FILA - 1); juke.amostras++;
+    }
+    d.outCount = 0;
+    if (seg && juke.amostras / 32000 > seg + fade / 1000 && !jukeEncher.trocando) {
+      jukeEncher.trocando = true; setTimeout(() => { jukeEncher.trocando = false; jukeProxima(1); }, 0); break;
+    }
+  }
+}
+async function jukeCarregar() {
+  try { juke.lista = (await bdTodos('musicas')).sort((a, b) => (a.jogo || '').localeCompare(b.jogo || '', 'pt-BR') || a.quando - b.quando); } catch (e) { juke.lista = []; }
+}
+function jukeTocar(i) {
+  const f = juke.lista[i];
+  if (!f) return;
+  try {
+    const apu = new KofNucleo.Apu(); apu.reset();
+    if (f.estado) KofEstado.restaurar(apu, JSON.parse(f.estado)); else KofSpc.ler(apu, f.spc);
+    apu.dsp.mudas = juke.mudas; apu.dsp.outCount = 0;
+    juke.apu = apu; juke.atual = i; juke.amostras = 0;
+  } catch (e) { avisar('não consegui tocar: ' + e.message, 4000); return; }
+  if (snes && !pausado) pausado = true;             // o jogo espera; P volta pro jogo
+  ini = fim = 0; juke.tocando = true; ligarSom();
+  montarJuke();
+}
+function jukePausar() { juke.tocando = false; ini = fim = 0; montarJuke(); }
+function jukeAlternar() {
+  if (juke.tocando) jukePausar();
+  else if (juke.apu) { if (snes && !pausado) pausado = true; juke.tocando = true; ligarSom(); montarJuke(); }
+  else if (juke.lista.length) jukeTocar(0);
+}
+function jukeProxima(d) {
+  const n = juke.lista.length;
+  if (!n) return;
+  const i = juke.aleatorio ? Math.floor(Math.random() * n) : (juke.atual + d + n) % n;
+  jukeTocar(i);
+}
+function jukeFechar() { juke.tocando = false; juke.apu = null; juke.atual = -1; ini = fim = 0; montarJuke(); }
+async function guardarMusica() {
+  if (!snes) { avisar('abra um jogo pra guardar a música dele'); return; }
+  try {
+    const n = juke.lista.filter((f) => f.jogoId === jogoId).length + 1;
+    await bdGuardar('musicas', { origem: 'jogo', titulo: `Faixa ${n}`, jogo: romNome, jogoId, quando: Date.now(), capa: foto(256), estado: JSON.stringify(KofEstado.capturar(snes.apu)) });
+    await jukeCarregar(); montarJuke();
+    avisar(`🎵 música guardada na jukebox: ${romNome} · Faixa ${n} (Som → Jukebox)`, 3500);
+  } catch (e) { avisar('não consegui guardar a música: ' + e.message, 4000); }
+}
+async function importarSpcs(arqs) {
+  let ok = 0;
+  for (const a of arqs) {
+    try {
+      const u8 = new Uint8Array(await a.arrayBuffer());
+      if (!KofSpc.eSpc(u8)) continue;
+      const t = KofSpc.etiquetas(u8);
+      await bdGuardar('musicas', { origem: 'spc', titulo: t.titulo || a.name.replace(/\.spc$/i, ''), jogo: t.jogo || 'Arquivos .spc', artista: t.artista, segundos: t.segundos, fadeMs: t.fadeMs, quando: Date.now(), spc: u8 });
+      ok++;
+    } catch (e) { /* arquivo ruim: pula */ }
+  }
+  await jukeCarregar();
+  avisar(ok ? `🎵 ${ok} ${ok === 1 ? 'música entrou' : 'músicas entraram'} na jukebox` : 'nenhum .spc válido', 3000);
+  abrirJuke();
+}
+async function exportarSpc(f) {
+  const apu = new KofNucleo.Apu(); apu.reset();
+  let u8 = f.spc;
+  if (!u8) { KofEstado.restaurar(apu, JSON.parse(f.estado)); u8 = KofSpc.gravar(apu, { titulo: f.titulo, jogo: f.jogo, artista: f.artista, segundos: f.segundos || PADRAO_SEG, fadeMs: f.fadeMs || PADRAO_FADE }); }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u8])); a.download = `${f.jogo} - ${f.titulo}.spc`.replace(/[\\/:*?"<>|]+/g, '_');
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+const mmss = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+async function abrirJuke() {
+  fecharJanelas(); fecharMenus(); await jukeCarregar(); $('#jukebox').hidden = false; montarJuke(); requestAnimationFrame(desenharVozes);
+}
+function montarJuke() {
+  const f = juke.lista[juke.atual];
+  // mini-player na barra de baixo
+  $('#st-juke').hidden = !juke.apu || !$('#jukebox').hidden;
+  if (f) $('#st-juke-nome').textContent = `🎵 ${f.titulo} · ${f.jogo}`;
+  $('#st-juke-tocar').textContent = juke.tocando ? '⏸' : '▶';
+  if ($('#jukebox').hidden) return;
+  $('#jk-titulo').textContent = f ? f.titulo : 'Nada tocando';
+  $('#jk-jogo').textContent = f ? [f.jogo, f.artista].filter(Boolean).join(' · ') : (juke.lista.length ? 'escolha uma música' : 'guarde uma música no jogo (F7) ou abra arquivos .spc');
+  const capa = f ? (srcCapa({ nome: f.jogo }) || f.capa || '') : '';
+  $('#jk-capa').hidden = !capa; $('.jk-capa span').hidden = !!capa; if (capa) $('#jk-capa').src = capa;
+  if (f) capaPorNome(f.jogo).catch(() => {});
+  $('[data-acao="jk-tocar"]').textContent = juke.tocando ? '⏸' : '▶';
+  $('[data-acao="jk-aleatorio"]').classList.toggle('ativo', juke.aleatorio);
+  $('[data-acao="jk-repetir"]').classList.toggle('ativo', juke.repetir);
+  const ul = $('#jk-lista'); ul.innerHTML = '';
+  let grupo = null;
+  juke.lista.forEach((m, i) => {
+    if (m.jogo !== grupo) { grupo = m.jogo; const h = document.createElement('li'); h.className = 'jk-grupo'; h.textContent = grupo; ul.appendChild(h); }
+    const li = document.createElement('li'); li.className = 'jk-faixa' + (i === juke.atual ? ' sel' : '');
+    const nm = document.createElement('span'); nm.textContent = (i === juke.atual && juke.tocando ? '♪ ' : '') + m.titulo;
+    const dur = document.createElement('small'); dur.textContent = m.origem === 'spc' ? (m.segundos ? mmss(m.segundos) : '.spc') : 'do jogo';
+    const bts = document.createElement('span'); bts.className = 'jk-acoes';
+    const bt = (txt, tit, fn) => { const b = document.createElement('button'); b.className = 'x'; b.textContent = txt; b.title = tit; b.onclick = (e) => { e.stopPropagation(); fn(); }; bts.appendChild(b); };
+    bt('✎', 'renomear', async () => {
+      const t = prompt('Nome da música:', m.titulo); if (!t) return;
+      m.titulo = t.trim(); await bdGuardar('musicas', m); montarJuke();
+    });
+    bt('⬇', 'exportar .spc', () => exportarSpc(m));
+    bt('🗑', 'apagar', async () => {
+      if (!confirm(`Apagar "${m.titulo}" da jukebox?`)) return;
+      if (i === juke.atual) jukeFechar();
+      await bdApagar('musicas', m.n); await jukeCarregar(); montarJuke();
+    });
+    li.append(nm, dur, bts); li.onclick = () => jukeTocar(i);
+    ul.appendChild(li);
+  });
+  $('#jk-vazia').hidden = juke.lista.length > 0;
+  const vz = $('#jk-vozes');
+  if (!vz.children.length) for (let v = 0; v < 8; v++) {
+    const b = document.createElement('button'); b.className = 'jk-voz'; b.dataset.voz = v; b.title = 'voz ' + (v + 1) + ': clique pra silenciar';
+    b.innerHTML = '<i></i><span>' + (v + 1) + '</span>'; vz.appendChild(b);
+  }
+  [...vz.children].forEach((b, v) => b.classList.toggle('muda', (juke.mudas & (1 << v)) !== 0));
+}
+// as 8 vozes do DSP, ao vivo: a barra é o envelope (ENVX) de cada voz
+function desenharVozes() {
+  if ($('#jukebox').hidden) return;
+  requestAnimationFrame(desenharVozes);
+  const d = juke.apu && juke.tocando ? juke.apu.dsp : null;
+  [...$('#jk-vozes').children].forEach((b, v) => { b.firstChild.style.height = (d ? Math.min(100, d.regs[v * 16 + 8] / 1.27) : 0) + '%'; });
+  const f = juke.lista[juke.atual], t = juke.amostras / 32000;
+  $('#jk-tempo').textContent = f ? mmss(t) + (juke.repetir ? ' · repetindo' : ' / ' + mmss((f.segundos || PADRAO_SEG) + (f.fadeMs || PADRAO_FADE) / 1000)) : '';
+}
+$('#jk-vozes').addEventListener('click', (e) => {
+  const b = e.target.closest('.jk-voz'); if (!b) return;
+  juke.mudas ^= 1 << +b.dataset.voz;
+  if (juke.apu) juke.apu.dsp.mudas = juke.mudas;
+  montarJuke();
+});
+$('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length) importarSpcs([...e.target.files]); e.target.value = ''; });
 
 // ---------------- caçador de bugs ----------------
 // Pra reproduzir um bug exatamente: a cada 10 s o KOFnes tira uma foto do
@@ -534,7 +693,7 @@ let bd = null;
 function abrirBanco() {
   if (bd) return bd;
   bd = new Promise((ok, falha) => {
-    const r = indexedDB.open('kofnes', 5);
+    const r = indexedDB.open('kofnes', 6);
     r.onupgradeneeded = (ev) => {
       const b = r.result;
       if (!b.objectStoreNames.contains('c')) b.createObjectStore('c');
@@ -544,6 +703,7 @@ function abrirBanco() {
       if (!b.objectStoreNames.contains('stats')) b.createObjectStore('stats', { keyPath: 'id' });   // tempo jogado, sessões, por dia
       if (!b.objectStoreNames.contains('roms')) b.createObjectStore('roms');
       if (!b.objectStoreNames.contains('autos')) b.createObjectStore('autos');
+      if (!b.objectStoreNames.contains('musicas')) b.createObjectStore('musicas', { keyPath: 'n', autoIncrement: true });   // jukebox
       if (ev.oldVersion >= 1 && ev.oldVersion < 5) {   // versão antiga: tira ROM e estado automático de dentro de "jogos"
         const t = r.transaction, roms = t.objectStore('roms'), autos = t.objectStore('autos');
         t.objectStore('jogos').openCursor().onsuccess = (e) => {
@@ -728,7 +888,9 @@ addEventListener('dragover', (e) => { e.preventDefault(); document.body.classLis
 addEventListener('dragleave', (e) => { if (!e.relatedTarget) document.body.classList.remove('arrastando'); });
 addEventListener('drop', (e) => {
   e.preventDefault(); document.body.classList.remove('arrastando');
-  if (e.dataTransfer.files[0]) abrirArquivo(e.dataTransfer.files[0]);
+  const fs = [...e.dataTransfer.files];
+  if (fs.length && fs.every((f) => /\.spc$/i.test(f.name))) { importarSpcs(fs); return; }
+  if (fs[0]) abrirArquivo(fs[0]);
 });
 
 // ---------------- continuar de onde parou ----------------
@@ -923,6 +1085,7 @@ const vagaCapa = () => new Promise((ok) => { if (baixandoCapas < 3) { baixandoCa
 function liberarCapa() { const p = filaCapas.shift(); if (p) p(); else baixandoCapas--; }
 // uma capa ficou pronta: troca só a miniatura daquele jogo (e o painel, se ele está selecionado)
 function capaChegou(nome) {
+  capaJukeChegou();
   if ($('#biblioteca').hidden) return;
   lis.forEach((li, i) => {
     const r = visiveis[i];
@@ -933,6 +1096,7 @@ function capaChegou(nome) {
   const sel = visiveis[selecionada];
   if (sel && sel.nome === nome) mostrarInfo();
 }
+function capaJukeChegou() { if (!$('#jukebox').hidden) montarJuke(); }
 function srcCapa(r) {   // capa oficial (do cache), senão o print de quando parou
   const c = r && capasNet ? capasMem.get(r.nome) : null;
   if (c instanceof Blob) {
@@ -1059,7 +1223,7 @@ async function mostrarBiblioteca(pedir) {
   selecionada = k >= 0 ? k : 0;
   montarLista();
 }
-function fecharJanelas() { fecharTemas(); for (const id of ['biblioteca', 'estados', 'ajuda', 'teclas', 'estatisticas']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
+function fecharJanelas() { fecharTemas(); for (const id of ['biblioteca', 'estados', 'ajuda', 'teclas', 'estatisticas', 'jukebox']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
 // controle também navega na biblioteca
 let padAntes = 0;
 setInterval(() => {
@@ -1085,6 +1249,7 @@ const ITENS_RAPIDO = [
   { t: '💾 Salvar estado', f: () => { fecharRapido(); salvarEstado(); } },
   { t: '⟲ Carregar último estado', f: () => { fecharRapido(); carregarUltimo(); } },
   { t: '⏪ Voltar 5 segundos', f: () => { voltarSegundos(5); } },
+  { t: '🎵 Guardar esta música', f: () => { fecharRapido(); guardarMusica(); } },
   { t: '🐞 Reportar bug', f: () => { fecharRapido(); abrirBug(); } },
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
@@ -1127,7 +1292,7 @@ addEventListener('contextmenu', (e) => {
   if (e.target.closest('input, textarea')) return;
   e.preventDefault();
   if (rapidoAberto) fecharRapido();
-  else if (snes && $('#biblioteca').hidden && ['estados', 'ajuda', 'teclas', 'temas', 'estatisticas', 'bug'].every((id) => $('#' + id).hidden)) abrirRapido();
+  else if (snes && $('#biblioteca').hidden && ['estados', 'ajuda', 'teclas', 'temas', 'estatisticas', 'bug', 'jukebox'].every((id) => $('#' + id).hidden)) abrirRapido();
 });
 // clique fora do menu rápido fecha ele
 addEventListener('mousedown', (e) => { if (rapidoAberto && e.button === 0 && !e.target.closest('#rapido')) fecharRapido(); });
@@ -1276,12 +1441,22 @@ async function acao(a) {
     case 'salvar-estado': await salvarEstado(); break;
     case 'carregar-ultimo': await carregarUltimo(); break;
     case 'reiniciar': if (snes) { snes.reset(); novoRebob(); avisar('reiniciado'); } break;
-    case 'pausar': if (snes) { pausado = !pausado; avisar(pausado ? 'pausado' : 'continuando'); } break;
+    case 'pausar': if (snes) { if (juke.tocando) jukePausar(); pausado = !pausado; avisar(pausado ? 'pausado' : 'continuando'); } break;
     case 'mudo': mudo = !mudo; guardar('mudo', mudo ? '1' : '0'); marcarSom(); avisar(mudo ? 'som desligado' : 'som ligado'); break;
     case 'rebob-toggle':
       rebobLigado = !rebobLigado; guardar('rebobinar', rebobLigado ? '1' : '0'); novoRebob(); marcarRebob();
       avisar(rebobLigado ? 'rebobinar ligado: segure Backspace (ou Select+Y)' : 'rebobinar desligado'); break;
     case 'bug': abrirBug(); break;
+    case 'jukebox': await abrirJuke(); break;
+    case 'fechar-jukebox': $('#jukebox').hidden = true; montarJuke(); if (!snes) mostrarBiblioteca(false); break;
+    case 'guardar-musica': await guardarMusica(); break;
+    case 'abrir-spc': $('#arquivo-spc').click(); break;
+    case 'jk-tocar': jukeAlternar(); break;
+    case 'jk-prox': jukeProxima(1); break;
+    case 'jk-ant': jukeProxima(-1); break;
+    case 'jk-aleatorio': juke.aleatorio = !juke.aleatorio; montarJuke(); break;
+    case 'jk-repetir': juke.repetir = !juke.repetir; montarJuke(); break;
+    case 'jk-parar': jukeFechar(); break;
     case 'bug-enviar': await enviarBug(); break;
     case 'bug-fechar': fecharBug(); break;
     case 'cacador-toggle':
@@ -1345,6 +1520,6 @@ window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n) => { itens = Array.from({ length: n }, (_, i) => ({ nome: 'Jogo de teste ' + i, ext: 'SFC' })); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
-  volume: () => volume, marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
+  volume: () => volume, juke: () => ({ faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
   assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
 })();

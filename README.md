@@ -88,6 +88,10 @@ Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
   meio; funciona pausado, pra voltar ao ponto exato e salvar ali (F5). Guarda só o que
   mudou entre os quadros (~3 KB por foto, 30 por segundo) e volta bit a bit igual.
 - **Molduras**: TV de madeira dos anos 80, TV de tubo dos anos 90 ou fliperama.
+- **Jukebox**: F7 guarda a música que está tocando (uma foto só do chip de som:
+  SPC700 + DSP + 64 KB) e ela toca sozinha, sem o jogo, num Apu avulso do núcleo.
+  Abre e exporta **.spc** (`web/spc.js`), mostra as 8 vozes do DSP ao vivo e deixa
+  silenciar cada uma; mini-player na barra de baixo.
 - **Caçador de bugs**: F9, ou sozinho quando o emulador quebra, abre a issue no GitHub
   já preenchida (jogo, SHA-1, versão, navegador, erro) e baixa um pacote com o
   savestate de segundos antes + os botões quadro a quadro. `node bugs/reproduzir.cjs`

@@ -35,6 +35,8 @@ class Dsp {
     // saída
     Int[] outBuf
     Int outCount
+    // vozes silenciadas (bit por voz): só a jukebox usa, o jogo deixa em 0
+    Int mudas
 
     public constructor(Int[] ram) {
         this.ram = ram
@@ -62,6 +64,7 @@ class Dsp {
         this.echoLength = 0
         this.outBuf = new Int[8192]
         this.outCount = 0
+        this.mudas = 0
         var r = "30721 2048 1536 1280 1024 768 640 512 384 320 256 192 160 128 96 80 64 48 40 32 24 20 16 12 10 8 6 5 4 3 2 1".split(" ")
         var o = "1 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 536 0 1040 0 0".split(" ")
         var i = 0
@@ -384,6 +387,10 @@ class Dsp {
             interp[v] = ip
             var l = (amp * s8(regs[rb])) >> 7
             var r = (amp * s8(regs[rb + 1])) >> 7
+            if ((mudas & bit) != 0) {
+                l = 0
+                r = 0
+            }
             mainL = clamp16(mainL + l)
             mainR = clamp16(mainR + r)
             if ((eon & bit) != 0) {

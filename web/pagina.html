@@ -62,6 +62,9 @@
     <button data-acao="mudo">Mudo<kbd>M</kbd></button>
     <hr>
     <button data-acao="pausa-auto">Pausar ao sair da janela: ligado</button>
+    <hr>
+    <button data-acao="jukebox">🎵 Jukebox…</button>
+    <button data-acao="guardar-musica">Guardar a música do jogo<kbd>F7</kbd></button>
   </div></div>
   <div class="m"><button data-acao="temas" title="galeria de temas">Tema</button></div>
   <div class="m"><button>Ajuda</button><div class="sub">
@@ -99,6 +102,7 @@
       <button class="sec" data-acao="pasta">📁 Escolher pasta de ROMs</button>
       <button class="sec" data-acao="abrir">＋ Adicionar arquivo</button>
       <button class="sec" data-acao="estatisticas">📊 Estatísticas</button>
+      <button class="sec" data-acao="jukebox">🎵 Jukebox</button>
       <button class="sec" data-acao="capas">🖼 Capas oficiais: ligadas</button>
       <span class="dica">setas navegam · Enter joga · Shift+Enter do zero · E estados · controle: A joga, X estados, Select sofá</span>
     </div>
@@ -138,6 +142,36 @@
     <p class="dica">Abre a página de issue do KOFnes já preenchida; o pacote é baixado e você arrasta ele pra dentro da issue.</p>
   </section>
 
+  <section id="jukebox" class="janela" hidden>
+    <div class="titulo-j">🎵 Jukebox <button class="x" data-acao="fechar-jukebox">×</button></div>
+    <div class="jk">
+      <div class="jk-tocando">
+        <div class="jk-capa"><img id="jk-capa" alt="" hidden><span>🎵</span></div>
+        <h2 id="jk-titulo">Nada tocando</h2>
+        <p id="jk-jogo" class="dica"></p>
+        <p id="jk-tempo" class="dica"></p>
+        <div class="jk-controles">
+          <button class="x" data-acao="jk-aleatorio" title="aleatório">🔀</button>
+          <button class="x" data-acao="jk-ant" title="anterior">⏮</button>
+          <button class="jk-play" data-acao="jk-tocar" title="tocar / pausar (Espaço)">▶</button>
+          <button class="x" data-acao="jk-prox" title="próxima">⏭</button>
+          <button class="x" data-acao="jk-repetir" title="repetir esta música pra sempre">🔁</button>
+        </div>
+        <div id="jk-vozes" title="as 8 vozes do chip de som: clique pra silenciar uma"></div>
+        <p class="dica">as 8 vozes do chip de som · clique numa pra silenciar</p>
+      </div>
+      <div class="jk-lado">
+        <ul id="jk-lista"></ul>
+        <p id="jk-vazia" class="dica">Nenhuma música ainda. No meio do jogo, aperte <b>F7</b> pra guardar a música que está tocando, ou abra arquivos <b>.spc</b>.</p>
+      </div>
+    </div>
+    <div class="bib-rodape">
+      <button class="sec" data-acao="guardar-musica">🎵 Guardar a música do jogo (F7)</button>
+      <button class="sec" data-acao="abrir-spc">📂 Abrir arquivos .spc…</button>
+      <span class="dica">Espaço toca/pausa · P volta pro jogo · arraste arquivos .spc pra cá</span>
+    </div>
+  </section>
+
   <div id="veu" hidden></div>
   <section id="temas" class="janela" hidden>
     <div class="titulo-j"><span>🎨 Temas <small id="tema-nome" class="dica"></small></span><button class="x" data-acao="fechar-temas">×</button></div>
@@ -161,9 +195,11 @@
 
 <footer id="status">
   <span id="st-jogo">nenhum jogo</span>
+  <span id="st-juke" hidden><span id="st-juke-nome"></span> <button class="x" data-acao="jk-tocar" id="st-juke-tocar">⏸</button><button class="x" data-acao="jk-prox">⏭</button><button class="x" data-acao="jukebox" title="abrir a jukebox">☰</button><button class="x" data-acao="jk-parar" title="parar">✕</button></span>
   <span id="st-fps"></span>
 </footer>
 <input type="file" id="arquivo" accept=".sfc,.smc,.zip,.fig,.swc" hidden>
+<input type="file" id="arquivo-spc" accept=".spc" multiple hidden>
 <script>
 {{NUCLEO}}
 </script>

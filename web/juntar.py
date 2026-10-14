@@ -47,13 +47,13 @@ if "class snes_Snes" not in nucleo:
 
 script = (
     "const KofNucleo = (() => {\n'use strict';\n" + runtime + "\n" + nucleo
-    + "\nreturn { Snes: snes_Snes };\n})();\n"
+    + "\nreturn { Snes: snes_Snes, Apu: snes_Apu };\n})();\n"
 )
 pagina = (web / "pagina.html").read_text()
 partes = {
     "{{CSS}}": (web / "estilo.css").read_text(),
     "{{NUCLEO}}": script,
-    "{{APP}}": (web / "estado.js").read_text() + "\n" + (web / "app.js").read_text(),
+    "{{APP}}": (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n" + (web / "app.js").read_text(),
     "{{ICONE}}": "data:image/png;base64," + base64.b64encode(icone.read_bytes()).decode(),
     "{{VERSAO}}": versao(),
 }

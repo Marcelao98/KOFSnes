@@ -22,6 +22,9 @@ Imagem > Moldura: TV de madeira, TV de tubo ou fliperama em volta do jogo.
 F9 (ou Ajuda > Reportar bug) abre uma issue no GitHub já preenchida, e baixa
 um pacote pra reproduzir o bug: arraste ele pra dentro da issue. Se o emulador
 quebrar, ele mesmo oferece reportar (Ajuda > Caçador de bugs).
+JUKEBOX (Som > Jukebox): no meio do jogo, F7 guarda a música que está tocando.
+Na jukebox: tocar, aleatório, repetir, silenciar cada uma das 8 vozes do chip
+de som, exportar .spc e abrir arquivos .spc (ou arraste eles pra janela).
 Controle USB/Xbox também funciona.
 
 Os saves de bateria ficam guardados sozinhos no perfil do KOFnes
