@@ -1,2 +1,2 @@
-versao=202610142001
-tamanho=470250
+versao=202610142143
+tamanho=499999
