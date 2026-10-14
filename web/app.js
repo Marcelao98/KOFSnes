@@ -328,12 +328,13 @@ let bd = null;
 function abrirBanco() {
   if (bd) return bd;
   bd = new Promise((ok, falha) => {
-    const r = indexedDB.open('kofnes', 2);
+    const r = indexedDB.open('kofnes', 3);
     r.onupgradeneeded = () => {
       const b = r.result;
       if (!b.objectStoreNames.contains('c')) b.createObjectStore('c');
       if (!b.objectStoreNames.contains('jogos')) b.createObjectStore('jogos', { keyPath: 'id' });
       if (!b.objectStoreNames.contains('estados')) b.createObjectStore('estados', { keyPath: 'n', autoIncrement: true }).createIndex('jogo', 'jogo');
+      if (!b.objectStoreNames.contains('capas')) b.createObjectStore('capas');   // nome do jogo -> capa (Blob) ou {falhou}
     };
     r.onsuccess = () => ok(r.result);
     r.onerror = () => falha(r.error);
@@ -572,11 +573,20 @@ async function montarItens(pedir) {
 const CAPAS = 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Super_Nintendo_Entertainment_System/master/Named_Boxarts/';
 let capasNet = ler('capas') !== '0';
 const urlsCapa = new Map();
+// nome da ROM -> nomes possíveis no acervo (padrão No-Intro). Converte o padrão
+// GoodTools ("Jogo (U) (V1.2) [!]" -> "Jogo (USA) (Rev 2)") e tenta as variações
+// de revisão e de idiomas ("(USA) (En,Fr)") que o acervo usa.
+const REGIOES = { U: 'USA', E: 'Europe', J: 'Japan', B: 'Brazil', F: 'France', G: 'Germany', S: 'Spain', I: 'Italy', K: 'Korea', A: 'Australia',
+  UE: 'USA, Europe', EU: 'USA, Europe', JU: 'Japan, USA', UJ: 'Japan, USA', JUE: 'World', W: 'World' };
 function nomesCapa(nome) {
-  const limpo = nome.replace(/[&*/:`<>?\\|"]/g, '_').trim();
-  const semRev = limpo.replace(/\s*\((Rev [^)]*|Beta[^)]*|Proto[^)]*|v\d[^)]*)\)/gi, '').replace(/\s*\[[^\]]*\]/g, '').trim();
-  const base = semRev.replace(/^(.*?\([^)]*\)).*$/, '$1');   // "Nome (Região)"
-  return [...new Set([limpo, semRev, base])];
+  let n = nome.replace(/[&*/:`<>?\\|"]/g, '_').replace(/\s*\[[^\]]*\]/g, '').trim();
+  n = n.replace(/\((JUE|UE|EU|JU|UJ|U|E|J|B|F|G|S|I|K|A|W)\)/g, (_, r) => `(${REGIOES[r]})`);
+  n = n.replace(/\s*\(V1\.0\)/gi, '').replace(/\(V1\.(\d)\)/gi, (_, v) => `(Rev ${v})`).replace(/\s+/g, ' ').trim();
+  const semRev = n.replace(/\s*\((Rev [^)]*|Beta[^)]*|Proto[^)]*|v\d[^)]*)\)/gi, '').trim();
+  const base = semRev.replace(/^(.*?\([^)]*\)).*$/, '$1');                 // "Nome (Região)"
+  const titulo = base.replace(/\s*\(.*$/, '').trim();
+  const idiomas = ['(En,Fr)', '(En,Fr,De)', '(En,De)', '(En,Fr,De,Es,It)'].map((l) => base + ' ' + l);
+  return [...new Set([n, semRev, base, ...idiomas, titulo + ' (USA)', titulo + ' (World)', titulo + ' (Europe)'])];
 }
 async function baixarCapa(nome) {
   for (const n of nomesCapa(nome)) {
@@ -592,20 +602,34 @@ async function baixarCapa(nome) {
   }
   return null;
 }
-async function garantirCapa(j) {
-  if (!capasNet || !j || j.boxart || (j.boxartFalhou && Date.now() - j.boxartFalhou < 7 * 864e5)) return;
-  const blob = await baixarCapa(j.nome);
-  if (blob) j.boxart = blob; else j.boxartFalhou = Date.now();
-  await bdMudarJogo(j.id, (atual) => atual && Object.assign(atual, blob ? { boxart: blob } : { boxartFalhou: j.boxartFalhou }));
-  if (blob) montarLista();
-}
-function srcCapa(j) {   // capa oficial, senão o print de quando parou
-  if (j && j.boxart && capasNet) {
-    if (!urlsCapa.has(j.id)) urlsCapa.set(j.id, URL.createObjectURL(j.boxart));
-    return urlsCapa.get(j.id);
+// cache de capas pelo nome do jogo (serve pros jogos da pasta e da biblioteca)
+const capasMem = new Map(), buscando = new Set();
+async function capaPorNome(nome) {
+  if (!capasNet || !nome || buscando.has(nome)) return;
+  if (!capasMem.has(nome)) {
+    const guardada = await bdPegar('capas', nome).catch(() => null) || null;
+    capasMem.set(nome, guardada);
+    if (guardada instanceof Blob) { montarLista(); return; }   // veio do cache: redesenha com ela
   }
-  return j ? (j.autoCapa || j.capa || '') : '';
+  const c = capasMem.get(nome);
+  if (c instanceof Blob || (c && c.falhou && Date.now() - c.falhou < 7 * 864e5)) return;
+  buscando.add(nome);
+  try {
+    const blob = await baixarCapa(nome);
+    const v = blob || { falhou: Date.now() };
+    capasMem.set(nome, v); await bdPor('capas', nome, v).catch(() => {});
+    if (blob) montarLista();
+  } finally { buscando.delete(nome); }
 }
+function srcCapa(r) {   // capa oficial (do cache), senão o print de quando parou
+  const c = r && capasNet ? capasMem.get(r.nome) : null;
+  if (c instanceof Blob) {
+    if (!urlsCapa.has(r.nome)) urlsCapa.set(r.nome, URL.createObjectURL(c));
+    return urlsCapa.get(r.nome);
+  }
+  return r && r.jogo ? (r.jogo.autoCapa || r.jogo.capa || '') : '';
+}
+const temCapaOficial = (r) => !!(r && capasNet && capasMem.get(r.nome) instanceof Blob);
 
 // ---------------- modo sofá ----------------
 // grade de capas em tela cheia, feita pro controle: setas, A joga, X estados
@@ -633,7 +657,8 @@ function montarLista() {
   visiveis.forEach((r, i) => {
     const li = document.createElement('li');
     if (sofa) {
-      const src = srcCapa(r.jogo), fig = document.createElement('div'); fig.className = 'mini';
+      const src = srcCapa(r), fig = document.createElement('div'); fig.className = 'mini';
+      capaPorNome(r.nome).catch(() => {});
       if (src) { const im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; fig.appendChild(im); } else fig.textContent = '☕';
       li.appendChild(fig);
     }
@@ -664,12 +689,12 @@ function mostrarInfo() {
   $('[data-acao="jogar"]').textContent = auto ? '▶ Continuar' : '▶ Jogar';
   $('[data-acao="do-zero"]').hidden = !auto;
   if (auto) $('#info-det').textContent += ` · parou em ${quando(r.jogo.autoQuando)}`;
-  const src = srcCapa(r.jogo);
+  const src = srcCapa(r), oficial = temCapaOficial(r);
   img.hidden = !src; $('#capa-vazia').hidden = !!src; if (src) img.src = src;
-  img.classList.toggle('oficial', !!(r.jogo && r.jogo.boxart && capasNet));
-  const parou = $('#parou-img'), mostrarParou = !!(r.jogo && r.jogo.boxart && capasNet && r.jogo.autoCapa);
+  img.classList.toggle('oficial', oficial);
+  const parou = $('#parou-img'), mostrarParou = !!(oficial && r.jogo && r.jogo.autoCapa);
   parou.hidden = !mostrarParou; if (mostrarParou) parou.src = r.jogo.autoCapa;
-  if (r.jogo) garantirCapa(r.jogo).catch(() => {});
+  capaPorNome(r.nome).catch(() => {});
 }
 async function jogar(doZero) {
   const r = visiveis[selecionada];
