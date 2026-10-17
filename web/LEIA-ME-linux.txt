@@ -1,0 +1,20 @@
+KOFnes - Super Nintendo escrito em Kof (Linux)
+
+1. Extraia esta pasta onde quiser.
+2. Abra um terminal nela e rode:   ./kofnes.sh
+   (ou, no gerenciador de arquivos, "executar". Pra aparecer no menu de aplicativos:
+   ./kofnes.sh --instalar)
+
+O que precisa: um navegador baseado em Chromium (Google Chrome, Chromium, Microsoft Edge,
+Brave ou Vivaldi) e curl ou wget pra atualizar. O Firefox abre o jogo mas não tem a pasta
+de ROMs nem o "Salvar perfil" (falta uma API dele).
+
+Ele procura atualização sozinho ao abrir; o que aconteceu fica em atualizacao.log.
+Pra não atualizar, crie um arquivo vazio chamado "nao-atualizar" nesta pasta.
+
+Navegador instalado por Snap ou Flatpak: funciona, mas o acesso às suas pastas é limitado.
+No Flatpak, libere a pasta das ROMs, por exemplo:
+  flatpak override --user --filesystem=$HOME/Jogos org.chromium.Chromium
+
+Jogos (ROMs) não vêm junto: use os seus. Dados (savestates, estatísticas) ficam no
+perfil do navegador do KOFnes; use "Meu perfil > Salvar perfil" pra levar pra outro computador.
