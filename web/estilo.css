@@ -38,7 +38,7 @@ body {
 }
 button { font: inherit; color: inherit; cursor: pointer; }
 
-#menu { display: flex; background: var(--painel); border-bottom: 1px solid var(--borda); padding: 0 4px; z-index: 5; }
+#menu { display: flex; background: var(--painel); border-bottom: 1px solid var(--borda); padding: 0 4px; z-index: 7; }   /* acima do menu lateral (6): o submenu desce por cima dele */
 #menu .m { position: relative; }
 #menu .m > button {
   background: none; border: 0; padding: 7px 12px; text-transform: var(--caixa);

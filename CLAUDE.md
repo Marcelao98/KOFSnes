@@ -77,7 +77,7 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 - Atualizador: `publicado/versao.txt` tem `versao=AAAAMMDDHHMM`, `tamanho=`, `lancador=`,
   `tamanho_exe=`. O exe compara com o `versao.txt` local, baixa, confere tamanho/cabeçalho,
   troca, e anota tudo em `atualizacao.log` ao lado do exe. `LANCADOR` no `lancador_win.c`
-  (hoje 2) controla a troca do próprio exe.
+  (hoje 3) controla a troca do próprio exe; `lancador_linux=` e `tamanho_linux=` fazem o mesmo pro kofnes.sh.
 
 ## Pendências (atualizado 17/10)
 
@@ -90,10 +90,14 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   de pedidos + honeypot. Sem internet/falha: cai no fluxo atual (issue preenchida no GitHub). Envio
   automático é só texto; o pacote do caçador de bugs continua baixado à parte (conferir antes se ele
   carrega trechos de ROM). Caixa de sugestões na mesma tela. A conta Cloudflare/token é do Marcelo.
-- **Navegação corrigida (falta publicar pelo atualizador):** botão direito nas telas = Voltar (no jogo,
-  menu rápido); Esc fecha a tela e volta ao jogo (sem jogo, Início); Voltar/Alt+←/botão 4 andam pelo
-  histórico de telas e só chegam ao jogo quando não sobra tela; F2/Select+Start só durante o jogo;
-  Alt+← funciona na Biblioteca. Conferido com `testes/navegador/matriz.cjs`.
+- **Publicado (17/10):** navegação corrigida (botão direito nas telas = Voltar; Esc = volta ao jogo;
+  Voltar anda pelo histórico; F2 só no jogo), correção do foco (tirar print não pula pro jogo), menu
+  Arquivo por cima da barra lateral, **Perfil** (`.kofperfil`: nome, avatar, savestates, estatísticas,
+  jukebox, configs; formato: `KOFPERFIL1` + tamanho do cabeçalho + JSON + blocos binários), lançador do
+  Windows 3 e **lançador de Linux** (`web/lancador_linux.sh` → `kofnes.sh`, POSIX sh, qualquer distro).
+  O perfil do Marcelo ficou com ~100 MB: **a otimizar** (medir por categoria na tela de Perfil, manter só
+  os últimos N savestates por jogo, compactar o arquivo, deixar as capas de fora). No Windows dele o exe
+  deu erro 12002 (timeout do WinHTTP) ao procurar atualização: se repetir, investigar proxy/IPv6.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
