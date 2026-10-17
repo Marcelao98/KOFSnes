@@ -1426,10 +1426,12 @@ setInterval(() => {
 // só despausa na volta se quem pausou foi a saída (pausa manual continua)
 let pausaAuto = ler('pausaAuto') !== '0', pausadoPorSair = false;
 function sair() { if (pausaAuto && snes && !pausado) { pausado = true; pausadoPorSair = true; } }
-function voltar() { if (pausadoPorSair) { pausadoPorSair = false; if (!rapidoAberto) { pausado = false; sobra = 0; } } }
+// (não pode chamar "voltar": esse nome é o do histórico de telas, e ele ganhava deste — por isso
+// tirar print ou trocar de janela jogava a pessoa pro jogo)
+function retomarAoVoltar() { if (pausadoPorSair) { pausadoPorSair = false; if (!rapidoAberto) { pausado = false; sobra = 0; } } }
 addEventListener('blur', sair);
-addEventListener('focus', voltar);
-document.addEventListener('visibilitychange', () => { if (document.hidden) sair(); else voltar(); });
+addEventListener('focus', retomarAoVoltar);
+document.addEventListener('visibilitychange', () => { if (document.hidden) sair(); else retomarAoVoltar(); });
 
 // ---------------- início (home) ----------------
 // A primeira tela: o que você jogou por último (com o print de onde parou), os

@@ -1,4 +1,4 @@
-versao=202610171459
-tamanho=499999
-lancador=2
+versao=202610171824
+tamanho=500751
+lancador=3
 tamanho_exe=84992
