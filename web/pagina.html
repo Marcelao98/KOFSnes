@@ -17,7 +17,6 @@
     <button data-acao="pasta">Escolher pasta de ROMs…</button>
     <button data-acao="abrir">Adicionar arquivo…<kbd>Ctrl+O</kbd></button>
     <button data-acao="estatisticas">📊 Estatísticas</button>
-    <button data-acao="perfil">👤 Meu perfil…</button>
     <hr>
     <button data-acao="reiniciar">Reiniciar<kbd>F1</kbd></button>
   </div></div>
@@ -89,7 +88,6 @@
     <button data-acao="biblioteca" data-tela="biblioteca" title="Biblioteca (Ctrl+L)"><i>📚</i><span>Biblioteca</span></button>
     <button data-acao="jukebox" data-tela="jukebox" title="Jukebox"><i>🎵</i><span>Jukebox</span></button>
     <button data-acao="estatisticas" data-tela="estatisticas" title="Estatísticas"><i>📊</i><span>Estatísticas</span></button>
-    <button data-acao="perfil" data-tela="perfil" title="Meu perfil"><i>👤</i><span>Perfil</span></button>
     <button data-acao="temas" title="Mudar o tema"><i>🎨</i><span>Tema</span></button>
     <button data-acao="guia" data-tela="guia" title="Guia do KOFnes"><i>📖</i><span>Guia</span></button>
     <hr>
@@ -314,22 +312,6 @@
     <div class="titulo-j"><span>🎨 Temas <small id="tema-nome" class="dica"></small></span><button class="x" data-acao="fechar-temas">×</button></div>
     <div id="grade-temas"></div>
     <p class="dica">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p>
-  </section>
-
-  <section id="perfil" class="janela" hidden>
-    <div class="titulo-j">👤 Meu perfil <button class="x" data-acao="fechar-perfil">×</button></div>
-    <div class="perfil-corpo">
-      <label>Seu nome <input id="perfil-nome" maxlength="24" placeholder="como te chamar?" autocomplete="off"></label>
-      <p>Avatar</p><div id="perfil-avatares"></div>
-      <p class="dica">O perfil guarda o nome, as configurações, estatísticas, jukebox e (se quiser) os savestates. As ROMs não entram. Um arquivo <b>.kofperfil</b> serve de backup e leva tudo pra outro computador.</p>
-      <label class="perfil-op"><input type="checkbox" id="perfil-estados" checked> incluir savestates</label>
-      <div class="perfil-botoes">
-        <button class="grande" data-acao="perfil-salvar">💾 Salvar perfil num arquivo</button>
-        <button class="grande sec" data-acao="perfil-carregar">📂 Carregar perfil de um arquivo</button>
-      </div>
-      <input type="file" id="perfil-arquivo" accept=".kofperfil" hidden>
-      <p id="perfil-msg" class="dica"></p>
-    </div>
   </section>
 
   <section id="estatisticas" class="janela" hidden>

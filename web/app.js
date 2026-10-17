@@ -345,7 +345,7 @@ addEventListener('keydown', (e) => {
   if (!$('#biblioteca').hidden) { listaTecla(e); return; }
   if (e.code === 'Home' && !e.target.closest('input, textarea')) { e.preventDefault(); acao('home'); return; }
   if (!$('#home').hidden) { if (homeTecla(e)) return; }
-  const aberta = ['estados', 'guia', 'teclas', 'temas', 'estatisticas', 'jukebox', 'perfil'].some((id) => !$('#' + id).hidden);
+  const aberta = ['estados', 'guia', 'teclas', 'temas', 'estatisticas', 'jukebox'].some((id) => !$('#' + id).hidden);
   if (e.code === 'Escape' && aberta) { sairDaTela(); return; }
   if (e.code === 'F1') { e.preventDefault(); acao('reiniciar'); return; }
   if (e.code === 'KeyP' || e.code === 'Escape') { acao('pausar'); return; }
@@ -842,9 +842,8 @@ function salvarSram() {
   const t = textoSram();
   if (t && t !== sramAntes) { guardar(chaveSram, btoa(t)); sramAntes = t; }
 }
-let importando = false;   // importar perfil recarrega a página: nada de gravar por cima ao sair
-addEventListener('pagehide', () => { if (importando) return; registrarTempo(); salvarSram(); salvarAuto(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && !importando) { registrarTempo(); salvarSram(); salvarAuto(); } });
+addEventListener('pagehide', () => { registrarTempo(); salvarSram(); salvarAuto(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { registrarTempo(); salvarSram(); salvarAuto(); } });
 
 // ---------------- estatísticas ----------------
 // por jogo: tempo jogado (só com o jogo rodando), sessões, primeira e última vez,
@@ -1310,7 +1309,7 @@ async function mostrarBiblioteca(pedir, relerPasta) {
     if (antes) { const j = visiveis.indexOf(antes); if (j >= 0) marcarSel(j); }
   }
 }
-function fecharJanelas() { fecharTemas(false); for (const id of ['home', 'biblioteca', 'estados', 'guia', 'teclas', 'estatisticas', 'jukebox', 'perfil']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
+function fecharJanelas() { fecharTemas(false); for (const id of ['home', 'biblioteca', 'estados', 'guia', 'teclas', 'estatisticas', 'jukebox']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
 // controle também navega na biblioteca
 let padAntes = 0;
 setInterval(() => {
@@ -1473,7 +1472,7 @@ function fraseHome(id) {
   const h = new Date().getHours(), ola = h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
   $('#hm-logo').textContent = LOGOS[id] || '🎮';
   $('#hm-saudacao').innerHTML = '';
-  const b = document.createElement('b'); b.textContent = ola + (perfil.nome ? ', ' + perfil.nome : '') + '! ';
+  const b = document.createElement('b'); b.textContent = ola + '! ';
   $('#hm-saudacao').append(b, document.createTextNode(FRASES[id] || 'Bora jogar?'));
 }
 function novaDica() {
@@ -1542,121 +1541,10 @@ function homeTecla(e) {
   return false;
 }
 
-// ---------------- perfil ----------------
-// Nome + avatar ficam no localStorage; "Salvar perfil" empacota isso, as
-// configurações e os dados do banco (menos ROMs e a pasta) num arquivo .kofperfil
-// que serve de backup e de mala pra outro computador.
-const AVATARES = ['🎮', '🕹️', '👾', '🐉', '🦊', '🐱', '🐸', '🦄', '🚀', '⚽', '🍄', '⭐'];
-let perfil = { nome: '', avatar: '🎮', criado: 0 };
-try { Object.assign(perfil, JSON.parse(ler('perfil') || '{}')); } catch (e) { /* perfil estragado: começa vazio */ }
-const gravarPerfil = () => guardar('perfil', JSON.stringify(perfil));
-const LOJAS_PERFIL = ['jogos', 'capas', 'stats', 'musicas', 'estados', 'autos'];
-const LOJAS_ESTADOS = ['estados', 'autos'];
-const MAGIA_PERFIL = 'KOFPERFIL1';
-function abrirPerfil() {
-  fecharJanelas(); fecharMenus(); $('#perfil').hidden = false;
-  $('#perfil-nome').value = perfil.nome;
-  const g = $('#perfil-avatares'); g.innerHTML = '';
-  for (const a of AVATARES) {
-    const b = elem('button', 'avatar' + (a === perfil.avatar ? ' ativo' : ''), a); b.dataset.avatar = a; g.appendChild(b);
-  }
-  $('#perfil-msg').textContent = '';
-}
-$('#perfil-avatares').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-avatar]'); if (!b) return;
-  perfil.avatar = b.dataset.avatar; if (!perfil.criado) perfil.criado = Date.now(); gravarPerfil(); abrirPerfil();
-});
-$('#perfil-nome').addEventListener('input', () => {
-  perfil.nome = $('#perfil-nome').value.trim().slice(0, 24); if (!perfil.criado) perfil.criado = Date.now(); gravarPerfil();
-});
-async function empacotarPerfil(comEstados) {
-  const partes = [];
-  const cod = (v) => {
-    if (v instanceof Blob) { partes.push(v); return { $b: partes.length - 1, t: 'blob', m: v.type }; }
-    if (v instanceof ArrayBuffer) { partes.push(new Blob([v])); return { $b: partes.length - 1, t: 'ab' }; }
-    if (ArrayBuffer.isView(v)) { partes.push(new Blob([v])); return { $b: partes.length - 1, t: 'u8' }; }
-    if (Array.isArray(v)) return v.map(cod);
-    if (v && typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) o[k] = cod(v[k]); return o; }
-    return v === undefined ? null : v;
-  };
-  const lojas = {}, config = {};
-  for (const nome of LOJAS_PERFIL) {
-    if (!comEstados && LOJAS_ESTADOS.includes(nome)) continue;
-    const ks = await bdOp(nome, 'readonly', (o) => o.getAllKeys()), vs = await bdTodos(nome);
-    lojas[nome] = ks.map((k, i) => ({ k, v: cod(vs[i]) }));
-  }
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k.startsWith('kofnes.') && k !== 'kofnes.versaoVista') config[k.slice(7)] = localStorage.getItem(k);
-  }
-  const cab = new TextEncoder().encode(JSON.stringify({ formato: 'kofperfil', versao: 1, quando: Date.now(), perfil, config, lojas, tamanhos: partes.map((p) => p.size) }));
-  const n = new Uint8Array(4); new DataView(n.buffer).setUint32(0, cab.length, true);
-  return new Blob([MAGIA_PERFIL, n, cab, ...partes], { type: 'application/octet-stream' });
-}
-async function lerPerfil(arquivo) {
-  const ini = new Uint8Array(await arquivo.slice(0, MAGIA_PERFIL.length + 4).arrayBuffer());
-  if (new TextDecoder().decode(ini.slice(0, MAGIA_PERFIL.length)) !== MAGIA_PERFIL) throw new Error('isso não é um arquivo de perfil do KOFnes');
-  const base = MAGIA_PERFIL.length + 4, tamCab = new DataView(ini.buffer).getUint32(MAGIA_PERFIL.length, true);
-  const cab = JSON.parse(await arquivo.slice(base, base + tamCab).text());
-  const pos = []; let p = base + tamCab;
-  for (const t of cab.tamanhos) { pos.push([p, p + t]); p += t; }
-  if (p !== arquivo.size) throw new Error('arquivo de perfil incompleto');
-  const dec = async (v) => {
-    if (Array.isArray(v)) return Promise.all(v.map(dec));
-    if (v && typeof v === 'object') {
-      if (v.$b !== undefined) {
-        const [a, z] = pos[v.$b], bl = arquivo.slice(a, z, v.m || '');
-        return v.t === 'blob' ? bl : v.t === 'ab' ? bl.arrayBuffer() : new Uint8Array(await bl.arrayBuffer());
-      }
-      const o = {}; for (const k of Object.keys(v)) o[k] = await dec(v[k]); return o;
-    }
-    return v;
-  };
-  return { cab, dec };
-}
-async function salvarPerfil() {
-  const msg = $('#perfil-msg');
-  try {
-    msg.textContent = 'Empacotando…';
-    const blob = await empacotarPerfil($('#perfil-estados').checked);
-    const nome = ((perfil.nome || 'meu-perfil').replace(/[^\w\-]+/g, '-') || 'meu-perfil') + '.kofperfil';
-    if ('showSaveFilePicker' in window) {
-      try {
-        const h = await showSaveFilePicker({ suggestedName: nome, types: [{ description: 'Perfil do KOFnes', accept: { 'application/octet-stream': ['.kofperfil'] } }] });
-        const w = await h.createWritable(); await w.write(blob); await w.close();
-      } catch (e) { if (e.name === 'AbortError') { msg.textContent = ''; return; } throw e; }
-    } else {
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    }
-    msg.textContent = '✔ Perfil salvo (' + (blob.size / 1048576).toFixed(1) + ' MB)';
-  } catch (e) { msg.textContent = '✖ ' + e.message; }
-}
-async function carregarPerfil(arquivo) {
-  const msg = $('#perfil-msg');
-  try {
-    const { cab, dec } = await lerPerfil(arquivo);
-    if (!confirm('Carregar "' + (cab.perfil.nome || 'perfil sem nome') + '" troca as suas configurações e os dados salvos aqui (jogos, estatísticas, jukebox' + (cab.lojas.estados ? ', savestates' : '') + '). Continuar?')) return;
-    importando = true; msg.textContent = 'Carregando…';
-    for (const nome of LOJAS_PERFIL) {
-      if (!cab.lojas[nome]) continue;
-      const b = await abrirBanco(), tem = b.transaction(nome).objectStore(nome).keyPath;
-      await bdOp(nome, 'readwrite', (o) => o.clear());
-      for (const { k, v } of cab.lojas[nome]) {
-        const val = await dec(v);
-        await bdOp(nome, 'readwrite', (o) => (tem ? o.put(val) : o.put(val, k)));
-      }
-    }
-    for (const k of Object.keys(cab.config)) guardar(k, cab.config[k]);
-    guardar('perfil', JSON.stringify(cab.perfil));
-    location.reload();
-  } catch (e) { importando = false; msg.textContent = '✖ ' + e.message; }
-}
-$('#perfil-arquivo').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) carregarPerfil(f); });
-
 // ---------------- voltar (histórico de telas) ----------------
 // Cada tela que aparece guarda a anterior; Voltar (← do menu lateral, Alt+←,
 // Esc numa janela, o botão "voltar" do mouse) leva de volta pra ela.
-const TELAS = ['home', 'biblioteca', 'estados', 'jukebox', 'estatisticas', 'guia', 'teclas', 'perfil'];
+const TELAS = ['home', 'biblioteca', 'estados', 'jukebox', 'estatisticas', 'guia', 'teclas'];
 const telaAtual = () => TELAS.find((id) => !$('#' + id).hidden) || 'jogo';
 let historico = [], telaConhecida = 'jogo', voltandoHist = false, telaT = 0;
 new MutationObserver(() => {
@@ -1689,7 +1577,6 @@ async function abrirTela(t) {
     case 'jukebox': await abrirJuke(); break;
     case 'estatisticas': await mostrarEstat(); break;
     case 'estados': await mostrarEstados(jogoId); break;
-    case 'perfil': abrirPerfil(); break;
     case 'guia': abrirGuia(); break;
     case 'teclas': fecharJanelas(); montarGrade(); $('#teclas').hidden = false; break;
   }
@@ -1764,7 +1651,7 @@ $('#grade-temas').addEventListener('mouseleave', () => {
 $('#veu').addEventListener('click', () => acao('fechar-temas'));
 let temasVoltar = null;   // a janela que estava aberta (biblioteca...) volta quando a galeria fecha
 function abrirTemas() {
-  temasVoltar = ['home', 'biblioteca', 'estatisticas', 'jukebox', 'estados', 'guia', 'perfil'].find((id) => !$('#' + id).hidden) || null;
+  temasVoltar = ['home', 'biblioteca', 'estatisticas', 'jukebox', 'estados', 'guia'].find((id) => !$('#' + id).hidden) || null;
   fecharMenus(); if (rapidoAberto) fecharRapido();   // a tela de trás fica (aparece sob o véu e muda ao vivo)
   montarTemas(); $('#temas').hidden = false; $('#veu').hidden = false;
   const b = $(`.previa[data-tema="${temaSalvo}"]`); if (b) { b.focus({ preventScroll: true }); b.scrollIntoView({ block: 'nearest' }); }
@@ -1860,10 +1747,6 @@ async function acao(a) {
     case 'fechar-temas': fecharTemas(); if (!snes && telaAtual() === 'jogo') abrirHome(); break;
     case 'estatisticas': await mostrarEstat(); break;
     case 'fechar-estat': voltar(); break;
-    case 'perfil': abrirPerfil(); break;
-    case 'fechar-perfil': voltar(); break;
-    case 'perfil-salvar': await salvarPerfil(); break;
-    case 'perfil-carregar': $('#perfil-arquivo').click(); break;
     case 'controles': abrirGuia('atalhos'); break;
     case 'guia': abrirGuia(); break;
     case 'fechar-guia': voltar(); break;

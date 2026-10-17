@@ -688,12 +688,3 @@ body.cheia #lateral, body.sofa #lateral { display: none; }
 [data-tema="classico98"] .lat-itens button:hover, [data-tema="classico98"] .lat-itens button.ativo,
 [data-tema="luna"] .lat-itens button:hover, [data-tema="luna"] .lat-itens button.ativo,
 [data-tema="classico98"] .gu-menu button.ativo, [data-tema="luna"] .gu-menu button.ativo { color: #fff; }
-
-/* perfil */
-#perfil { width: min(520px, 96vw); max-height: 88vh; overflow-y: auto; text-align: left; }
-.perfil-corpo { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 16px; }
-#perfil-nome { width: 100%; box-sizing: border-box; margin-top: 4px; padding: 6px 8px; font: inherit; color: var(--texto); background: var(--painel2); border: 1px solid var(--borda); border-radius: var(--raio); }
-#perfil-avatares { display: flex; flex-wrap: wrap; gap: 6px; }
-#perfil-avatares .avatar { font-size: 24px; width: 44px; height: 44px; background: var(--painel2); border: 2px solid var(--borda); border-radius: var(--raio); cursor: pointer; }
-#perfil-avatares .avatar.ativo { border-color: var(--destaque); background: var(--sel); }
-.perfil-botoes { display: flex; flex-direction: column; gap: 8px; }
