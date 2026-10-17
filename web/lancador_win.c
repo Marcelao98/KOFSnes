@@ -23,7 +23,7 @@
 #include <stdarg.h>
 #include <time.h>
 
-#define LANCADOR 3
+#define LANCADOR 4
 #define HOST L"raw.githubusercontent.com"
 #define CAMINHO L"/Marcelao98/KOFSnes/main/publicado/"
 #ifndef WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
@@ -70,8 +70,8 @@ static int comecaCom(const wchar_t *arq, const char *ini) {
     return _strnicmp(b, ini, strlen(ini)) == 0;
 }
 
-// baixa https://HOST/CAMINHO<nome> pra destino; devolve os bytes baixados ou -1
-static long long baixar(const wchar_t *nome, const wchar_t *destino) {
+// baixa https://HOST/CAMINHO<nome> pra destino pelo WinHTTP; devolve os bytes baixados ou -1
+static long long baixar_winhttp(const wchar_t *nome, const wchar_t *destino) {
     HINTERNET s = WinHttpOpen(L"KOFnes", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
     if (!s) s = WinHttpOpen(L"KOFnes", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
     if (!s) { anotar("WinHttpOpen falhou (erro %lu)", GetLastError()); return -1; }
@@ -108,6 +108,29 @@ static long long baixar(const wchar_t *nome, const wchar_t *destino) {
     if (c) WinHttpCloseHandle(c);
     WinHttpCloseHandle(s);
     return total;
+}
+
+// Pelo WinINet (lancador_inet.c): é a pilha de rede do Edge/Explorer, então usa o mesmo proxy e as
+// mesmas configurações do navegador (o WinHTTP, em algumas redes, dava timeout 12002 com o Edge funcionando).
+extern long long inet_baixar(const wchar_t *url, const wchar_t *destino, unsigned long *codigo, int *http);
+static long long baixar_inet(const wchar_t *nome, const wchar_t *destino) {
+    wchar_t url[600];
+    swprintf(url, 600, L"https://" HOST CAMINHO L"%ls?t=%lu", nome, GetTickCount());
+    unsigned long cod; int http;
+    long long b = inet_baixar(url, destino, &cod, &http);
+    if (b < 0) {
+        if (http) anotar("WinINet: GitHub respondeu %lu pra %ls", cod, nome);
+        else anotar("WinINet: falhou (erro %lu) pra %ls", cod, nome);
+    }
+    return b;
+}
+
+// tenta o WinINet e, se não der, o WinHTTP
+static long long baixar(const wchar_t *nome, const wchar_t *destino) {
+    long long b = baixar_inet(nome, destino);
+    if (b > 0) return b;
+    anotar("tentando de novo pelo WinHTTP");
+    return baixar_winhttp(nome, destino);
 }
 
 static DWORD WINAPI atualizar(LPVOID arg) {
