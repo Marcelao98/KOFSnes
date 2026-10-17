@@ -1,4 +1,4 @@
-KOFnes sem Java - Super Nintendo escrito em Kof
+KOFnes - Super Nintendo escrito em Kof
 
 Dois cliques no KOFnes.exe. Ele abre o emulador numa janela do Microsoft
 Edge (que já vem no Windows 10 e 11), sem barra de endereço.

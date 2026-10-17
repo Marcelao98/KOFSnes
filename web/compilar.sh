@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Versão web/Windows sem Java: compila o núcleo Kof (snes/) pra JavaScript e
+# Versão web/Windows: compila o núcleo Kof (snes/) pra JavaScript e
 # monta UM arquivo só, dist/web/KOFnes.html (navegador não carrega módulos de
 # um arquivo local), mais o KOFnes.exe que abre a página numa janela do Edge.
 #   web/compilar.sh
@@ -30,6 +30,6 @@ LANCADOR="$(sed -n 's/^#define LANCADOR \([0-9]*\).*/\1/p' "$AQUI/lancador_win.c
     [ -f "$SAIDA/KOFnes.exe" ] && printf 'tamanho_exe=%s\n' "$(stat -c %s "$SAIDA/KOFnes.exe")"
 } > "$SAIDA/versao.txt"
 sed "s/$/\r/" "$AQUI/LEIA-ME.txt" > "$SAIDA/LEIA-ME.txt"
-rm -f "$RAIZ/dist/KOFnes-sem-java-windows.zip"
-(cd "$RAIZ/dist" && mkdir -p z/KOFnes && cp web/* z/KOFnes/ && cd z && zip -qr -9 ../KOFnes-sem-java-windows.zip KOFnes && cd .. && rm -rf z)
-ls -l "$SAIDA" "$RAIZ/dist/KOFnes-sem-java-windows.zip"
+rm -f "$RAIZ/dist/KOFnes-windows.zip"
+(cd "$RAIZ/dist" && mkdir -p z/KOFnes && cp web/* z/KOFnes/ && cd z && zip -qr -9 ../KOFnes-windows.zip KOFnes && cd .. && rm -rf z)
+ls -l "$SAIDA" "$RAIZ/dist/KOFnes-windows.zip"

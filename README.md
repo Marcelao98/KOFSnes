@@ -126,7 +126,7 @@ O núcleo do console é **Kof puro**, sem nenhuma biblioteca de emulação:
 | Cartucho | `snes/Cartridge.kf` | LoROM, HiROM e ExHiROM |
 | Super FX | `snes/Gsu.kf` | o chip do *Star Fox* e do *Yoshi's Island* |
 
-A versão principal é a **sem Java**: `web/compilar.sh` compila o mesmo `snes/` com `kof build --target js` e junta tudo num `KOFnes.html` de ~500 KB (zip de ~150 KB). O `KOFnes.exe` é um lançador pequeno em C que abre essa página numa janela do Edge. A saída é idêntica bit a bit à da versão em JVM, a 60 fps.
+O KOFnes roda direto no navegador: `web/compilar.sh` compila o mesmo `snes/` com `kof build --target js` e junta tudo num `KOFnes.html` de ~500 KB (zip de ~150 KB). O `KOFnes.exe` é um lançador pequeno em C que abre essa página numa janela do Edge. A saída é idêntica bit a bit à da versão em JVM, a 60 fps.
 
 ```
 KOFnes/
@@ -144,7 +144,7 @@ KOFnes/
 Precisa do [Kof](https://github.com/KofLang/Kof4j) **0.6.3** com o `web/kof-js-correcoes.patch` aplicado (4 correções no alvo JS do compilador), de `python3` e, pro `.exe`, do `mingw-w64`.
 
 ```bash
-web/compilar.sh     # gera dist/web/KOFnes.html, KOFnes.exe e o zip sem Java
+web/compilar.sh     # gera dist/web/KOFnes.html, KOFnes.exe e o zip
 web/publicar.sh     # sobe a versão pra publicado/ (depois é só commitar)
 ```
 

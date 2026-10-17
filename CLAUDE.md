@@ -30,14 +30,14 @@ o que o produto faz está no `README.md`.
 snes/            núcleo em Kof (~5.600 linhas): Cpu.kf (65816), Ppu.kf, Spc.kf (SPC700),
                  Dsp.kf, Apu.kf, CpuBus.kf/Snes.kf (barramento, DMA/HDMA, IRQ), Cartridge.kf
                  (LoROM/HiROM/ExHiROM, SRAM), Gsu.kf (Super FX)
-web/             A VERSÃO PRINCIPAL ("sem Java"): o núcleo Kof → JavaScript num KOFnes.html só
+web/             A VERSÃO PRINCIPAL: o núcleo Kof → JavaScript num KOFnes.html só
   app.js         toda a interface (≈1.800 linhas): biblioteca, Início, temas, savestates,
                  rebobinar, jukebox, estatísticas, caçador de bugs, atualizações...
   estado.js      savestate genérico (KofEstado.capturar/restaurar) + Rebobinador (fotos delta)
   spc.js         ler/gravar arquivos .spc (jukebox)
   pagina.html, estilo.css (28 temas por variáveis CSS), juntar.py (monta o HTML)
   compilar.sh    build: kof build --target js → juntar.py → dist/web/KOFnes.html + KOFnes.exe
-                 (mingw) + versao.txt + dist/KOFnes-sem-java-windows.zip
+                 (mingw) + versao.txt + dist/KOFnes-windows.zip
   publicar.sh    compila e copia html/exe/versao.txt pra publicado/ (o atualizador lê de lá)
   lancador_win.c o KOFnes.exe: atualizador (WinHTTP) + abre o html numa janela app do Edge
   kof-js-correcoes.patch  correções no alvo JS do compilador Kof (sem elas o núcleo quebra)

@@ -1,4 +1,4 @@
-// KOFnes.exe da versão sem Java: abre o KOFnes.html (o emulador Kof
+// KOFnes.exe: abre o KOFnes.html (o emulador Kof
 // compilado pra JavaScript) numa janela de app do Edge, que vem em todo
 // Windows 10/11, sem barra de endereço. Sem Edge, tenta o Chrome; sem os
 // dois, abre no navegador padrão.
