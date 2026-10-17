@@ -1,4 +1,4 @@
-versao=202610142233
+versao=202610171459
 tamanho=499999
 lancador=2
 tamanho_exe=84992
