@@ -84,6 +84,15 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 - ~~Atualizador no Windows~~ **Resolvido.** Lançador 2 (WinHTTP, log, troca do próprio exe) publicado
   na versão 202610171459; troca do exe confirmada no Wine e o Marcelo já testou no Windows dele e em
   outro computador (só exe + html + jogos): roda liso. Se falhar de novo, pedir o `atualizacao.log`.
+- **Decidido, a fazer depois (branch novo): envio de bug/sugestão com um clique.** Cloudflare Worker
+  (token fine-grained só de issues, guardado no Worker) cria a issue num repositório **privado**
+  "caixa" do Marcelo (ex.: `kofnes-caixa`); anônimo, só `{tipo, texto, versão}`; limite de tamanho e
+  de pedidos + honeypot. Sem internet/falha: cai no fluxo atual (issue preenchida no GitHub). Envio
+  automático é só texto; o pacote do caçador de bugs continua baixado à parte (conferir antes se ele
+  carrega trechos de ROM). Caixa de sugestões na mesma tela. A conta Cloudflare/token é do Marcelo.
+- **Navegação (relatório da matriz `testes/navegador/matriz.cjs`), aguardando decisão dele:** botão
+  direito não faz nada fora do jogo (de propósito, linha ~1383); com jogo carregado Voltar/Esc/Alt+←
+  vão direto pro jogo; F2 em qualquer tela pula pro jogo; Alt+← não funciona na Biblioteca.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
