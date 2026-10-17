@@ -21,6 +21,8 @@ node testes/navegador/rebob.cjs   $H rom saida/         # rebobinar + molduras
 node testes/navegador/juke.cjs    $H rom-com-musica arquivo.spc saida/
 node testes/navegador/home.cjs    $H rom saida/         # Início, Voltar, menu lateral, guia
 node testes/navegador/bib.cjs     $H x saida/           # biblioteca com 3.000 jogos de mentira
+node testes/navegador/perfil.cjs  $H rom saida/         # salvar/apagar/carregar o perfil (.kofperfil)
+node testes/navegador/matriz.cjs  $H rom                # matriz tela × ação da navegação
 ```
 
 Os outros: `auto` (salvar automático), `sofa`, `teclas`, `bug` (caçador de bugs),
