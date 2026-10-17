@@ -962,11 +962,17 @@ async function salvarEstado() {
     if (!$('#estados').hidden) mostrarEstados(jogoId);
   } catch (e) { avisar('não consegui salvar o estado: ' + e.message, 4000); }
 }
+// O perfil (.kofperfil) leva savestates e estatísticas, mas não as ROMs: num computador novo o jogo
+// aparece no Início sem a ROM. Aí o KOFnes já pede a pasta onde elas estão, em vez de só reclamar.
+async function semRom(nome) {
+  avisar(`a ROM de "${nome}" não está neste computador (o perfil não leva ROMs). Escolha a pasta onde ela está.`, 7000);
+  await acao(temPasta ? 'pasta' : 'abrir');
+}
 async function carregarEstado(est) {
   try {
     if (est.jogo !== jogoId) {          // estado de outro jogo: abre o jogo antes
       const j = await bdPegar('jogos', est.jogo), rom = await bdPegar('roms', est.jogo);
-      if (!j || !rom) { avisar('a ROM desse jogo não está na biblioteca', 4000); return; }
+      if (!j || !rom) { await semRom(est.nome || (j && j.nome)); return; }
       await abrirBytes(j.arquivo || j.nome, rom, false);
     }
     KofEstado.restaurar(snes, JSON.parse(await descomprimir(est.dados)));
@@ -978,7 +984,7 @@ async function carregarEstado(est) {
 }
 async function continuar(j) {
   const rom = await bdPegar('roms', j.id);
-  if (!rom) throw new Error('a ROM desse jogo não está na biblioteca');
+  if (!rom) { await semRom(j.nome); return; }
   const auto = j.temAuto ? await bdPegar('autos', j.id) : null;
   await abrirBytes(j.arquivo || j.nome, rom, false);
   if (!auto) return;
@@ -1288,7 +1294,7 @@ async function abrirJogo(r, doZero) {
     if (autoSalvar && r.jogo && r.jogo.temAuto && !doZero) await continuar(r.jogo);
     else if (r.jogo) {
       const rom = await bdPegar('roms', r.jogo.id);
-      if (!rom) throw new Error('a ROM desse jogo não está na biblioteca');
+      if (!rom) { await semRom(r.nome); return; }
       await abrirBytes(r.jogo.arquivo || r.nome, rom, false);
     }
     else await abrirArquivo(await r.h.getFile());
