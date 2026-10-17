@@ -77,7 +77,7 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 - Atualizador: `publicado/versao.txt` tem `versao=AAAAMMDDHHMM`, `tamanho=`, `lancador=`,
   `tamanho_exe=`. O exe compara com o `versao.txt` local, baixa, confere tamanho/cabeçalho,
   troca, e anota tudo em `atualizacao.log` ao lado do exe. `LANCADOR` no `lancador_win.c`
-  (hoje 3) controla a troca do próprio exe; `lancador_linux=` e `tamanho_linux=` fazem o mesmo pro kofnes.sh.
+  (hoje 4) controla a troca do próprio exe; `lancador_linux=` e `tamanho_linux=` fazem o mesmo pro kofnes.sh.
 
 ## Pendências (atualizado 17/10)
 
@@ -92,12 +92,17 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   carrega trechos de ROM). Caixa de sugestões na mesma tela. A conta Cloudflare/token é do Marcelo.
 - **Publicado (17/10):** navegação corrigida (botão direito nas telas = Voltar; Esc = volta ao jogo;
   Voltar anda pelo histórico; F2 só no jogo), correção do foco (tirar print não pula pro jogo), menu
-  Arquivo por cima da barra lateral, **Perfil** (`.kofperfil`: nome, avatar, savestates, estatísticas,
-  jukebox, configs; formato: `KOFPERFIL1` + tamanho do cabeçalho + JSON + blocos binários), lançador do
-  Windows 3 e **lançador de Linux** (`web/lancador_linux.sh` → `kofnes.sh`, POSIX sh, qualquer distro).
-  O perfil do Marcelo ficou com ~100 MB: **a otimizar** (medir por categoria na tela de Perfil, manter só
-  os últimos N savestates por jogo, compactar o arquivo, deixar as capas de fora). No Windows dele o exe
-  deu erro 12002 (timeout do WinHTTP) ao procurar atualização: se repetir, investigar proxy/IPv6.
+  Arquivo por cima da barra lateral e **lançador de Linux** (`web/lancador_linux.sh` → `kofnes.sh`, POSIX
+  sh, qualquer distro). No Windows do Marcelo o exe dava erro 12002 (timeout do WinHTTP) em toda abertura
+  com o Edge funcionando: o lançador 4 baixa pelo **WinINet** (mesma rede/proxy do Edge,
+  `web/lancador_inet.c`) e só cai pro WinHTTP se falhar.
+- **Perfil (`.kofperfil`) está só no branch `ccr-ff223c92-a1bil9`, FORA da main por pedido dele:** foi
+  publicado na 202610172119 e retirado com `git revert` (commit "Revert Perfil...") + nova publicação.
+  Pra trazer de volta: `git revert` desse revert na main (ou juntar o branch). Formato: `KOFPERFIL1` +
+  tamanho do cabeçalho + JSON + blocos binários. Ele disse que "quebrou tudo" ao carregar num
+  computador novo (jukebox etc.) e a causa **não foi achada**: o teste nunca guardou música na jukebox
+  (cobrir isso primeiro). ~100 MB a otimizar. O branch também tem o **rebobinar estilo Príncipe da
+  Pérsia** (5 s, preto e branco, ampulheta que recarrega) e o "Continuar sem ROM pede a pasta".
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
