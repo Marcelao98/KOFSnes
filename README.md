@@ -1,279 +1,181 @@
 <p align="center">
-  <img src="docs/banner.png" alt="KOFnes — um Super Nintendo inteiro, escrito em Kof" width="100%">
+  <img src="docs/banner.png" alt="KOFnes: um Super Nintendo inteiro, escrito em Kof" width="100%">
 </p>
 
 <p align="center">
   <img alt="feito em Kof" src="https://img.shields.io/badge/feito%20em-Kof%200.6.3-c08552?style=flat-square&labelColor=2b1d14">
-  <img alt="Windows e Linux" src="https://img.shields.io/badge/roda%20em-Windows%20%C2%B7%20Linux-d9b99b?style=flat-square&labelColor=2b1d14">
-  <img alt="CPU 649/649" src="https://img.shields.io/badge/cputest%20(hardware)-649%2F649-6f4e37?style=flat-square&labelColor=2b1d14">
-  <img alt="SPC700 76200/76200" src="https://img.shields.io/badge/SPC700-76.200%2F76.200-6f4e37?style=flat-square&labelColor=2b1d14">
+  <img alt="Windows" src="https://img.shields.io/badge/roda%20em-Windows%20(Edge)-d9b99b?style=flat-square&labelColor=2b1d14">
+  <img alt="tamanho" src="https://img.shields.io/badge/tamanho-~500%20KB-6f4e37?style=flat-square&labelColor=2b1d14">
+  <img alt="cputest 649/649" src="https://img.shields.io/badge/cputest-649%2F649-6f4e37?style=flat-square&labelColor=2b1d14">
 </p>
+
+# ☕ KOFnes
+
+**Um Super Nintendo escrito inteiro em [Kof](https://github.com/KofLang/Kof4j), uma linguagem brasileira com poucos meses de vida, e feito pra facilitar a sua jogatina.**
+
+Dois cliques no `KOFnes.exe` e você cai numa tela de Início bonita, com a sua biblioteca de jogos, capas, savestates com print, rebobinar o tempo, jukebox, 28 temas e até um caçador de bugs. Tudo isso num arquivo de ~500 KB.
 
 <p align="center">
-  <b>Emulador de Super Nintendo escrito do zero em <a href="https://github.com/KofLang/Kof4j">Kof</a></b> —
-  uma linguagem lançada mês passado.<br>
-  CPU, chip de som, vídeo, Mode 7 e até o Super FX. ~6.600 linhas de Kof, zero biblioteca de emulação.<br>
-  <i>Tema cappuccino porque sim.</i> ☕
+  <img src="docs/prints/inicio-4-telas.jpg" alt="A tela de Início do KOFnes em quatro situações: primeira vez, jogo pausado, tema Clássico 98 e tema Matrix" width="100%">
+  <br><sub>A tela de Início muda conforme o momento (primeira vez, jogo pausado, continuar) e conforme o tema.</sub>
 </p>
 
----
+## ✨ O que ele faz
 
-<table>
-<tr>
-<td width="50%"><img src="docs/tela-inicial.png" alt="tela inicial do KOFnes com a xícara de cappuccino"></td>
-<td width="50%"><img src="docs/rodando-mode7.png" alt="KOFnes rodando a demo dizworld em Mode 7"></td>
-</tr>
-<tr>
-<td align="center"><sub>a tela inicial</sub></td>
-<td align="center"><sub>Mode 7 em perspectiva a 60 fps (<a href="#créditos">dizworld</a>)</sub></td>
-</tr>
-</table>
+| | |
+|---|---|
+| 🏠 **Início** | continuar de onde parou (com print), jogados recentemente, atalhos e dica do dia. Até a frase de boas-vindas muda com o tema |
+| 🧭 **Navegação** | menu lateral, botão **Voltar** com histórico (`Alt+←`, `Esc`, botão voltar do mouse) e um **Guia do KOFnes** dentro do próprio emulador |
+| 📚 **Biblioteca** | estilo ZSNES: escolha a pasta de ROMs uma vez, busque por palavras em qualquer ordem, esconda hacks e variantes com **Só os principais**, capas oficiais ([libretro-thumbnails](https://github.com/libretro-thumbnails)) e **modo sofá** (grade de capas pra jogar de longe, com o controle) |
+| 🎨 **28 temas** | consoles, Windows antigo, internet de 1999, anime e bem brasileiro, com galeria de prévias ao vivo |
+| 📺 **Imagem** | filtros WebGL (nítido, suave, CRT, fliperama, Game Boy, sépia, LCD), proporção 4:3 / 8:7 / esticar, tela cheia de verdade e **molduras** |
+| 💾 **Savestates** | por jogo, com print do momento, e **salvar automático** pra continuar de onde parou |
+| ⏪ **Rebobinar** | segure `Backspace` (ou `Select+Y`) e o jogo volta no tempo, até ~1 min e meio. Dá pra pausar, voltar até o ponto exato e salvar ali |
+| 🎵 **Jukebox** | `F7` guarda a música que está tocando; abre e exporta `.spc`; mostra as 8 vozes do chip de som ao vivo e deixa silenciar cada uma |
+| 📊 **Estatísticas** | tempo jogado por jogo, sessões, primeira e última vez e o gráfico dos últimos 7 dias |
+| 🐞 **Caçador de bugs** | `F9` abre uma issue no GitHub já preenchida, com um pacote pra reproduzir o bug quadro a quadro |
+| 🎮 **Conforto** | controle USB/Xbox, volume, mudo, turbo, pausa sozinho quando você sai da janela, teclas configuráveis |
 
-## ☕ Baixar e jogar
+### 🎨 Temas pro seu gosto
 
-| Sistema | Pacote | Como abrir |
-|---|---|---|
-| **Windows** (x64) | `KOFnes-instalador-windows.exe` · **12 MB** (15 MB instalado) | dois cliques → instala (sem pedir administrador) → ícone na área de trabalho |
-| **Windows** (x64), portátil | `KOFnes-windows-x64.zip` · 13 MB | extrair → dois cliques em **`KOFnes.exe`** |
-| **Linux** (x64) | `KOFnes-linux-x64.tar.xz` · 23 MB | extrair → `./KOFnes/KOFnes` |
-| **Windows**, **sem Java** | `KOFnes-sem-java-windows.zip` · **0,1 MB** | extrair → dois cliques em **`KOFnes.exe`** (abre numa janela do Edge) |
-| **Qualquer sistema**, navegador | `KOFnes.html` · 0,3 MB | abrir no Chrome/Edge |
-| **Linux** (x64), **só Kof** | `KOFnes-so-kof-linux-x64` · **0,3 MB** | `./KOFnes-so-kof-linux-x64 jogo.sfc` (veja o [tradeoff](#-duas-versões-com-java--só-kof)) |
+<p align="center">
+  <img src="docs/prints/inicio-temas.jpg" alt="A tela de Início em oito temas diferentes" width="100%">
+</p>
 
-**Não precisa instalar Java**: ele vai junto, numa versão podada só com o que
-o KOFnes usa. Depois é só **Ctrl+O** e escolher a ROM (`.sfc`, `.smc` ou um
-`.zip` com a ROM dentro). Também dá pra arrastar a ROM em cima do `KOFnes.exe`.
+A galeria deixa você experimentar passando o mouse e escolher com um clique:
 
-> Na primeira vez o Windows pode dizer *"o Windows protegeu o computador"*: o
-> `.exe` não tem assinatura digital. Clique em **Mais informações → Executar
-> assim mesmo**.
+<p align="center">
+  <img src="docs/prints/galeria-temas.jpg" alt="Galeria de temas com prévia ao vivo" width="62%">
+  &nbsp;
+  <img src="docs/prints/menu-lateral-classico98.jpg" alt="Tema Clássico 98 com o menu lateral aberto" width="36%">
+</p>
 
-Saves de bateria vão pra `nome-da-rom.srm`, do lado da ROM (automático a cada
-~30 s e ao sair pelo menu).
+### 📚 Biblioteca, modo sofá e molduras
 
-## 🎮 Controles
+<p align="center">
+  <img src="docs/prints/biblioteca-modo-sofa.jpg" alt="Biblioteca em modo sofá, com grade de capas" width="100%">
+</p>
 
-| SNES | Teclado | | Emulador | Teclado |
-|---|---|---|---|---|
-| Direcional | setas | | Abrir ROM | **Ctrl+O** |
-| B · A | **Z** · **X** | | Pausa | **P** / **Esc** |
-| Y · X | **A** · **S** | | Reiniciar | **F1** |
-| L · R | **Q** · **W** | | Turbo 4× | **Tab** (segurar) |
-| Start · Select | **Enter** · **Shift** | | Escala 2×/3×/4× | menu **Tela** |
+Cada jogo ganha capa oficial, baixada uma vez e guardada. Com o controle na mão, `Select` alterna pro modo sofá. Na tela de jogo, o menu **Imagem → Moldura** coloca o jogo numa TV de madeira dos anos 80, numa TV de tubo dos anos 90 ou num fliperama:
 
-## 🌐 Sem Java: o núcleo em Kof compilado pra JavaScript
+<p align="center">
+  <img src="docs/prints/molduras.jpg" alt="Molduras: TV de madeira, TV de tubo e fliperama" width="100%">
+</p>
 
-`web/compilar.sh` compila o mesmo `snes/` com `kof build --target js` e monta
-**um arquivo só**, `KOFnes.html` (329 KB), mais um `KOFnes.exe` de 67 KB que
-abre essa página numa janela de app do Edge (que já vem no Windows 10/11).
-Sem Java, sem instalar nada, **60 fps** e saída idêntica bit a bit à do JVM.
+### 🎵 Jukebox, estatísticas e guia
 
-- **4 temas**: Café queimado, Escuro, Claro e ZSNES (menu **Tema**; fica salvo).
-- **Lista de ROMs dentro da janela**, estilo ZSNES: escolha a pasta uma vez
-  (**Arquivo → Escolher pasta de ROMs**), depois **Ctrl+L**, digite pra filtrar
-  e Enter. Também abre `.sfc`, `.smc` e `.zip`, ou é só arrastar a ROM.
-- **Savestates por jogo, com print do momento**: F5 salva, F8 carrega o último,
-  F6 abre a galeria. **Continuar de onde parou**: um estado automático por jogo
-  (dá pra desligar em Emulação → Salvar automático).
-- **Biblioteca** com **capa oficial** (acervo aberto libretro-thumbnails, baixada
-  uma vez e guardada) e **modo sofá** (grade de capas em tela cheia, pro controle).
-- **7 filtros** na placa de vídeo (Tela): nítido, suave, **TV de tubo (CRT)**,
-  fliperama, Game Boy, café (sépia) e LCD.
-- **Teclas configuráveis** (Emulação → Configurar teclas…), saves de bateria
-  automáticos, controle USB/Xbox, tela cheia de verdade (F11 ou duplo clique), mudo (M).
-- **Conforto**: proporção 4:3 como na TV (ou 8:7, esticar) no menu Imagem; volume
-  (- e =) no menu Som; menu rápido no jogo com Select+Start (ou F2); Select+L/R
-  salva e carrega pelo controle; pausa sozinho quando você sai da janela.
-- **Rebobinar**: segure Backspace (ou Select+Y) e o jogo volta no tempo, até ~1 min e
-  meio; funciona pausado, pra voltar ao ponto exato e salvar ali (F5). Guarda só o que
-  mudou entre os quadros (~3 KB por foto, 30 por segundo) e volta bit a bit igual.
-- **Molduras**: TV de madeira dos anos 80, TV de tubo dos anos 90 ou fliperama.
-- **Início**: a primeira tela, no clima do tema escolhido (até a frase de boas-vindas muda):
-  continuar de onde parou com o print, jogados recentemente, atalhos e dica do dia. Menu
-  lateral (Início, Voltar, Biblioteca, Jukebox, Estatísticas, Tema, Guia), **Voltar** com
-  histórico de telas (Alt+←, Esc, botão voltar do mouse) e o **Guia do KOFnes**.
-- **Atualiza sozinho**: o `KOFnes.exe` lê `publicado/versao.txt` no GitHub ao abrir e,
-  se for mais novo, baixa `publicado/KOFnes.html` (confere o tamanho) antes de abrir a
-  janela; o emulador avisa "atualizado" e tem Ajuda → Procurar atualização. Pra
-  publicar uma versão: `web/publicar.sh` e commitar `publicado/`.
-- **Jukebox**: F7 guarda a música que está tocando (uma foto só do chip de som:
-  SPC700 + DSP + 64 KB) e ela toca sozinha, sem o jogo, num Apu avulso do núcleo.
-  Abre e exporta **.spc** (`web/spc.js`), mostra as 8 vozes do DSP ao vivo e deixa
-  silenciar cada uma; mini-player na barra de baixo.
-- **Caçador de bugs**: F9, ou sozinho quando o emulador quebra, abre a issue no GitHub
-  já preenchida (jogo, SHA-1, versão, navegador, erro) e baixa um pacote com o
-  savestate de segundos antes + os botões quadro a quadro. `node bugs/reproduzir.cjs`
-  roda o pacote e chega exatamente na mesma imagem (a ROM não vai no pacote).
-- **28 temas** com galeria de prévias (consoles, computador e internet antiga, anime,
-  bem brasileiro) e **estatísticas**: tempo jogado, sessões, primeira e última vez
-  por jogo, e o gráfico dos últimos 7 dias.
+<p align="center">
+  <img src="docs/prints/jukebox.jpg" alt="Jukebox com as 8 vozes do chip de som" width="49%">
+  <img src="docs/prints/estatisticas.jpg" alt="Estatísticas de tempo jogado" width="49%">
+</p>
+<p align="center">
+  <img src="docs/prints/guia-embutido.jpg" alt="Guia do KOFnes embutido no emulador" width="62%">
+</p>
 
-Pra compilar, o alvo JS do Kof 0.6.3 precisou de 4 correções no compilador
-(`web/kof-js-correcoes.patch`, aplicar no Kof4j): sem elas o núcleo nem
-compila, ou compila errado em silêncio (e roda a 0,3 fps). Detalhes nos
-[relatórios](docs/relatorio-kof.md).
+## 🎮 Como jogar
 
-## ⚖️ Duas versões: com Java × só Kof
+1. Baixe a pasta [`publicado/`](publicado/) (`KOFnes.exe` e `KOFnes.html`, juntos) ou o zip gerado pelo `web/compilar.sh`, e deixe num lugar seu (Documentos, Área de Trabalho), **não** em *Arquivos de Programas*.
+2. Dois cliques no **`KOFnes.exe`**. Ele abre o emulador numa janela do Microsoft Edge (que já vem no Windows 10 e 11) sem barra de endereço. Também dá pra abrir o `KOFnes.html` direto no Chrome ou no Edge.
+3. **Arquivo → Escolher pasta de ROMs** e pronto: a lista aparece dentro do emulador (`Ctrl+L`). Ou arraste uma ROM (`.sfc`, `.smc` ou `.zip`) pra janela.
 
-O núcleo (`snes/`) é **Kof puro**, sem nenhuma linha de Java, e é o mesmo nas
-duas versões. Elas só mudam no que fica em volta:
+> Na primeira vez o Windows pode dizer *"o Windows protegeu o computador"*: o `.exe` não tem assinatura digital. Clique em **Mais informações → Executar assim mesmo**.
 
-| | **Com Java** (`app/` + `empacotar/`) | **Só Kof** (`nativo/`) |
-|---|---|---|
-| Tamanho | 12 MB (instalador), 15 MB instalado | **0,3 MB** |
-| Velocidade | **350–500 fps** sem janela; os jogos rodam a 60 fps com folga | **~22 fps**: o jogo anda a ~1/3 da velocidade |
-| Sistemas | Windows e Linux | só Linux x64 (no Windows, pelo WSL) |
-| Janela | menu, Abrir ROM, pausa, escala, `.zip` | SDL2: ROM pela linha de comando ou arrastada pra janela; só `.sfc`/`.smc` |
-| Precisa | nada (o Java vai junto) | `libsdl2-2.0-0` (`sudo apt install libsdl2-2.0-0`) |
-| Saída | idêntica bit a bit: mesma tela, mesmo som | |
+### ⌨️ Atalhos principais
 
-**Por que o só-Kof é lento?** O compilador nativo do Kof ainda é jovem: ele
-gera código de pilha (cada conta faz `push`/`pop`, toda variável fica na
-memória, todo acesso a array é uma chamada de função). Num laço simples ele é
-~16× mais lento que o mesmo programa no Java, e o `--release` não muda isso. O
-Java tem um JIT de 25 anos por trás. Quando o alvo nativo do Kof ganhar
-registradores e acesso a array em linha, a versão só-Kof fica rápida **sem mudar
-uma linha do emulador**. Está no [relatório](docs/relatorio-kof.md) (item 12).
+| Ação | Tecla | Ação | Tecla |
+|---|---|---|---|
+| Direcional | setas | Salvar / carregar estado | `F5` / `F8` |
+| B · A | `Z` · `X` | Galeria de estados | `F6` |
+| Y · X | `A` · `S` | Rebobinar | segurar `Backspace` |
+| L · R | `Q` · `W` | Guardar música (Jukebox) | `F7` |
+| Start · Select | `Enter` · `Shift` | Reportar bug | `F9` |
+| Pausa · Reiniciar | `P` · `F1` | Menu rápido | botão direito, `F2` ou `Select+Start` |
+| Turbo | segurar `Tab` | Biblioteca · Voltar | `Ctrl+L` · `Alt+←` |
+| Tela cheia · Mudo | `F11` ou duplo clique · `M` | Volume | `-` e `=` |
 
-**Como o Java ficou com 15 MB instalado:** o pacote leva só os módulos
-`java.base` e `java.desktop`, e dentro deles só as classes que o KOFnes carrega
-numa sessão de verdade (medidas com `-Xlog:class+load` pelo próprio
-`KOFnes.exe`), mais as classes de erro e os pacotes que mudam de um Windows pro
-outro (som, janela, fontes). A janela usa AWT puro, sem Swing. As DLLs do Java
-vão comprimidas com UPX e o runtime do C fica com o do Windows 10/11.
+No controle: `Select+L` salva, `Select+R` carrega e `Select+Y` rebobina. As teclas mudam em **Emulação → Configurar teclas**. Os saves de bateria ficam sozinhos no perfil do KOFnes (`%LOCALAPPDATA%\KOFnes`).
 
-## 🧩 O que tem dentro
+## 🔄 Atualiza sozinho
 
-```
-                 ┌──────────────── Snes.kf ─────────────────┐
-  ROM ──► Cartridge ──► barramento 24 bits, DMA/HDMA, IRQ/NMI, joypad
-                 │            │                 │
-              Cpu.kf       Ppu.kf            Apu.kf ──► Spc.kf + Dsp.kf
-             65C816     vídeo por linha     64 KB de RAM de som, timers
-                 │            │                        │
-              Gsu.kf     framebuffer            32 kHz estéreo
-            (Super FX)        └─────► app/Janela.kf ◄──┘
-                                  janela, teclado, som, saves
-```
+Ao abrir, o `KOFnes.exe` confere no GitHub (`publicado/versao.txt`) se existe versão nova e baixa o `KOFnes.html` atualizado, conferindo o tamanho antes de abrir a janela. Leva uns segundos; sem internet, abre normal. Saves, estados e biblioteca não se perdem.
+
+- O que o atualizador fez fica anotado em `atualizacao.log`.
+- Pra desligar, crie um arquivo chamado `nao-atualizar` na pasta.
+- Também tem **Ajuda → Procurar atualização**.
+
+## 🐞 Caçador de bugs
+
+Achou um bug? Aperte `F9` (ou deixe o emulador oferecer sozinho quando ele quebrar). O KOFnes abre uma issue **já preenchida** (jogo, SHA-1, versão, navegador, erro) e baixa um pacote `kofbug` com o savestate de segundos antes e os botões apertados, quadro a quadro. É só arrastar o pacote pra dentro da issue. A ROM não vai junto.
+
+<p align="center">
+  <img src="docs/prints/cacador-de-bugs.jpg" alt="Janela do caçador de bugs oferecendo abrir uma issue no GitHub" width="70%">
+</p>
+
+Pra reproduzir em outra máquina: `node bugs/reproduzir.cjs KOFnes.html kofbug-....json.gz minha-rom.sfc` chega exatamente na mesma imagem.
+
+## 🔧 Por dentro
+
+O núcleo do console é **Kof puro**, sem nenhuma biblioteca de emulação:
 
 | Peça | Arquivo | O que faz |
 |---|---|---|
-| **CPU 65C816** | `snes/Cpu.kf` | os 256 opcodes, modo nativo e emulação, flags M/X, decimal, MVN/MVP, WAI/STP, NMI/IRQ, tempo por acesso à memória |
-| **SPC700** | `snes/Spc.kf` | a CPU do som: 256 opcodes, MUL/DIV, DAA/DAS, operações de bit |
-| **S-DSP** | `snes/Dsp.kf` | 8 vozes BRR, envelopes ADSR/GAIN, interpolação gaussiana, ruído, pitch modulation, eco com FIR de 8 taps |
-| **APU** | `snes/Apu.kf` | RAM do som, ROM de boot (IPL), 3 timers, portas $2140–$2143 |
-| **PPU** | `snes/Ppu.kf` | modos 0–7, Mode 7 (rotação, zoom, EXTBG), 2/4/8bpp, sprites de todos os tamanhos, janelas, color math, cor direta, mosaico, offset-per-tile, hi-res |
-| **Barramento** | `snes/Snes.kf` | mapa de memória, DMA de 8 canais, HDMA direto/indireto, contadores H/V, IRQ por H/V, multiplicação/divisão, FastROM, refresh de DRAM |
-| **Cartucho** | `snes/Cartridge.kf` | LoROM / HiROM / ExHiROM pelo cabeçalho, espelhamento, SRAM |
-| **Super FX** | `snes/Gsu.kf` | o chip RISC do Star Fox e do Yoshi's Island: instruções, pipeline com delay slot, cache, PLOT/RPIX |
-| **Janela** | `app/` | a "xícara", menu, teclado, áudio, pausa, turbo, escala automática, ROMs em `.zip` |
+| CPU 65C816 | `snes/Cpu.kf` | os 256 opcodes, modos nativo e emulação, tempo por acesso à memória |
+| PPU | `snes/Ppu.kf` | modos 0 a 7 (com Mode 7), sprites, janelas, color math, mosaico, hi-res |
+| SPC700 + DSP + APU | `snes/Spc.kf`, `Dsp.kf`, `Apu.kf` | a CPU e o chip de som: 8 vozes BRR, ADSR, eco, 3 timers |
+| Barramento | `snes/CpuBus.kf`, `Snes.kf` | mapa de memória, DMA/HDMA, IRQ/NMI, joypad |
+| Cartucho | `snes/Cartridge.kf` | LoROM, HiROM e ExHiROM |
+| Super FX | `snes/Gsu.kf` | o chip do *Star Fox* e do *Yoshi's Island* |
 
-O relógio é o master clock de 21,477 MHz: cada acesso da CPU custa 6, 8 ou
-12 ciclos conforme a região, a PPU desenha cada linha no hblank junto com o
-HDMA, e o APU e o Super FX andam sincronizados.
-
-## ✅ Como foi testado
-
-Não teve "parece que funciona": cada peça foi medida contra uma suíte de testes
-pública.
-
-| Suíte | O que mede | Resultado |
-|---|---|---|
-| [SingleStepTests 65816](https://github.com/SingleStepTests/65816) | registradores, memória **e ciclos** de cada instrução | **151.194 / 152.400**, ciclos exatos em todos que passam¹ |
-| [cputest do gilyon](https://github.com/gilyon/snes-tests) | CPU, validada num SNES real | **649 / 649 — "Success"** |
-| [SingleStepTests SPC700](https://github.com/SingleStepTests/spc700) | CPU do som, com ciclos | **76.200 / 76.200** |
-| [ROMs do PeterLemon](https://github.com/PeterLemon/SNES) | CPU, SPC700, PPU, Mode 7, HDMA, músicas | testes de CPU/SPC: PASS · demos de PPU e músicas: certas |
-| [ROMs do PeterLemon — GSU](https://github.com/PeterLemon/SNES/tree/master/CHIP/GSU) | Super FX | 31 testes de instrução: PASS · 27 demos de desenho: certas |
-| [ROMs do undisbeliever](https://github.com/undisbeliever/snes-test-roms) | 108 testes de hardware (compilados aqui) | janelas, HDMA, VMAIN, autojoy, IPL, VRAM fora do vblank |
-| [bbbradsmith](https://github.com/bbbradsmith/SNES_stuff), [nesdoug](https://github.com/nesdoug) | demos e jogos homebrew | todos rodando |
-| **Jogo comercial, num Windows de verdade** | *Mega Man X* (13/10/2026) | **rodou liso a 61 fps, com som** 🎉 |
-
-<sub>¹ O que sobra é MVN/MVP (o SST mede essas instruções de outro jeito; a
-cputest de hardware passa) e um quirk de `(dp,X)` em modo emulação em que o
-SST discorda do teste feito em hardware real — o KOFnes segue o hardware.</sub>
-
-## 🚧 O que ainda não roda
-
-- **Chips de cartucho além do Super FX**: SA-1 (*Super Mario RPG*, *Kirby Super
-  Star*), DSP-1 (*Super Mario Kart*, *Pilotwings*), Cx4 (*Mega Man X2/X3*),
-  S-DD1, SPC7110.
-- Entrelaçado (512×448) sai em 256×224; hi-res (modos 5/6) é reduzido pra 256
-  de largura.
-- Save state, gamepad USB, remapear teclas.
-- A precisão é por instrução/linha, não por ciclo/pixel: truques de meio de
-  linha muito agressivos podem sair diferentes.
-- Jogo comercial testado até agora: só o *Mega Man X* (rodou liso). Os testes
-  acima dizem que a base está sólida, mas cada jogo tem seus caprichos.
-
-## 🛠️ Rodando e empacotando a partir do código
-
-Precisa do [Kof](https://github.com/KofLang/Kof4j) 0.6.3+ (`kof` no PATH) e de
-**Java 25**.
-
-```bash
-./kofnes.sh                 # abre a janela        (kofnes.bat no Windows)
-./kofnes.sh jogo.sfc        # já abre o jogo
-
-kof run KOFnes.kf headless rom.sfc 600 tela.png   # 600 frames sem janela -> PNG + WAV
-kof run KOFnes.kf testar-cpu <pasta>              # SingleStepTests 65816 (convertidos pra texto)
-kof run KOFnes.kf testar-spc <pasta>              # SingleStepTests SPC700
-
-empacotar/empacotar.sh      # gera o instalador, o zip do Windows e o .tar.xz do Linux em dist/
-empacotar/testar-interface.sh linux      rom.zip   # teste de interface do pacote
-empacotar/testar-interface.sh windows    rom.zip   # o mesmo com o .exe, no Wine
-empacotar/testar-interface.sh instalador rom.zip   # instala em silêncio no Wine e testa
-nativo/compilar.sh          # versão só-Kof: dist/KOFnes-so-kof-linux-x64
-web/compilar.sh             # sem Java: dist/web/KOFnes.html + KOFnes.exe
-```
-
-O teste de interface faz o que um usuário faz: abre o programa, clica em
-**Arquivo → Abrir ROM**, escolhe a ROM no diálogo, espera o título, aperta
-**Start** e confere a tela em cada passo. Ele existe porque a primeira versão
-do pacote passou em todos os testes do motor e mesmo assim não abria ROM pelo
-menu.
-
-O `empacotar.sh` precisa de Python com Pillow, gcc, mingw-w64 e NSIS; o Java embutido
-vem do pacote [`jdk4py`](https://pypi.org/project/jdk4py/) do PyPI.
+A versão principal é a **sem Java**: `web/compilar.sh` compila o mesmo `snes/` com `kof build --target js` e junta tudo num `KOFnes.html` de ~500 KB (zip de ~150 KB). O `KOFnes.exe` é um lançador pequeno em C que abre essa página numa janela do Edge. A saída é idêntica bit a bit à da versão em JVM, a 60 fps.
 
 ```
 KOFnes/
-├── KOFnes.kf          ponto de entrada (janela e subcomandos)
-├── snes/              o console: Cpu, Spc, Dsp, Apu, Ppu, Snes, Cartridge, Gsu
-├── app/               janela, controle, som, tema cappuccino (versão com Java)
-├── nativo/            versão só-Kof: janela/som pela SDL2 via extern
-├── web/               sem Java: núcleo Kof → JavaScript, interface, temas, KOFnes.exe
-├── tools/             testes de CPU/SPC e o modo headless
-├── empacotar/         lançadores, instalador, poda do Java, script dos pacotes
-└── docs/              imagens, relatório de bugs da Kof e reproduções
+├── snes/        o console em Kof: Cpu, Ppu, Spc, Dsp, Apu, Snes, Cartridge, Gsu
+├── web/         núcleo → JavaScript, interface, temas, lançador do .exe
+├── publicado/   a versão que o atualizador baixa (KOFnes.exe, .html, versao.txt)
+├── bugs/        reproduzir.cjs: roda os pacotes do caçador de bugs
+├── app/         janela da versão com Java       ├── nativo/   versão só-Kof (SDL2)
+├── tools/       testes de CPU/SPC e modo headless
+└── docs/        como o SNES funciona, relatórios de bugs do Kof e reproduções
 ```
 
-## 🐛 Kof: o que encontrei no caminho
+### Como compilar
 
-A linguagem aguentou muito bem: o compilador gera bytecode JVM de verdade, e o
-emulador roda a 160–280 fps sem janela. No caminho apareceram alguns bugs do
-compilador, todos com reprodução mínima:
+Precisa do [Kof](https://github.com/KofLang/Kof4j) **0.6.3** com o `web/kof-js-correcoes.patch` aplicado (4 correções no alvo JS do compilador), de `python3` e, pro `.exe`, do `mingw-w64`.
 
-- 📄 **[Relatório para humanos](docs/relatorio-kof.md)**: curto, só o essencial.
-- 🤖 **[Relatório para IA](docs/relatorio-kof-ia.md)**: completo, com
-  reprodução, saída esperada × obtida, onde no compilador olhar e como testar a
-  correção.
-- 🧪 **[Reproduções](docs/kof-repros/)**: um `main.kf` por problema; cada um
-  roda com `kof run main.kf`.
+```bash
+web/compilar.sh     # gera dist/web/KOFnes.html, KOFnes.exe e o zip sem Java
+web/publicar.sh     # sobe a versão pra publicado/ (depois é só commitar)
+```
+
+### Outras versões (laboratório da linguagem)
+
+O mesmo núcleo também roda com **Java** (instalador pra Windows e pacote pra Linux, 350 a 500 fps sem janela) e em **Kof nativo** pra Linux (0,3 MB, mas ~22 fps, porque o compilador nativo ainda é jovem). Elas existem pra testar a linguagem e estão em `app/`, `empacotar/` e `nativo/`, com `./kofnes.sh` pra rodar a partir do código.
+
+### Como foi testado
+
+Cada peça foi medida contra suítes públicas: **cputest do gilyon 649/649**, **SingleStepTests SPC700 76.200/76.200**, **SingleStepTests 65816 151.194/152.400** (o resto é MVN/MVP e um quirk em que o KOFnes segue o hardware), além das ROMs de teste do PeterLemon e do undisbeliever. Pra entender o hardware: [`docs/como-o-snes-funciona.md`](docs/como-o-snes-funciona.md).
+
+## 💜 Kof e a Mel
+
+O Kof é uma linguagem brasileira nova, da **Mel Santos**: [github.com/KofLang/Kof4j](https://github.com/KofLang/Kof4j). Escrever um emulador inteiro nela foi um teste e tanto, e a linguagem aguentou muito bem. No caminho apareceram alguns bugs do compilador, todos com reprodução mínima:
+
+- 📄 [Relatório pra humanos](docs/relatorio-kof.md) e 🤖 [relatório pra IA](docs/relatorio-kof-ia.md)
+- 🧪 [Reproduções](docs/kof-repros/): um `main.kf` por problema, cada um roda com `kof run main.kf`
+- 📝 [Issues prontas](docs/issues/README.md): 19 bugs já formatados pra abrir no repositório do Kof
+
+## 🚀 Próximos passos
+
+- [ ] 📱 Versão pra **Android** e pra navegador (GitHub Pages), já que o núcleo é JavaScript
+- [ ] 🐧 **Linux** com lançador próprio, como o do Windows
+- [ ] 🕹️ **Multi-sistema**: NES, Game Boy e Mega Drive na mesma biblioteca
+- [ ] 🏆 **Conquistas**
+- [ ] Chips de cartucho que faltam: SA-1, DSP-1, Cx4, S-DD1, SPC7110
+
+## ⚖️ Aviso
+
+O KOFnes **não inclui ROMs** nem ensina onde baixar. Use cópias dos seus próprios cartuchos.
 
 ## Créditos
 
-- Linguagem: [Kof / Kof4j](https://github.com/KofLang/Kof4j), da Mel Santos e
-  contribuidores.
-- Testes: [SingleStepTests](https://github.com/SingleStepTests),
-  [gilyon](https://github.com/gilyon/snes-tests),
-  [PeterLemon (krom)](https://github.com/PeterLemon/SNES),
-  [undisbeliever](https://github.com/undisbeliever/snes-test-roms),
-  [bbbradsmith](https://github.com/bbbradsmith/SNES_stuff),
-  [nesdoug](https://github.com/nesdoug).
-- Print do Mode 7: a demo *dizworld*, de Brad Smith (CC BY 4.0), com arte do
-  OpenGameArt: *16x16 Forest Tiles* de Sharm (CC BY 4.0), *Ocean Background* de
-  KnoblePersona (CC BY 3.0) e *LPC Birds* de bluecarrot16 (CC BY 4.0).
-- Java embutido nos pacotes: OpenJDK 25, via [jdk4py](https://pypi.org/project/jdk4py/).
-- Versão só-Kof: [SDL2](https://www.libsdl.org/) (zlib).
-
-ROMs não acompanham o programa. Use cópias dos seus próprios cartuchos.
+Linguagem: [Kof / Kof4j](https://github.com/KofLang/Kof4j), da Mel Santos e contribuidores. Testes: [SingleStepTests](https://github.com/SingleStepTests), [gilyon](https://github.com/gilyon/snes-tests), [PeterLemon](https://github.com/PeterLemon/SNES), [undisbeliever](https://github.com/undisbeliever/snes-test-roms). Capas: [libretro-thumbnails](https://github.com/libretro-thumbnails). Versão só-Kof: [SDL2](https://www.libsdl.org/) (zlib).
