@@ -79,13 +79,11 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   troca, e anota tudo em `atualizacao.log` ao lado do exe. `LANCADOR` no `lancador_win.c`
   (hoje 2) controla a troca do próprio exe.
 
-## Pendências (onde paramos, 17/10)
+## Pendências (atualizado 17/10)
 
-- **Atualizador no Windows dele falhou** com o exe antigo (lançador 1, URLDownloadToFile e espera
-  de só 3 s; a página mostrava "tem versão nova"). Reescrito com WinHTTP, prazos maiores, log e
-  troca do próprio exe; no Wine ele baixou e trocou o html. **Falta confirmar** a troca do exe
-  (no teste o GitHub ainda servia o versao.txt antigo, por cache) e **mandar pra ele o zip novo**
-  uma última vez (o exe antigo não sabe se trocar). Pedir o `atualizacao.log` se falhar de novo.
+- ~~Atualizador no Windows~~ **Resolvido.** Lançador 2 (WinHTTP, log, troca do próprio exe) publicado
+  na versão 202610171459; troca do exe confirmada no Wine e o Marcelo já testou no Windows dele e em
+  outro computador (só exe + html + jogos): roda liso. Se falhar de novo, pedir o `atualizacao.log`.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
