@@ -23,7 +23,7 @@
 #include <stdarg.h>
 #include <time.h>
 
-#define LANCADOR 2
+#define LANCADOR 3
 #define HOST L"raw.githubusercontent.com"
 #define CAMINHO L"/Marcelao98/KOFSnes/main/publicado/"
 #ifndef WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
@@ -204,11 +204,19 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
     HANDLE t = NULL;
     static Atualizacao at;
     if (GetFileAttributesW(trava) == INVALID_FILE_ATTRIBUTES) {
-        registro = _wfopen(log, L"w");
+        // o registro vai acumulando (as últimas execuções), pra dar pra ver o que aconteceu em cada abertura
+        WIN32_FILE_ATTRIBUTE_DATA info;
+        int grande = GetFileAttributesExW(log, GetFileExInfoStandard, &info) && info.nFileSizeLow > 32768;
+        registro = _wfopen(log, grande ? L"w" : L"a");
+        anotar("---- abrindo (pasta: %ls)", dir);
         wcscpy(at.dir, dir);
         at.baixando = 0;
         t = CreateThread(NULL, 0, atualizar, &at, 0, NULL);
-        if (t && WaitForSingleObject(t, 8000) == WAIT_TIMEOUT && at.baixando) WaitForSingleObject(t, 30000);
+        // sem pressa: rede lenta não pode fazer o lançador desistir de atualizar
+        if (t && WaitForSingleObject(t, 15000) == WAIT_TIMEOUT) {
+            anotar("a verificação passou de 15 s (%s)", at.baixando ? "já baixando" : "ainda procurando");
+            if (at.baixando) WaitForSingleObject(t, 60000);
+        }
     }
     if (UrlCreateFromPathW(html, url, &n, 0) != S_OK) return 1;
 
