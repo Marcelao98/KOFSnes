@@ -1,0 +1,25 @@
+const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const [,, html, rom, saida] = process.argv;
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+  const p = await (await b.newContext({ viewport: { width: 1000, height: 700 } })).newPage(); const erros = [], r = {};
+  p.on('pageerror', (e) => erros.push(e.message));
+  await p.goto('file://' + html); await p.waitForTimeout(500);
+  const [fc] = await Promise.all([p.waitForEvent('filechooser'), p.click('#home:not([hidden]) .hm-atalhos [data-acao="abrir"], #biblioteca:not([hidden]) [data-acao="abrir"]')]);
+  await fc.setFiles(rom); await p.waitForTimeout(3000);
+  const tema = () => p.evaluate(() => document.documentElement.dataset.tema);
+  await p.click('#menu .m > button:text-is("Tema")'); await p.waitForTimeout(200);
+  r.abriuDireto = await p.isVisible('#temas'); r.veu = await p.isVisible('#veu');
+  await p.hover('.previa[data-tema="classico98"]'); r.hoverMostra = await tema();
+  r.nome = await p.textContent('#tema-nome');
+  await p.screenshot({ path: saida + '/popup-hover.png' });
+  await p.mouse.move(5, 690); await p.waitForTimeout(100); r.saiuVolta = await tema();
+  await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowDown'); r.setas = await tema();
+  await p.keyboard.press('Escape'); r.escFecha = !(await p.isVisible('#temas')); r.escVolta = await tema();
+  await p.click('#menu .m > button:text-is("Tema")'); await p.waitForTimeout(200);
+  await p.click('.previa[data-tema="luna"]'); r.cliqueEscolhe = await tema(); r.fechouAoEscolher = !(await p.isVisible('#temas'));
+  await p.click('#menu .m > button:text-is("Tema")'); await p.waitForTimeout(200);
+  await p.mouse.click(5, 690); r.cliqueForaFecha = !(await p.isVisible('#temas'));
+  await p.reload(); await p.waitForTimeout(500); r.lembra = await tema();
+  console.log(JSON.stringify({ ...r, erros })); await b.close();
+})();

@@ -1,0 +1,12 @@
+const fs = require('fs'), vm = require('vm');
+const html = fs.readFileSync(process.argv[2], 'utf8');
+const ini = html.indexOf('const KofNucleo = '), fim = html.indexOf('</script>', ini);
+const ctx = { console, Math, performance }; vm.createContext(ctx);
+vm.runInContext(html.slice(ini, fim) + '\nthis.KofNucleo = KofNucleo;', ctx);
+const E = require(require('path').join(__dirname, '..', '..', 'web', 'estado.js'));
+const s = new ctx.KofNucleo.Snes(Int32Array.from(fs.readFileSync(process.argv[3]))); s.reset();
+for (let i = 0; i < 120; i++) s.runFrame();
+let t0 = performance.now(); for (let i = 0; i < 10; i++) E.capturar(s); const tc = (performance.now() - t0) / 10;
+t0 = performance.now(); for (let i = 0; i < 10; i++) s.runFrame(); const tf = (performance.now() - t0) / 10;
+const j = JSON.stringify(E.capturar(s));
+console.log({ capturarMs: tc.toFixed(1), quadroMs: tf.toFixed(1), jsonKB: (j.length / 1024).toFixed(0) });

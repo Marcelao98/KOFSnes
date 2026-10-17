@@ -1,0 +1,10 @@
+const fs = require('fs'), vm = require('vm');
+const html = fs.readFileSync(process.argv[2], 'utf8');
+const ini = html.indexOf('const KofNucleo = '), fim = html.indexOf('</script>', ini);
+const ctx = { console, Math, performance }; vm.createContext(ctx);
+vm.runInContext(html.slice(ini, fim) + '\nthis.KofNucleo = KofNucleo;', ctx);
+const Estado = require(require('path').join(__dirname, '..', '..', 'web', 'estado.js'));
+const s = new ctx.KofNucleo.Snes(Int32Array.from(fs.readFileSync(process.argv[3]))); s.reset(); s.runFrame();
+const foto = Estado.capturar(s); const lista = [];
+(function anda(n, cam) { for (const [k, v] of Object.entries(n.f || {})) { const t = JSON.stringify(v).length; if (t > 20000) lista.push([t, cam + '.' + k]); if (v && v.f) anda(v, cam + '.' + k); } })(foto.raiz, 'snes');
+lista.sort((a, b) => b[0] - a[0]).slice(0, 14).forEach(([t, c]) => console.log((t / 1024).toFixed(0).padStart(5), 'KB', c));
