@@ -30,7 +30,7 @@ Dois cliques no `KOFnes.exe` e você cai numa tela de Início bonita, com a sua 
 | 🎨 **28 temas** | consoles, Windows antigo, internet de 1999, anime e bem brasileiro, com galeria de prévias ao vivo |
 | 📺 **Imagem** | filtros WebGL (nítido, suave, CRT, fliperama, Game Boy, sépia, LCD), proporção 4:3 / 8:7 / esticar, tela cheia de verdade e **molduras** |
 | 💾 **Savestates** | por jogo, com print do momento, e **salvar automático** pra continuar de onde parou |
-| ⏪ **Rebobinar** | segure `Backspace` (ou `Select+Y`) e o jogo volta no tempo, até ~1 min e meio. Dá pra pausar, voltar até o ponto exato e salvar ali |
+| ⏪ **Rebobinar** | deu ruim? segure `Backspace` (ou `Select+Y`) e o jogo volta no tempo, em preto e branco, até 5 s (dá pra mudar em Emulação → Rebobinar). Depois uma ampulheta ⏳ recarrega enquanto você joga, estilo Príncipe da Pérsia |
 | 🎵 **Jukebox** | `F7` guarda a música que está tocando; abre e exporta `.spc`; mostra as 8 vozes do chip de som ao vivo e deixa silenciar cada uma |
 | 📊 **Estatísticas** | tempo jogado por jogo, sessões, primeira e última vez e o gráfico dos últimos 7 dias |
 | 🐞 **Caçador de bugs** | `F9` abre uma issue no GitHub já preenchida, com um pacote pra reproduzir o bug quadro a quadro |

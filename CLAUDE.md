@@ -98,6 +98,10 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   O perfil do Marcelo ficou com ~100 MB: **a otimizar** (medir por categoria na tela de Perfil, manter só
   os últimos N savestates por jogo, compactar o arquivo, deixar as capas de fora). No Windows dele o exe
   deu erro 12002 (timeout do WinHTTP) ao procurar atualização: se repetir, investigar proxy/IPv6.
+- **Rebobinar estilo Príncipe da Pérsia (branch de teste, ainda não publicado):** segurar Backspace/Select+Y
+  volta até 5 s em preto e branco; soltou ou acabou, o buffer zera e a ampulheta ⏳ leva 30 s de jogo pra
+  recarregar. Sem item no menu (savestates guardam momentos); só roda com o jogo andando. Chave
+  `kofnes.rebobLimite` (3/5/10/15) só pros testes. Teste: `testes/navegador/rebob.cjs`.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
