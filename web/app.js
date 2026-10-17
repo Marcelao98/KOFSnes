@@ -340,13 +340,13 @@ addEventListener('keydown', (e) => {
   if (e.code === 'F6') { e.preventDefault(); acao('estados'); return; }
   if (e.code === 'F8') { e.preventDefault(); acao('carregar-ultimo'); return; }
   if (e.code === 'F11') { e.preventDefault(); acao('cheia'); return; }
-  if (!$('#biblioteca').hidden) { listaTecla(e); return; }
   if (e.altKey && e.code === 'ArrowLeft') { e.preventDefault(); voltar(); return; }
   if (e.code === 'BrowserBack') { e.preventDefault(); voltar(); return; }
+  if (!$('#biblioteca').hidden) { listaTecla(e); return; }
   if (e.code === 'Home' && !e.target.closest('input, textarea')) { e.preventDefault(); acao('home'); return; }
   if (!$('#home').hidden) { if (homeTecla(e)) return; }
   const aberta = ['estados', 'guia', 'teclas', 'temas', 'estatisticas', 'jukebox'].some((id) => !$('#' + id).hidden);
-  if (e.code === 'Escape' && aberta) { voltar(); return; }
+  if (e.code === 'Escape' && aberta) { sairDaTela(); return; }
   if (e.code === 'F1') { e.preventDefault(); acao('reiniciar'); return; }
   if (e.code === 'KeyP' || e.code === 'Escape') { acao('pausar'); return; }
   if (e.code === 'KeyM') { acao('mudo'); return; }
@@ -1283,7 +1283,7 @@ async function abrirJogo(r, doZero) {
   } catch (e) { avisar(e.message, 4000); }
 }
 function listaTecla(e) {
-  if (e.code === 'Escape') { voltar(); return true; }
+  if (e.code === 'Escape') { sairDaTela(); return true; }
   const passo = { ArrowDown: colunas(), ArrowUp: -colunas(), ArrowRight: sofa ? 1 : 0, ArrowLeft: sofa ? -1 : 0 }[e.code];
   if (passo) {
     e.preventDefault(); marcarSel(selecionada + passo); return true;
@@ -1369,7 +1369,7 @@ function montarRapido() {
   });
 }
 function abrirRapido() {
-  if (!snes || rapidoAberto || !$('#bug').hidden) return;
+  if (!snes || rapidoAberto || !$('#bug').hidden || telaAtual() !== 'jogo') return;
   fecharMenus(); fecharJanelas();
   rapidoAberto = true; pausadoAntesRapido = pausado; pausado = true; teclado = 0;
   selR = 0; montarRapido(); $('#rapido').hidden = false;
@@ -1378,13 +1378,15 @@ function fecharRapido() {
   if (!rapidoAberto) return;
   rapidoAberto = false; $('#rapido').hidden = true; pausado = pausadoAntesRapido; sobra = 0;
 }
-// botão direito do mouse abre/fecha o menu rápido (o menu do navegador quebra a
+// botão direito do mouse: no jogo abre/fecha o menu rápido, nas telas faz Voltar (o menu do navegador quebra a
 // imersão); nas caixas de texto o menu do navegador continua, pra colar
 addEventListener('contextmenu', (e) => {
   if (e.target.closest('input, textarea')) return;
   e.preventDefault();
   if (rapidoAberto) fecharRapido();
-  else if (snes && $('#biblioteca').hidden && ['home', 'estados', 'guia', 'teclas', 'temas', 'estatisticas', 'bug', 'jukebox'].every((id) => $('#' + id).hidden)) abrirRapido();
+  else if (!$('#temas').hidden || !$('#bug').hidden) return;
+  else if (telaAtual() !== 'jogo') voltar();
+  else if (snes) abrirRapido();
 });
 // clique fora do menu rápido fecha ele
 addEventListener('mousedown', (e) => { if (rapidoAberto && e.button === 0 && !e.target.closest('#rapido')) fecharRapido(); });
@@ -1549,13 +1551,18 @@ new MutationObserver(() => {
     const t = telaAtual();
     if (t === telaConhecida) return;
     if (!voltandoHist && !(telaConhecida === 'jogo' && !snes)) { historico.push(telaConhecida); if (historico.length > 30) historico.shift(); }
-    telaConhecida = t; marcarLateral();
+    telaConhecida = t; if (t === 'jogo') historico = []; marcarLateral();
   }, 120);
 }).observe($('#palco'), { attributes: true, attributeFilter: ['hidden'], subtree: true });
+// Esc: fecha a tela e volta ao jogo (sem jogo, vai pro Início); já o Voltar anda pelo histórico de telas
+function sairDaTela() { if (snes) fecharJanelas(); else if (telaAtual() !== 'home') abrirHome(); }
 async function voltar() {
   let alvo;
-  do { alvo = historico.pop(); } while (alvo && (alvo === telaAtual() || (alvo === 'jogo' && !snes)));
-  if (!alvo) alvo = snes ? 'jogo' : 'home';
+  if (telaAtual() === 'jogo') alvo = 'home';
+  else {   // o jogo só entra quando não sobra tela anterior (senão o Voltar ficava indo e vindo do jogo)
+    const i = historico.findLastIndex((t) => t !== 'jogo' && t !== telaAtual());
+    if (i >= 0) { alvo = historico[i]; historico.length = i; } else { historico = []; alvo = snes ? 'jogo' : 'home'; }
+  }
   if (alvo === telaAtual()) return;
   voltandoHist = true;
   try { await abrirTela(alvo); } finally { setTimeout(() => { voltandoHist = false; }, 250); }
@@ -1729,7 +1736,7 @@ async function acao(a) {
       avisar(cacador ? '🐞 caçador de bugs ligado: se o emulador quebrar, ele oferece reportar' : 'caçador de bugs desligado'); break;
     case 'vol-menos': mudarVolume(-10); break;
     case 'vol-mais': mudarVolume(10); break;
-    case 'rapido': if (rapidoAberto) fecharRapido(); else if (snes) abrirRapido(); else avisar('abra um jogo primeiro'); break;
+    case 'rapido': if (rapidoAberto) fecharRapido(); else if (!snes) avisar('abra um jogo primeiro'); else if (telaAtual() !== 'jogo') avisar('o menu rápido é só durante o jogo'); else abrirRapido(); break;
     case 'pausa-auto':
       pausaAuto = !pausaAuto; guardar('pausaAuto', pausaAuto ? '1' : '0'); marcarSom();
       avisar(pausaAuto ? 'pausa ao sair da janela ligada' : 'pausa ao sair da janela desligada'); break;

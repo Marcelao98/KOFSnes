@@ -90,9 +90,10 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   de pedidos + honeypot. Sem internet/falha: cai no fluxo atual (issue preenchida no GitHub). Envio
   automático é só texto; o pacote do caçador de bugs continua baixado à parte (conferir antes se ele
   carrega trechos de ROM). Caixa de sugestões na mesma tela. A conta Cloudflare/token é do Marcelo.
-- **Navegação (relatório da matriz `testes/navegador/matriz.cjs`), aguardando decisão dele:** botão
-  direito não faz nada fora do jogo (de propósito, linha ~1383); com jogo carregado Voltar/Esc/Alt+←
-  vão direto pro jogo; F2 em qualquer tela pula pro jogo; Alt+← não funciona na Biblioteca.
+- **Navegação corrigida (falta publicar pelo atualizador):** botão direito nas telas = Voltar (no jogo,
+  menu rápido); Esc fecha a tela e volta ao jogo (sem jogo, Início); Voltar/Alt+←/botão 4 andam pelo
+  histórico de telas e só chegam ao jogo quando não sobra tela; F2/Select+Start só durante o jogo;
+  Alt+← funciona na Biblioteca. Conferido com `testes/navegador/matriz.cjs`.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
