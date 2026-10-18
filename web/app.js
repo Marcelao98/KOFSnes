@@ -1495,7 +1495,7 @@ const FRASES = {
   mp3: "Faixa 01 · Repetir tudo",
   gibi: "Edição especial · 52 páginas",
   interior: "Praça vazia, poste aceso.",
-  detetive: "Algo sobrenatural no ar.",
+  detetive: "Venha conhecer o outro mundo… dos jogos.",
   folhas: "Acredite! (e salve o jogo).",
   mar: "Rumo ao tesouro!",
   alquimia: "Troca equivalente: um save por uma fase.",
