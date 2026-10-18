@@ -99,7 +99,7 @@ const KofEstado = (() => {
   // mudaram desde a foto anterior, com o valor antigo. Voltar = aplicar o
   // desfazer na cabeça e copiar a cabeça pro console.
   const PEDACO = 64;
-  function Rebobinador(raiz, limiteBytes) {
+  function Rebobinador(raiz, limiteBytes, maxFotos) {
     let plano = null, cabeca = null, primsCab = null, fotos = [], bytes = 0;
     const palavras = (a) => (a.byteLength % 4 === 0 && a.byteOffset % 4 === 0
       ? new Int32Array(a.buffer, a.byteOffset, a.byteLength / 4) : new Uint8Array(a.buffer, a.byteOffset, a.byteLength));
@@ -143,7 +143,7 @@ const KofEstado = (() => {
       primsCab = plano.prims.map(([o, k]) => o[k]);
       fotos.push({ pedacos, prims: antigos, tam });
       bytes += tam + antigos.length * 8;
-      while (bytes > limiteBytes && fotos.length > 1) { const f = fotos.shift(); bytes -= f.tam + f.prims.length * 8; }
+      while ((bytes > limiteBytes || fotos.length > (maxFotos || Infinity)) && fotos.length > 1) { const f = fotos.shift(); bytes -= f.tam + f.prims.length * 8; }
     }
     function escreverNoConsole() {
       for (let i = 0; i < cabeca.length; i++) plano.vivas[i].set(cabeca[i]);

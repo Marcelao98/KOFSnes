@@ -370,8 +370,10 @@ addEventListener('blur', () => { teclado = 0; turbo = false; voltandoTecla = fal
 let ultimo = 0, sobra = 0, contados = 0, marco = 0;
 function laco(t) {
   requestAnimationFrame(laco);
-  if (snes && voltando() && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden && $('#home').hidden) { rebobinarPasso(); ultimo = marco = t; contados = 0; return; }
+  const querVoltar = snes && voltando() && !pausado && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden && $('#home').hidden;
+  if (querVoltar && rebob && (rebobinou || rebobPronto())) { rebobinarPasso(); ultimo = marco = t; contados = 0; return; }
   if (rebobinou) terminarRebobinar();
+  if (querVoltar && rebob && rebobRecarga > 0) avisar('⏳ rebobinar recarregando: ' + Math.ceil(rebobRecarga / 60) + ' s de jogo', 900);
   if (!snes || pausado || !$('#biblioteca').hidden || !$('#estados').hidden || !$('#jukebox').hidden || !$('#home').hidden || !$('#guia').hidden) { ultimo = marco = t; contados = 0; return; }
   if (juke.tocando) jukePausar();
   const dt = Math.min(t - ultimo, 100);
@@ -395,6 +397,11 @@ function laco(t) {
   if (vezes) desenhar();
   desdeFoto += vezes;
   if (rebobLigado && rebob && desdeFoto >= 2) { rebob.gravar(); desdeFoto = 0; }   // ~30 fotos por segundo
+  if (rebobRecarga > 0) {
+    rebobRecarga -= vezes;
+    if (rebobRecarga <= 0) { rebobRecarga = 0; avisar('⏳ rebobinar pronto', 1500); }
+    marcarAmpulheta();
+  }
   contados += vezes;
   if (t - marco >= 1000) {
     $('#st-fps').textContent = (pausado ? 'pausado · ' : '') + Math.round(contados * 1000 / (t - marco)) + ' fps';
@@ -598,7 +605,7 @@ async function enviarBug() {
   const desc = $('#bug-desc').value.trim() || '(sem descrição)', comPacote = $('#bug-pacote').checked && snes;
   const agora = new Date(), data = agora.toISOString().slice(0, 16).replace(/[-:T]/g, '');
   const jogo = snes ? { nome: romNome, titulo: snes.cart.title.trim(), tamanho: romAtual ? romAtual.length : 0, sha1: romAtual ? await sha1(romAtual) : '?', mapeamento: ['LoROM', 'HiROM', 'ExHiROM'][snes.cart.mapper] || '?', superfx: !!snes.cart.superfx } : null;
-  const opcoes = `tema ${temaSalvo} · filtro ${filtro} · proporção ${proporcao} · moldura ${moldura} · rebobinar ${rebobLigado ? 'sim' : 'não'}`;
+  const opcoes = `tema ${temaSalvo} · filtro ${filtro} · proporção ${proporcao} · moldura ${moldura} · rebobinar ${rebobLimite} s`;
   const erro = erroBug ? { mensagem: String(erroBug.message || erroBug), pilha: String(erroBug.stack || '').slice(0, 1500) } : null;
   let arquivo = '';
   if (comPacote) {
@@ -659,33 +666,37 @@ function avisarSeAtualizou() {
 }
 
 // ---------------- rebobinar ----------------
-// segura Backspace (ou Select+Y no controle) e o jogo volta no tempo, 2x mais
-// rápido que o normal; funciona pausado também: volta até o ponto certo e
-// aperta F5 pra guardar aquele momento num savestate
-let rebob = null, rebobLigado = ler('rebobinar') !== '0', desdeFoto = 0, voltandoTecla = false, rebobinou = 0;
+// Estilo Príncipe da Pérsia: segure Backspace (ou Select+Y) e o jogo volta no tempo, em preto e
+// branco, até 5 s. Soltou, ou acabou o tempo: a ampulheta zera e leva 6× isso de jogo pra encher
+// de novo. É o "deu ruim", não uma fita (pra guardar um momento existem os savestates).
+// Sem opção no menu; a chave "rebobLimite" do localStorage só existe pros testes.
+const RECARGA_X = 6;                        // jogar 6× o limite recarrega
+const rebobLimite = [3, 5, 10, 15].includes(+ler('rebobLimite')) ? +ler('rebobLimite') : 5;   // segundos
+let rebob = null, rebobLigado = true, desdeFoto = 0, voltandoTecla = false, rebobinou = 0, rebobRecarga = 0, rebobTotal = 1, ampTexto = '';
 const voltando = () => voltandoTecla || (estado() & 0x6000) === 0x6000;
-function novoRebob() { rebob = rebobLigado && snes ? KofEstado.Rebobinador(snes, 48 << 20) : null; desdeFoto = 0; novoMarco(true); }
-function mostrarRebob() {
-  const s = (rebobinou * 2 / 60).toFixed(1).replace('.', ',');
-  avisar(`⏪ −${s} s · ${rebob.fotos ? 'segure pra voltar mais' : 'não dá pra voltar mais'} · F5 salva este momento`, 1500);
+const rebobPronto = () => !!rebob && rebobRecarga <= 0 && rebob.fotos > 0;
+function novoRebob() {
+  rebob = rebobLigado && snes ? KofEstado.Rebobinador(snes, 48 << 20, rebobLimite * 30) : null;   // ~30 fotos por segundo
+  desdeFoto = 0; rebobRecarga = 0; marcarAmpulheta(); novoMarco(true);
+}
+function marcarAmpulheta() {
+  let txt = '', frac = 0;
+  if (rebobinou && rebob) { txt = '⏪ ' + (rebob.fotos / 30).toFixed(1).replace('.', ',') + ' s'; frac = rebob.fotos / (rebobLimite * 30); }
+  else if (rebobRecarga > 0) { txt = '⏳ ' + Math.ceil(rebobRecarga / 60) + ' s'; frac = 1 - rebobRecarga / rebobTotal; }
+  if (txt === ampTexto) return;
+  ampTexto = txt; const el = $('#ampulheta'); el.hidden = !txt;
+  if (txt) { el.firstElementChild.textContent = txt; el.style.setProperty('--enche', Math.round(frac * 100) + '%'); }
 }
 function rebobinarPasso() {
-  if (!rebob) { if (!rebobLigado) avisar('rebobinar está desligado (Emulação → Rebobinar)'); return; }
-  if (rebob.voltar()) rebobinou++;
+  if (!rebob.voltar()) { terminarRebobinar(); return; }   // acabou o tempo
+  rebobinou++; document.body.classList.add('rebobinando');
   snes.pad[0] = 0; snes.runFrame(); snes.apu.dsp.outCount = 0;    // um quadro pra ter a imagem daquele momento
-  desenhar(); mostrarRebob();
+  desenhar(); marcarAmpulheta();
 }
-function terminarRebobinar() { rebobinou = 0; ini = fim = 0; sobra = 0; desdeFoto = 0; novoMarco(true); }
-function voltarSegundos(seg) {   // do menu rápido: volta e fica pausado
-  if (!rebob) { avisar('rebobinar está desligado (Emulação → Rebobinar)'); return; }
-  let n = 0;
-  for (let i = 0; i < seg * 30 && rebob.voltar(); i++) n++;
-  snes.pad[0] = 0; snes.runFrame(); snes.apu.dsp.outCount = 0; desenhar(); novoMarco(true);
-  avisar(n ? `⏪ voltou ${(n * 2 / 60).toFixed(1).replace('.', ',')} s` : 'não dá pra voltar mais');
-}
-function marcarRebob() {
-  const b = $('[data-acao="rebob-toggle"]');
-  b.textContent = 'Rebobinar (Backspace): ' + (rebobLigado ? 'ligado' : 'desligado'); b.classList.toggle('ativo', rebobLigado);
+function terminarRebobinar() {
+  document.body.classList.remove('rebobinando');
+  if (rebobinou && rebob) { rebob.limpar(); rebobTotal = rebobRecarga = rebobLimite * RECARGA_X * 60; }   // usou: zera e recarrega
+  rebobinou = 0; ini = fim = 0; sobra = 0; desdeFoto = 0; novoMarco(true); marcarAmpulheta();
 }
 
 // ---------------- ROMs ----------------
@@ -1345,7 +1356,6 @@ const ITENS_RAPIDO = [
   { t: '▶ Continuar', f: () => fecharRapido() },
   { t: '💾 Salvar estado', f: () => { fecharRapido(); salvarEstado(); } },
   { t: '⟲ Carregar último estado', f: () => { fecharRapido(); carregarUltimo(); } },
-  { t: '⏪ Voltar 5 segundos', f: () => { voltarSegundos(5); } },
   { t: '🎵 Guardar esta música', f: () => { fecharRapido(); guardarMusica(); } },
   { t: '🐞 Reportar bug', f: () => { fecharRapido(); abrirBug(); } },
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
@@ -1457,7 +1467,7 @@ const LOGOS = { cafe: '☕', escuro: '🌙', claro: '☀️', zsnes: '🕹️', 
   branco: '🤍', laminas: '🟢', neon: '🕹️', classico98: '🪟', luna: '🌄', mensageiro: '💬', rosa2004: '💌', terminal: '⌨️', vapor: '🌴',
   web1: '🚧', esferas: '⭐', unidade01: '🤖', lua: '🌙', dourado: '✨', pokebola: '🔴', floresta: '🌿', desenho: '📺', camelo: '🎁', brasil: '🇧🇷' };
 const DICAS = [
-  'Segure <b>Backspace</b> pra voltar no tempo. Pausado, volte até o ponto exato e aperte <b>F5</b> pra guardar aquele momento.',
+  'Deu ruim? Segure <b>Backspace</b> (ou Select+Y): o jogo volta até 5 segundos, em preto e branco. Depois a ampulheta ⏳ recarrega enquanto você joga.',
   'O <b>botão direito</b> do mouse abre o menu rápido no meio do jogo.',
   'Tocou aquela música que você ama? <b>F7</b> guarda ela na Jukebox.',
   'Achou um bug? <b>F9</b> abre a issue no GitHub com tudo pra reproduzir.',
@@ -1721,9 +1731,6 @@ async function acao(a) {
     case 'reiniciar': if (snes) { snes.reset(); novoRebob(); avisar('reiniciado'); } break;
     case 'pausar': if (snes) { if (juke.tocando) jukePausar(); pausado = !pausado; avisar(pausado ? 'pausado' : 'continuando'); } break;
     case 'mudo': mudo = !mudo; guardar('mudo', mudo ? '1' : '0'); marcarSom(); avisar(mudo ? 'som desligado' : 'som ligado'); break;
-    case 'rebob-toggle':
-      rebobLigado = !rebobLigado; guardar('rebobinar', rebobLigado ? '1' : '0'); novoRebob(); marcarRebob();
-      avisar(rebobLigado ? 'rebobinar ligado: segure Backspace (ou Select+Y)' : 'rebobinar desligado'); break;
     case 'bug': abrirBug(); break;
     case 'atualizacao': await procurarAtualizacao(true); break;
     case 'jukebox': await abrirJuke(); break;
@@ -1795,7 +1802,6 @@ tema(ler('tema') || 'cafe');
 aplicarFiltro(filtro);
 marcarAuto();
 marcarSom();
-marcarRebob();
 marcarCacador();
 marcarPrincipais();
 avisarSeAtualizou();
@@ -1808,6 +1814,6 @@ window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
-  volume: () => volume, juke: () => ({ faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
+  volume: () => volume, juke: () => ({ faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, rebobEstado: () => ({ limite: rebobLimite, recarga: Math.round(rebobRecarga), fotos: rebob ? rebob.fotos : -1, ativo: !!rebobinou }), estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
   assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
 })();

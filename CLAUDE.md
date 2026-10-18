@@ -39,7 +39,7 @@ web/             A VERSÃO PRINCIPAL: o núcleo Kof → JavaScript num KOFnes.ht
   compilar.sh    build: kof build --target js → juntar.py → dist/web/KOFnes.html + KOFnes.exe
                  (mingw) + versao.txt + dist/KOFnes-windows.zip
   publicar.sh    compila e copia html/exe/versao.txt pra publicado/ (o atualizador lê de lá)
-  lancador_win.c o KOFnes.exe: atualizador (WinHTTP) + abre o html numa janela app do Edge
+  lancador_win.c o KOFnes.exe: atualizador (IP que responde + curl.exe; WinINet/WinHTTP de reserva) + abre o html numa janela app do Edge
   kof-js-correcoes.patch  correções no alvo JS do compilador Kof (sem elas o núcleo quebra)
 publicado/       a versão que o KOFnes.exe dos usuários baixa (raw.githubusercontent.com)
 bugs/reproduzir.cjs  roda um pacote do caçador de bugs (kofbug-*.json.gz) quadro a quadro
@@ -77,7 +77,7 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 - Atualizador: `publicado/versao.txt` tem `versao=AAAAMMDDHHMM`, `tamanho=`, `lancador=`,
   `tamanho_exe=`. O exe compara com o `versao.txt` local, baixa, confere tamanho/cabeçalho,
   troca, e anota tudo em `atualizacao.log` ao lado do exe. `LANCADOR` no `lancador_win.c`
-  (hoje 4) controla a troca do próprio exe; `lancador_linux=` e `tamanho_linux=` fazem o mesmo pro kofnes.sh.
+  (hoje 5) controla a troca do próprio exe; `lancador_linux=` e `tamanho_linux=` fazem o mesmo pro kofnes.sh.
 
 ## Pendências (atualizado 17/10)
 
@@ -93,16 +93,26 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 - **Publicado (17/10):** navegação corrigida (botão direito nas telas = Voltar; Esc = volta ao jogo;
   Voltar anda pelo histórico; F2 só no jogo), correção do foco (tirar print não pula pro jogo), menu
   Arquivo por cima da barra lateral e **lançador de Linux** (`web/lancador_linux.sh` → `kofnes.sh`, POSIX
-  sh, qualquer distro). No Windows do Marcelo o exe dava erro 12002 (timeout do WinHTTP) em toda abertura
-  com o Edge funcionando: o lançador 4 baixa pelo **WinINet** (mesma rede/proxy do Edge,
-  `web/lancador_inet.c`) e só cai pro WinHTTP se falhar.
+  sh, qualquer distro).
+- **Atualizador no Windows do Marcelo (branch `atualizador-wininet`, ainda não publicado):** o erro 12002
+  era a rede dele: só 1 dos 4 IPs do raw.githubusercontent.com responde (185.199.110.133) e o IPv6 não
+  sai. O **lançador 5** pede os IPv4 ao DNS, conecta em todos ao mesmo tempo e baixa pelo `curl.exe` do
+  Windows preso no IP que respondeu (`--resolve`); WinINet e WinHTTP ficam de reserva com prazo de 3 s.
+  Testado no Windows dele: atualiza em ~1 s. O lançador 4 (só WinINet) está publicado e não resolve.
 - **Perfil (`.kofperfil`) está só no branch `ccr-ff223c92-a1bil9`, FORA da main por pedido dele:** foi
   publicado na 202610172119 e retirado com `git revert` (commit "Revert Perfil...") + nova publicação.
   Pra trazer de volta: `git revert` desse revert na main (ou juntar o branch). Formato: `KOFPERFIL1` +
-  tamanho do cabeçalho + JSON + blocos binários. Ele disse que "quebrou tudo" ao carregar num
-  computador novo (jukebox etc.) e a causa **não foi achada**: o teste nunca guardou música na jukebox
-  (cobrir isso primeiro). ~100 MB a otimizar. O branch também tem o **rebobinar estilo Príncipe da
-  Pérsia** (5 s, preto e branco, ampulheta que recarrega) e o "Continuar sem ROM pede a pasta".
+  tamanho do cabeçalho + JSON + blocos binários. O "quebrou tudo (jukebox etc.)" era o **mudo**: carregar
+  o perfil copia todas as configs `kofnes.*`, inclusive `mudo=1`. Ao trazer de volta, não levar `mudo`
+  nem `volume` no arquivo. ~100 MB a otimizar. O "Continuar sem ROM pede a pasta" (`c1260eb`) também
+  ficou só nesse branch, porque só serve pro perfil.
+- **Aviso de mudo (branch `atualizador-wininet`):** "o som está desligado: aperte M pra ligar" ao abrir
+  um jogo e no play da jukebox.
+- **Rebobinar estilo Príncipe da Pérsia (trazido do branch do perfil pro `atualizador-wininet`, ainda não
+  publicado):** segurar Backspace/Select+Y volta até 5 s em preto e branco; soltou ou acabou, o buffer
+  zera e a ampulheta ⏳ leva 30 s de jogo pra recarregar. Sem item no menu (savestates guardam momentos);
+  só roda com o jogo andando. Chave `kofnes.rebobLimite` (3/5/10/15) só pros testes. Teste:
+  `testes/navegador/rebob.cjs`.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
