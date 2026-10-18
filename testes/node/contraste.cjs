@@ -1,8 +1,12 @@
-// Contraste (WCAG) dos oito temas de café, direto do estilo.css, e o tema original intacto.
+// Contraste (WCAG) dos temas novos (café, jogos, animais e Brasil), direto do estilo.css, e o tema original intacto.
 //   node testes/node/contraste.cjs [web/estilo.css]
 const fs = require('fs'), path = require('path');
 const css = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', '..', 'web', 'estilo.css'), 'utf8');
-const IDS = ['cafe', 'espresso', 'cappuccino', 'latte', 'mocha', 'caramelo', 'coldbrew', 'canela'];
+const IDS = ['cafe', 'espresso', 'cappuccino', 'latte', 'mocha', 'caramelo', 'coldbrew', 'canela',
+  'encanador', 'heroi', 'cacadora', 'corredor', 'blocos', 'arena', 'onca', 'arara', 'capivara', 'gato', 'raposa', 'panda', 'flamingo',
+  'carnaval', 'junina', 'litoral', 'sertao', 'amazonia',
+  'sessao', 'globinho', 'lanhouse', 'orkutmsn', 'dvdcamelo', 'locadora', 'caderno', 'recreio', 'boteco', 'chuva', 'almoco', 'feira',
+  'brasil98', 'hexa2002', 'ferias', 'juninaescola', 'casavo', 'mp3', 'gibi', 'interior'];
 const lum = (h) => { const n = h.replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 const razao = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 function vars(id) {

@@ -35,7 +35,7 @@ web/             A VERSÃO PRINCIPAL: o núcleo Kof → JavaScript num KOFnes.ht
                  rebobinar, jukebox, estatísticas, caçador de bugs, atualizações...
   estado.js      savestate genérico (KofEstado.capturar/restaurar) + Rebobinador (fotos delta)
   spc.js         ler/gravar arquivos .spc (jukebox)
-  pagina.html, estilo.css (28 temas por variáveis CSS), juntar.py (monta o HTML)
+  pagina.html, estilo.css (73 temas por variáveis CSS), juntar.py (monta o HTML)
   compilar.sh    build: kof build --target js → juntar.py → dist/web/KOFnes.html + KOFnes.exe
                  (mingw) + versao.txt + dist/KOFnes-windows.zip
   publicar.sh    compila e copia html/exe/versao.txt pra publicado/ (o atualizador lê de lá)
@@ -123,6 +123,10 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   Tokens do sistema: `--fundo`, `--painel`/`--painel2`, `--texto`, `--fraco`, `--destaque`, `--borda`, `--sel` e (novos,
   opcionais) `--botao-fundo`/`--botao-texto` pro `.grande`. Foco de teclado e `:disabled` agora valem pra todos os temas.
   Testes: `testes/node/contraste.cjs` (WCAG dos 8) e `testes/navegador/pacote-cafe.cjs`.
+- **Pacotes Jogos, Animais e Nostalgia BR (branch `temas-menu`, não publicado):** 73 temas no total. `TEMAS` aceita descrição
+  opcional (`[id, nome, descrição]`, aparece na prévia e entra na busca); Nostalgia BR tem 20 com descrição. Só cor, gradiente e
+  textura leve em `--fundo-img` (sem imagem, sem nome de marca). Testes: `testes/node/contraste.cjs` (lista de ids no topo; todo
+  tema novo entra lá) e `testes/navegador/nostalgia-br.cjs`.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;

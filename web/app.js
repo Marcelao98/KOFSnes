@@ -1475,9 +1475,47 @@ const FRASES = {
   dourado: 'Eleve seu cosmo e aperte Start.', pokebola: 'Um jogo selvagem apareceu!', floresta: 'Um bom lugar pra se perder num jogo.',
   espresso: 'Curto, forte e sem açúcar.', cappuccino: 'Com espuma e tudo.', latte: 'Leve, cremoso e sem pressa.', mocha: 'Café com chocolate: fase boa.',
   caramelo: 'Doce o bastante pra mais uma fase.', coldbrew: 'Devagar, gelado e no ponto.', canela: 'Um cheirinho de canela e bora.',
+  sessao: "Hoje tem filme e pipoca.",
+  globinho: "Já acabou o desenho?!",
+  lanhouse: "Mais 5 minutos, tio!",
+  orkutmsn: "Fulano está online.",
+  dvdcamelo: "Menu principal · Cenas · Extras",
+  locadora: "Lembre-se: rebobine antes de devolver.",
+  caderno: "Anote tudo, menos a cola.",
+  recreio: "Tocou o sinal!",
+  boteco: "Uma geladinha e mais uma fase.",
+  chuva: "Barulho de chuva no telhado.",
+  almoco: "Já pode sentar, tá na mesa.",
+  feira: "Olha a banana, madame!",
+  brasil98: "Tempo de CD-ROM e enciclopédia.",
+  hexa2002: "É penta! (e já já é hexa)",
+  ferias: "Foto da praia, câmera digital e areia no pé.",
+  juninaescola: "Olha a cobra! É mentira!",
+  casavo: "Come mais um pouquinho.",
+  mp3: "Faixa 01 · Repetir tudo",
+  gibi: "Edição especial · 52 páginas",
+  interior: "Praça vazia, poste aceso.",
   desenho: 'Tá na hora do desenho… digo, do jogo!', camelo: '9999 JOGOS EM 1 (e esse funciona)', brasil: 'Bora jogar, Brasil!',
+  encanador: "Pula, pula, pula!",
+  heroi: "É perigoso ir sozinho. Leve um jogo.",
+  cacadora: "Missão: zerar o jogo. Sem baixas.",
+  corredor: "Mais rápido que o som. Menos que o 60 fps.",
+  blocos: "Linha completa!",
+  arena: "FIGHT! Round 1.",
+  onca: "Silêncio na mata… e Start na mão.",
+  arara: "Voando alto, jogando bonito.",
+  capivara: "Calma. O jogo espera.",
+  gato: "Sete vidas. Um save.",
+  raposa: "Esperta, rápida e sem pausa.",
+  panda: "Bambu, calma e um joguinho.",
+  flamingo: "Numa perna só e jogando.",
+  carnaval: "Hoje o jogo é de bloco.",
+  junina: "Quentão, fogueira e fase nova.",
+  litoral: "Maré boa pra jogar.",
+  sertao: "Sol a pino e jogo no ponto.",
+  amazonia: "Mata fechada, tela aberta.",
 };
-const LOGOS = { cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
+const LOGOS = { sessao: '📺', globinho: '🖍️', lanhouse: '🖥️', orkutmsn: '💬', dvdcamelo: '📀', locadora: '📼', caderno: '📓', recreio: '🍬', boteco: '🍺', chuva: '🌧️', almoco: '🍲', feira: '🍅', brasil98: '🛰️', hexa2002: '⚽', ferias: '🏖️', juninaescola: '🎏', casavo: '🧶', mp3: '🎧', gibi: '🦸', interior: '🏘️', encanador: '🍄', heroi: '🗡️', cacadora: '🚀', corredor: '💨', blocos: '🧱', arena: '🥊', onca: '🐆', arara: '🦜', capivara: '🦫', gato: '🐈‍⬛', raposa: '🦊', panda: '🐼', flamingo: '🦩', carnaval: '🎭', junina: '🎏', litoral: '🏖️', sertao: '🌵', amazonia: '🌳', cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
   branco: '🤍', laminas: '🟢', neon: '🕹️', classico98: '🪟', luna: '🌄', mensageiro: '💬', rosa2004: '💌', terminal: '⌨️', vapor: '🌴',
   web1: '🚧', esferas: '⭐', unidade01: '🤖', lua: '🌙', dourado: '✨', pokebola: '🔴', floresta: '🌿', desenho: '📺', camelo: '🎁', brasil: '🇧🇷' };
 const DICAS = [
@@ -1645,7 +1683,30 @@ const TEMAS = [
     ['terminal', 'Terminal'], ['vapor', 'Vaporwave'], ['web1', 'Web 1.0']]],
   ['Anime', [['esferas', 'Esferas do dragão'], ['unidade01', 'Unidade 01'], ['lua', 'Guerreira da lua'], ['dourado', 'Cavaleiro dourado'],
     ['pokebola', 'Caçador de monstrinhos'], ['floresta', 'Floresta encantada']]],
-  ['Bem brasileiro', [['desenho', 'Manhã de desenho'], ['camelo', 'Console de camelô'], ['brasil', 'Brasil']]],
+  ['Jogos', [['encanador', 'Mundo dos encanadores'], ['heroi', 'Herói de verde'], ['cacadora', 'Caçadora espacial'], ['corredor', 'Corredor azul'], ['blocos', 'Blocos que caem'], ['arena', 'Arena de luta']]],
+  ['Animais', [['onca', 'Onça-pintada'], ['arara', 'Arara-azul'], ['capivara', 'Capivara zen'], ['gato', 'Gato preto'], ['raposa', 'Raposa'], ['panda', 'Panda'], ['flamingo', 'Flamingo']]],
+  ['Bem brasileiro', [['desenho', 'Manhã de desenho'], ['camelo', 'Console de camelô'], ['brasil', 'Brasil'], ['carnaval', 'Carnaval'], ['junina', 'Festa junina'], ['litoral', 'Litoral'], ['sertao', 'Sertão'], ['amazonia', 'Amazônia']]],
+  ['Nostalgia BR', [
+    ['sessao', 'Sessão da Tarde', 'Azul de televisão, sol de tarde e laranja de VHS.'],
+    ['globinho', 'TV Globinho', 'Azul elétrico, amarelo vibrante e vermelho de desenho animado.'],
+    ['lanhouse', 'Lan House 2007', 'Preto, verde de terminal e a luz de um monitor de tubo.'],
+    ['orkutmsn', 'Orkut & MSN', 'Roxo e azul com gradiente, de quando todo mundo tinha scrapbook.'],
+    ['dvdcamelo', 'DVD de Camelô', 'Preto, prata e vermelho de capa de DVD e menu antigo.'],
+    ['locadora', 'A Locadora', 'Azul-marinho, vinho e creme de capa de VHS.'],
+    ['caderno', 'Caderno de Escola', 'Papel pautado, azul de caneta e margem vermelha.'],
+    ['recreio', 'Recreio', 'Verde de quadra, amarelo de sol e doce de embalagem.'],
+    ['boteco', 'Boteco do Bairro', 'Verde-garrafa, madeira escura e luz quente de fim de tarde.'],
+    ['chuva', 'Chuva no Interior', 'Cinza azulado, verde apagado e uma luz amarela acolhedora.'],
+    ['almoco', 'Almoço de Domingo', 'Creme, terracota e verde-oliva de mesa de família.'],
+    ['feira', 'Feira de Domingo', 'Vermelho tomate, amarelo banana e verde folha de feira livre.'],
+    ['brasil98', 'Brasil 1998', 'Verde escuro, amarelo envelhecido e azul de céu.'],
+    ['hexa2002', 'Hexa 2002', 'Amarelo canário, verde bandeira e azul profundo de Copa.'],
+    ['ferias', 'Férias de Verão', 'Turquesa, coral e sol, como álbum de férias.'],
+    ['juninaescola', 'Festa Junina da Escola', 'Azul de noite, laranja de fogueira e bandeirinhas.'],
+    ['casavo', 'Casa da Vó', 'Creme, madeira, verde antigo e a luz do abajur.'],
+    ['mp3', 'MP3 & Fone de Ouvido', 'Prata metálico, preto e azul neon de tocador de MP3.'],
+    ['gibi', 'Gibi da Banca', 'Vermelho, amarelo, azul e papel envelhecido de gibi.'],
+    ['interior', 'Cidade do Interior', 'Azul de anoitecer, laranja de poste e concreto de rua tranquila.']]],
 ];
 const TODOS_TEMAS = TEMAS.flatMap(([, l]) => l);
 document.querySelectorAll('.n-temas').forEach((e) => { e.textContent = TODOS_TEMAS.length; });
@@ -1659,20 +1720,20 @@ function experimentar(id) {
   $('#tema-nome').textContent = t ? '· ' + t[1] + (id === temaSalvo ? ' (em uso)' : '') : '';
 }
 // A galeria tem uma caixa de busca e uma fileira de categorias (os grupos de TEMAS, mais "Todos").
-// Pra colocar tema novo: um bloco [data-tema="id"] no estilo.css + uma linha em TEMAS (o grupo novo
+// Pra colocar tema novo: um bloco [data-tema="id"] no estilo.css + uma linha em TEMAS ([id, nome, descrição opcional]) (o grupo novo
 // aparece sozinho como categoria). A busca acha por nome, categoria ou id, sem ligar pra acento.
 let temasCat = 'todos', temasBusca = '';
 const semAcento = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-function achaTema(grupo, id, nome) {
-  const palavras = semAcento(temasBusca).split(/\s+/).filter(Boolean), alvo = semAcento(`${nome} ${grupo} ${id}`);
+function achaTema(grupo, id, nome, desc) {
+  const palavras = semAcento(temasBusca).split(/\s+/).filter(Boolean), alvo = semAcento(`${nome} ${grupo} ${id} ${desc || ''}`);
   return palavras.every((p) => alvo.includes(p));
 }
 function temasFiltrados() {   // [[grupo, [[id, nome]...]]...] só com o que passa na categoria e na busca
-  return TEMAS.map(([grupo, lista]) => [grupo, lista.filter(([id, nome]) => (temasCat === 'todos' || temasCat === grupo) && achaTema(grupo, id, nome))]).filter(([, l]) => l.length);
+  return TEMAS.map(([grupo, lista]) => [grupo, lista.filter(([id, nome, desc]) => (temasCat === 'todos' || temasCat === grupo) && achaTema(grupo, id, nome, desc))]).filter(([, l]) => l.length);
 }
 function montarCategorias() {
   const c = $('#temas-cats'); c.innerHTML = '';
-  const cont = TEMAS.map(([grupo, lista]) => [grupo, lista.filter(([id, nome]) => achaTema(grupo, id, nome)).length]);
+  const cont = TEMAS.map(([grupo, lista]) => [grupo, lista.filter(([id, nome, desc]) => achaTema(grupo, id, nome, desc)).length]);
   const total = cont.reduce((t, [, n]) => t + n, 0);
   for (const [cat, rotulo, n] of [['todos', 'Todos', total], ...cont.map(([g, n]) => [g, g, n])]) {
     const b = document.createElement('button'); b.className = 'cat' + (cat === temasCat ? ' ativo' : ''); b.dataset.cat = cat;
@@ -1689,10 +1750,11 @@ function montarTemas() {
   for (const [grupo, lista] of filtrados) {
     const h = document.createElement('h3'); h.textContent = grupo; g.appendChild(h);
     const d = document.createElement('div'); d.className = 'temas-grupo';
-    for (const [id, nome] of lista) {
-      const b = document.createElement('button'); b.className = 'previa'; b.dataset.tema = id; b.title = nome;
-      b.innerHTML = '<span class="pv-barra"></span><span class="pv-corpo"><span class="pv-nome"></span><span class="pv-tela"></span><span class="pv-bot"></span></span>';
+    for (const [id, nome, desc] of lista) {
+      const b = document.createElement('button'); b.className = 'previa'; b.dataset.tema = id; b.title = desc ? `${nome}: ${desc}` : nome;
+      b.innerHTML = '<span class="pv-barra"></span><span class="pv-corpo"><span class="pv-nome"></span><span class="pv-desc"></span><span class="pv-tela"></span><span class="pv-bot"></span></span>';
       b.querySelector('.pv-nome').textContent = nome;
+      b.querySelector('.pv-desc').textContent = desc || '';
       b.classList.toggle('ativo', temaSalvo === id);
       b.addEventListener('mouseenter', () => experimentar(id));
       b.addEventListener('focus', () => experimentar(id));

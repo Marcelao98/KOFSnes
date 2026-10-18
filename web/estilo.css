@@ -802,3 +802,273 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
 }
 [data-tema="canela"] .janela, [data-tema="canela"] .sub, [data-tema="canela"] #rapido { box-shadow: inset 0 0 0 3px var(--painel), inset 0 0 0 4px var(--borda), var(--brilho); }
 [data-tema="canela"] .titulo-j { background: var(--destaque); color: var(--painel); border-bottom-color: var(--destaque); }
+
+/* Pacote Jogos, Animais e mais Brasil: só cor e clima, nenhum nome ou imagem de obra */
+[data-tema="encanador"] {
+  --fundo: #8fc4ff; --painel: #fff7e0; --painel2: #ffffff; --texto: #1c1740; --fraco: #4a4470;
+  --destaque: #c62828; --borda: #1c1740; --sel: #ffd966; --tela-borda: #c62828;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: uppercase; --raio: 4px; --brilho: 0 6px 0 #1c174055;
+  --fundo-img: radial-gradient(ellipse 14% 6% at 18% 16%, #ffffff 0 98%, transparent), radial-gradient(ellipse 18% 7% at 72% 28%, #ffffff 0 98%, transparent), linear-gradient(transparent 94%, #b5651d 94%);
+}
+[data-tema="encanador"] .titulo-j { background: #c62828; color: #fff7e0; border-bottom: 3px solid #1c1740; }
+[data-tema="heroi"] {
+  --fundo: #12261a; --painel: #1f3d2a; --painel2: #2c5238; --texto: #f1f0d4; --fraco: #b5c9a0;
+  --destaque: #e8c547; --borda: #5e8a4a; --sel: #3d6b3f; --tela-borda: #e8c547;
+  --fonte: "Palatino Linotype", "Book Antiqua", Palatino, serif; --caixa: none; --raio: 6px; --brilho: 0 8px 28px #000a;
+  --fundo-img: radial-gradient(circle at 50% 0%, #e8c54722, transparent 55%);
+}
+[data-tema="heroi"] .janela, [data-tema="heroi"] .sub, [data-tema="heroi"] #rapido { box-shadow: inset 0 0 0 2px #1f3d2a, inset 0 0 0 3px #e8c54788, var(--brilho); }
+[data-tema="cacadora"] {
+  --fundo: #060b14; --painel: #101a2b; --painel2: #182638; --texto: #e6f0f7; --fraco: #8fa7bd;
+  --destaque: #ff9a1f; --borda: #2d4a63; --sel: #1e3a52; --tela-borda: #ff9a1f;
+  --fonte: "Consolas", "Lucida Console", "DejaVu Sans Mono", monospace; --caixa: uppercase; --raio: 2px; --brilho: 0 0 24px #ff9a1f22, 0 10px 30px #000a;
+  --fundo-img: radial-gradient(1px 1px at 20% 30%, #fff9, transparent), radial-gradient(1px 1px at 60% 70%, #fff8, transparent), radial-gradient(1.5px 1.5px at 85% 20%, #fffc, transparent), radial-gradient(1px 1px at 40% 85%, #fff8, transparent);
+}
+[data-tema="cacadora"] .titulo-j { border-left: 4px solid var(--destaque); }
+[data-tema="corredor"] {
+  --fundo: #0a2a8a; --painel: #123fb8; --painel2: #1846c4; --texto: #ffffff; --fraco: #c4d4ff;
+  --destaque: #ffd400; --borda: #7aa6ff; --sel: #2a63e8; --tela-borda: #ffd400;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 10px; --brilho: 0 8px 26px #00104acc;
+  --fundo-img: repeating-conic-gradient(#0a2a8a 0 25%, #0c309c 0 50%) 0 0 / 56px 56px;
+}
+[data-tema="corredor"] .titulo-j { font-style: italic; }
+[data-tema="blocos"] {
+  --fundo: #0b0b14; --painel: #14142a; --painel2: #1d1d3a; --texto: #f0f0ff; --fraco: #a5a5cc;
+  --destaque: #00e5ff; --borda: #3a3a70; --sel: #2a2a5c; --tela-borda: #00e5ff;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 0; --brilho: 0 0 0 1px #3a3a70, 0 10px 30px #000a;
+  --fundo-img: linear-gradient(transparent 0, transparent);
+}
+[data-tema="blocos"] .titulo-j { border-top: 4px solid; border-image: linear-gradient(90deg,#00e5ff,#2979ff,#ff9100,#ffd600,#00e676,#d500f9,#ff1744) 1; }
+[data-tema="arena"] {
+  --fundo: #1a0505; --painel: #2e0a0a; --painel2: #431010; --texto: #fff2e0; --fraco: #e0a89a;
+  --destaque: #ffcc00; --borda: #a31515; --sel: #7a1515; --tela-borda: #ffcc00;
+  --fonte: Impact, "Arial Narrow", "Arial Black", sans-serif; --caixa: uppercase; --raio: 0; --brilho: 0 0 0 2px #a31515, 0 10px 30px #000b;
+  --fundo-img: repeating-linear-gradient(115deg, transparent 0 34px, #a3151514 34px 68px);
+}
+[data-tema="arena"] .titulo-j { letter-spacing: .08em; background: linear-gradient(90deg, #a31515, transparent); }
+[data-tema="onca"] {
+  --fundo: #17120a; --painel: #2a2010; --painel2: #3b2d17; --texto: #f7e7c2; --fraco: #c8b080;
+  --destaque: #f2a516; --borda: #6b4a14; --sel: #5a3c10; --tela-borda: #f2a516;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 14px; --brilho: 0 8px 30px #000a;
+  --fundo-img: radial-gradient(circle at 12% 22%, #0000 0 10px, #00000055 11px 15px, transparent 16px), radial-gradient(circle at 78% 68%, #0000 0 14px, #00000055 15px 20px, transparent 21px), radial-gradient(circle at 52% 10%, #0000 0 8px, #00000055 9px 12px, transparent 13px), linear-gradient(160deg, #2a1d0a, #17120a);
+}
+[data-tema="arara"] {
+  --fundo: #07194a; --painel: #0e2a7a; --painel2: #153a9c; --texto: #fff9e0; --fraco: #b8c8ff;
+  --destaque: #ffd23f; --borda: #4a73e0; --sel: #2450c4; --tela-borda: #ffd23f;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 16px; --brilho: 0 8px 28px #00093acc;
+  --fundo-img: radial-gradient(circle at 90% 8%, #ffd23f33, transparent 40%);
+}
+[data-tema="capivara"] {
+  --fundo: #cdbf9f; --painel: #e6dcc4; --painel2: #f2ebd9; --texto: #3a2f1f; --fraco: #524530;
+  --destaque: #4d5a28; --borda: #a99b78; --sel: #d7c9a5; --tela-borda: #8b7d58;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 22px; --brilho: 0 8px 24px #4a3a1a2e;
+  --fundo-img: linear-gradient(180deg, #d6caa9, #c5b78f);
+}
+[data-tema="gato"] {
+  --fundo: #0a0a0c; --painel: #131318; --painel2: #1c1c24; --texto: #ececf2; --fraco: #9a9aaa;
+  --destaque: #a6e22e; --borda: #2c2c3a; --sel: #262633; --tela-borda: #a6e22e;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 14px; --brilho: 0 8px 30px #000c;
+  --fundo-img: radial-gradient(ellipse 30% 3% at 50% 100%, #a6e22e22, transparent);
+}
+[data-tema="raposa"] {
+  --fundo: #fbe9da; --painel: #fff7ef; --painel2: #ffffff; --texto: #2b1a12; --fraco: #6b4a38;
+  --destaque: #b24616; --borda: #e5b99c; --sel: #fbd9bd; --tela-borda: #b24616;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 12px; --brilho: 0 8px 24px #7a3a1a2e;
+  --fundo-img: linear-gradient(135deg, #fbe9da 0 70%, #f7d2b4 70%);
+}
+[data-tema="panda"] {
+  --fundo: #eef0ec; --painel: #ffffff; --painel2: #f6f7f4; --texto: #1a1a1a; --fraco: #55595a;
+  --destaque: #2f7d3b; --borda: #d2d6cf; --sel: #dfeadb; --tela-borda: #1a1a1a;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 16px; --brilho: 0 8px 24px #1a1a1a1f;
+  --fundo-img: none;
+}
+[data-tema="panda"] .titulo-j { background: #1a1a1a; color: #ffffff; border-bottom-color: #1a1a1a; }
+[data-tema="flamingo"] {
+  --fundo: #ffd9e0; --painel: #fff0f3; --painel2: #ffffff; --texto: #4a1020; --fraco: #8a3a52;
+  --destaque: #b8124f; --borda: #f0a8bb; --sel: #ffc9d6; --tela-borda: #b8124f;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 18px; --brilho: 0 8px 24px #b8124f2e;
+  --fundo-img: radial-gradient(circle at 12% 0%, #ffffffaa, transparent 45%);
+}
+[data-tema="carnaval"] {
+  --fundo: #1a0633; --painel: #2d0b57; --painel2: #43107f; --texto: #fff4ff; --fraco: #dcc2f4;
+  --destaque: #ffc400; --borda: #c026d3; --sel: #6d1fb0; --tela-borda: #ffc400;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 14px; --brilho: 0 0 30px #c026d344, 0 10px 30px #000a;
+  --fundo-img: radial-gradient(circle at 15% 15%, #ffc40033 0 3px, transparent 4px), radial-gradient(circle at 70% 30%, #c026d355 0 4px, transparent 5px), radial-gradient(circle at 40% 80%, #19e0b855 0 3px, transparent 4px), radial-gradient(circle at 90% 85%, #ffc40044 0 4px, transparent 5px);
+}
+[data-tema="carnaval"] .titulo-j { background: linear-gradient(90deg, #c026d3, #6d1fb0); }
+[data-tema="junina"] {
+  --fundo: #e8c98f; --painel: #f7ecd2; --painel2: #fff8e6; --texto: #3a1f0a; --fraco: #6a4420;
+  --destaque: #b3261e; --borda: #c9a45c; --sel: #f3d59a; --tela-borda: #b3261e;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 6px; --brilho: 0 8px 22px #6a44203a;
+  --fundo-img: linear-gradient(180deg, #ecd09b, #e2be7f);
+}
+[data-tema="junina"] .titulo-j { border-bottom: 3px dashed #b3261e; }
+[data-tema="litoral"] {
+  --fundo: #bfe3ee; --painel: #fdf8ec; --painel2: #fffdf6; --texto: #0d3342; --fraco: #3f6371;
+  --destaque: #00758f; --borda: #9ccddb; --sel: #d9eef4; --tela-borda: #00758f;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 14px; --brilho: 0 8px 24px #0d33422e;
+  --fundo-img: linear-gradient(#cfeaf3, #aedbe8 70%, #f0e2bd 70%);
+}
+[data-tema="sertao"] {
+  --fundo: #e0b27a; --painel: #f6e3c3; --painel2: #fcf0d8; --texto: #3b1d0a; --fraco: #623f1c;
+  --destaque: #4d6b1f; --borda: #c28f55; --sel: #f0cf98; --tela-borda: #4d6b1f;
+  --fonte: "Palatino Linotype", "Book Antiqua", Palatino, serif; --caixa: none; --raio: 4px; --brilho: 0 8px 22px #7a4a1a3a;
+  --fundo-img: radial-gradient(circle at 85% 8%, #fff0c8cc 0, #fff0c800 30%), linear-gradient(#e6bd88, #d9a468);
+}
+[data-tema="amazonia"] {
+  --fundo: #06190f; --painel: #0c2e1c; --painel2: #134229; --texto: #e6f7e9; --fraco: #8fc7a0;
+  --destaque: #7be07b; --borda: #1f6b3d; --sel: #1a5a34; --tela-borda: #7be07b;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 12px; --brilho: 0 8px 30px #000a;
+  --fundo-img: radial-gradient(ellipse 60% 40% at 50% -10%, #7be07b22, transparent 70%), repeating-linear-gradient(100deg, transparent 0 30px, #7be07b07 30px 31px);
+}
+
+/* Nostalgia BR: memória afetiva brasileira. Só cor, gradiente e clima (sem nome de marca, obra ou foto) */
+[data-tema="sessao"] {
+  --fundo: #fbe3a6; --painel: #fff6dc; --painel2: #fffbee; --texto: #1d2a4a; --fraco: #4b5878;
+  --destaque: #1f4fb0; --borda: #e8b95a; --sel: #ffd98a; --tela-borda: #e8661a;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 10px; --brilho: 0 8px 24px #8a5a1a30;
+  --fundo-img: radial-gradient(circle at 90% 0%, #fff3b8 0, #fff3b800 45%), repeating-linear-gradient(0deg, #0000000a 0 1px, transparent 1px 3px), linear-gradient(#fbe3a6, #f6cf86);
+}
+[data-tema="sessao"] .titulo-j { background: linear-gradient(90deg, #ff9a3c, #ffd24a); color: #1d2a4a; border-bottom-color: #e8661a; }
+[data-tema="globinho"] {
+  --fundo: #0b1c7a; --painel: #12299b; --painel2: #1b38b8; --texto: #fff9d6; --fraco: #b9c6ff;
+  --destaque: #ffd400; --borda: #3a55e0; --sel: #2a49cc; --tela-borda: #ff3040;
+  --botao-fundo: #d91c29; --botao-texto: #ffffff;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 20px; --brilho: 0 8px 0 #060f4a, 0 12px 30px #000a;
+  --fundo-img: radial-gradient(circle at 12% 18%, #ffd40033 0 8%, transparent 8.5%), radial-gradient(circle at 88% 78%, #ff304033 0 10%, transparent 10.5%), linear-gradient(#0b1c7a, #0a1766);
+}
+[data-tema="globinho"] .janela, [data-tema="globinho"] .sub, [data-tema="globinho"] #rapido { border: 3px solid #ffd400; }
+[data-tema="lanhouse"] {
+  --fundo: #050a06; --painel: #0b140d; --painel2: #121f15; --texto: #c9f7c9; --fraco: #7fb589;
+  --destaque: #39ff6a; --borda: #1f4a2a; --sel: #174a26; --tela-borda: #39ff6a;
+  --fonte: "Consolas", "Lucida Console", "DejaVu Sans Mono", monospace; --caixa: uppercase; --raio: 0px; --brilho: 0 0 22px #39ff6a1c, 0 10px 30px #000c;
+  --fundo-img: repeating-linear-gradient(0deg, #39ff6a0b 0 1px, transparent 1px 3px), radial-gradient(ellipse 80% 70% at 50% 40%, #39ff6a10, transparent 75%);
+}
+[data-tema="lanhouse"] .titulo-j { border-bottom: 1px solid #39ff6a; letter-spacing: .08em; }
+[data-tema="orkutmsn"] {
+  --fundo: #1c1240; --painel: #2a1a66; --painel2: #36237f; --texto: #f3eeff; --fraco: #bfb0f0;
+  --destaque: #5cc8ff; --borda: #5a46b8; --sel: #4a35a0; --tela-borda: #5cc8ff;
+  --botao-fundo: #ff5fb0; --botao-texto: #1c1240;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 10px; --brilho: 0 8px 28px #0009;
+  --fundo-img: radial-gradient(circle at 15% 10%, #5b34c966 0, transparent 45%), radial-gradient(circle at 85% 90%, #2f7be055 0, transparent 45%), linear-gradient(#1c1240, #170e36);
+}
+[data-tema="orkutmsn"] .titulo-j { background: linear-gradient(90deg, #5b34c9, #2f7be0); color: #fff; border-bottom-color: #5cc8ff; }
+[data-tema="dvdcamelo"] {
+  --fundo: #0a0a0c; --painel: #151518; --painel2: #1f1f24; --texto: #f1f1f5; --fraco: #a8a8b4;
+  --destaque: #ff4a4a; --borda: #5a5a66; --sel: #2c2c34; --tela-borda: #c8c8d2;
+  --botao-fundo: #d41e1e; --botao-texto: #ffffff;
+  --fonte: "Arial Narrow", "Segoe UI", sans-serif; --caixa: uppercase; --raio: 2px; --brilho: 0 10px 30px #000d;
+  --fundo-img: repeating-linear-gradient(135deg, #ffffff06 0 2px, transparent 2px 10px), radial-gradient(ellipse 60% 40% at 50% -10%, #c8c8d230, transparent 70%);
+}
+[data-tema="dvdcamelo"] .titulo-j { background: linear-gradient(#e6e6ee, #a0a0ac); color: #0a0a0c; border-bottom-color: #ff4a4a; }
+[data-tema="locadora"] {
+  --fundo: #121c33; --painel: #1b2a4a; --painel2: #24365c; --texto: #f6ecd6; --fraco: #b6bfd6;
+  --destaque: #f0c070; --borda: #3c4f7a; --sel: #4a2236; --tela-borda: #f0c070;
+  --botao-fundo: #8c1f3a; --botao-texto: #f6ecd6;
+  --fonte: Georgia, "Times New Roman", serif; --caixa: none; --raio: 4px; --brilho: 0 8px 26px #000a;
+  --fundo-img: linear-gradient(transparent 90%, #8c1f3a55 90% 94%, transparent 94%), repeating-linear-gradient(0deg, #ffffff05 0 1px, transparent 1px 4px);
+}
+[data-tema="locadora"] .titulo-j { background: #8c1f3a; color: #f6ecd6; border-bottom-color: #f0c070; }
+[data-tema="caderno"] {
+  --fundo: #f4f1e4; --painel: #fffef6; --painel2: #ffffff; --texto: #1c2a63; --fraco: #4e5a8f;
+  --destaque: #2038c8; --borda: #c9c3a6; --sel: #e3ecff; --tela-borda: #2038c8;
+  --fonte: "Segoe Print", "Comic Sans MS", "Segoe UI", cursive; --caixa: none; --raio: 3px; --brilho: 0 6px 16px #1c2a6322;
+  --fundo-img: linear-gradient(90deg, transparent 56px, #e5484d66 56px 58px, transparent 58px), repeating-linear-gradient(transparent 0 27px, #7aa6d666 27px 28px);
+}
+[data-tema="caderno"] .titulo-j { border-bottom: 2px solid #2038c8; }
+[data-tema="recreio"] {
+  --fundo: #083a20; --painel: #0d5230; --painel2: #12623a; --texto: #fffbe0; --fraco: #d4f4dc;
+  --destaque: #ffe04a; --borda: #2a8a52; --sel: #1a6f47; --tela-borda: #ffe04a;
+  --botao-fundo: #ff5a8a; --botao-texto: #2b0a16;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 14px; --brilho: 0 8px 26px #0008;
+  --fundo-img: radial-gradient(circle at 50% 120%, transparent 0 28%, #ffffff22 28% 29%, transparent 29%), linear-gradient(90deg, transparent 49.7%, #ffffff1c 49.7% 50.3%, transparent 50.3%), linear-gradient(#083a20, #09401f);
+}
+[data-tema="boteco"] {
+  --fundo: #101a14; --painel: #1a2a20; --painel2: #243829; --texto: #f5e8c8; --fraco: #b7b79a;
+  --destaque: #f0b348; --borda: #4a3722; --sel: #3a3020; --tela-borda: #f0b348;
+  --fonte: Georgia, "Times New Roman", serif; --caixa: none; --raio: 6px; --brilho: 0 8px 28px #000b;
+  --fundo-img: radial-gradient(ellipse 50% 35% at 50% -5%, #f0b34840, transparent 70%), repeating-linear-gradient(90deg, #4a37220f 0 3px, transparent 3px 17px);
+}
+[data-tema="boteco"] .titulo-j { border-bottom: 2px solid #f0b348; }
+[data-tema="chuva"] {
+  --fundo: #1d2733; --painel: #26343f; --painel2: #2f404d; --texto: #e6ecef; --fraco: #a2b3be;
+  --destaque: #f2c35b; --borda: #44586a; --sel: #38505f; --tela-borda: #8fb59a;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 12px; --brilho: 0 8px 28px #0009;
+  --fundo-img: radial-gradient(ellipse 40% 35% at 92% 100%, #f2c35b26, transparent 70%), repeating-linear-gradient(105deg, #ffffff07 0 1px, transparent 1px 9px);
+}
+[data-tema="almoco"] {
+  --fundo: #f1dfc4; --painel: #fbf1de; --painel2: #fff9ec; --texto: #3a2214; --fraco: #6a4d38;
+  --destaque: #a63d22; --borda: #d6b894; --sel: #ecd0a6; --tela-borda: #6b7a2a;
+  --fonte: "Palatino Linotype", "Book Antiqua", Palatino, serif; --caixa: none; --raio: 8px; --brilho: 0 8px 22px #6a3a1a30;
+  --fundo-img: repeating-linear-gradient(90deg, #a63d2212 0 28px, transparent 28px 56px), repeating-linear-gradient(0deg, #a63d2212 0 28px, transparent 28px 56px);
+}
+[data-tema="almoco"] .titulo-j { border-bottom: 3px solid #6b7a2a; }
+[data-tema="feira"] {
+  --fundo: #fff0b8; --painel: #fffbe6; --painel2: #ffffff; --texto: #2a1a0a; --fraco: #645324;
+  --destaque: #b3201a; --borda: #e5c85a; --sel: #ffe27a; --tela-borda: #2f7a25;
+  --botao-fundo: #2f7a25; --botao-texto: #ffffff;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 10px; --brilho: 0 8px 22px #8a6a1a30;
+  --fundo-img: linear-gradient(#fff0b8 0 0) 0 10px / 100% 100% no-repeat, repeating-linear-gradient(90deg, #d6362c 0 28px, #fffbe6 28px 56px);
+}
+[data-tema="feira"] .titulo-j { background: #2f7a25; color: #ffffff; border-bottom-color: #b3201a; }
+[data-tema="brasil98"] {
+  --fundo: #0f2a1c; --painel: #17402a; --painel2: #1f5236; --texto: #f4e9b8; --fraco: #c0cfa8;
+  --destaque: #f2d24b; --borda: #3a7a52; --sel: #2c6a44; --tela-borda: #6fb4e8;
+  --botao-fundo: #1f6fb5; --botao-texto: #ffffff;
+  --fonte: Verdana, "Segoe UI", sans-serif; --caixa: none; --raio: 4px; --brilho: 0 8px 24px #000a;
+  --fundo-img: radial-gradient(ellipse 70% 40% at 50% -10%, #6fb4e83a, transparent 70%), repeating-linear-gradient(0deg, #f4e9b806 0 1px, transparent 1px 4px);
+}
+[data-tema="hexa2002"] {
+  --fundo: #0a2a6e; --painel: #123a8f; --painel2: #1b4aa8; --texto: #fff6c8; --fraco: #bcd0ff;
+  --destaque: #ffdc00; --borda: #2f6ad0; --sel: #1e5ab8; --tela-borda: #ffdc00;
+  --botao-fundo: #007a33; --botao-texto: #ffffff;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 8px; --brilho: 0 8px 26px #000a;
+  --fundo-img: repeating-linear-gradient(115deg, #ffdc0010 0 40px, transparent 40px 80px), linear-gradient(#0a2a6e, #08225a);
+}
+[data-tema="hexa2002"] .titulo-j { background: #ffdc00; color: #0a2a6e; border-bottom-color: #007a33; }
+[data-tema="ferias"] {
+  --fundo: #d8f3f0; --painel: #fffaf2; --painel2: #ffffff; --texto: #08343a; --fraco: #3d6a70;
+  --destaque: #00798c; --borda: #a7dcd6; --sel: #ffe3d0; --tela-borda: #ff6f61;
+  --botao-fundo: #d63a2c; --botao-texto: #ffffff;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 18px; --brilho: 0 8px 24px #00798c2a;
+  --fundo-img: radial-gradient(circle at 92% 6%, #ffe27acc 0, #ffe27a00 28%), repeating-linear-gradient(0deg, #00000006 0 1px, transparent 1px 3px), linear-gradient(#d8f3f0, #bfe9e4);
+}
+[data-tema="ferias"] .janela, [data-tema="ferias"] .sub, [data-tema="ferias"] #rapido { border: 6px solid #fffaf2; box-shadow: 0 0 0 1px #a7dcd6, var(--brilho); }
+[data-tema="juninaescola"] {
+  --fundo: #0d1b3f; --painel: #16295a; --painel2: #1f3875; --texto: #fff1d6; --fraco: #b8c6ee;
+  --destaque: #ff9a2e; --borda: #3a54a0; --sel: #2c4486; --tela-borda: #ff9a2e;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 10px; --brilho: 0 8px 26px #000a;
+  --fundo-img: linear-gradient(#0d1b3f 0 0) 0 10px / 100% 100% no-repeat, repeating-linear-gradient(90deg, #e63946 0 28px, #ffd166 28px 56px, #06d6a0 56px 84px, #4ea8ff 84px 112px);
+}
+[data-tema="casavo"] {
+  --fundo: #e9dcc3; --painel: #f6ecd9; --painel2: #fdf6e8; --texto: #3b2a1c; --fraco: #6a5842;
+  --destaque: #4f6b3d; --borda: #c9b48f; --sel: #e2cfa8; --tela-borda: #6b4a2e;
+  --fonte: Georgia, "Times New Roman", serif; --caixa: none; --raio: 10px; --brilho: 0 8px 22px #5a3a1a2e;
+  --fundo-img: repeating-radial-gradient(circle at 0 0, #8a6a4a14 0 2px, transparent 2px 14px), radial-gradient(ellipse 50% 40% at 90% 0%, #ffe9b8aa, transparent 70%);
+}
+[data-tema="casavo"] .titulo-j { border-bottom: 2px dashed #4f6b3d; }
+[data-tema="mp3"] {
+  --fundo: #0b0d12; --painel: #14171f; --painel2: #1d212c; --texto: #e9eef7; --fraco: #9aa5b8;
+  --destaque: #2ee6ff; --borda: #3b4252; --sel: #232a3a; --tela-borda: #2ee6ff;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 10px; --brilho: 0 0 0 1px #2ee6ff22, 0 10px 30px #000c;
+  --fundo-img: repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 3px), radial-gradient(ellipse 60% 35% at 50% -10%, #2ee6ff22, transparent 70%);
+}
+[data-tema="mp3"] .titulo-j { background: linear-gradient(#3a3f4d, #1d212c); border-bottom-color: #2ee6ff; }
+[data-tema="gibi"] {
+  --fundo: #f2e2b6; --painel: #fff4d2; --painel2: #fffae6; --texto: #1b1b2e; --fraco: #55507a;
+  --destaque: #d62828; --borda: #1b1b2e; --sel: #ffd84d; --tela-borda: #1d5fd0;
+  --fonte: "Comic Sans MS", "Trebuchet MS", "Segoe UI", sans-serif; --caixa: uppercase; --raio: 3px; --brilho: 4px 4px 0 #1b1b2e;
+  --fundo-img: repeating-radial-gradient(circle at 0 0, #d6282820 0 2px, transparent 2px 9px), linear-gradient(#f2e2b6, #ead69c);
+}
+[data-tema="gibi"] .janela, [data-tema="gibi"] .sub, [data-tema="gibi"] #rapido { border: 3px solid #1b1b2e; }
+[data-tema="gibi"] .titulo-j { background: #ffd84d; color: #1b1b2e; border-bottom: 3px solid #1b1b2e; }
+[data-tema="interior"] {
+  --fundo: #141c33; --painel: #1d2745; --painel2: #26335a; --texto: #eceaf2; --fraco: #aab3d0;
+  --destaque: #ff9d3d; --borda: #3d4a78; --sel: #33426d; --tela-borda: #ff9d3d;
+  --fonte: "Segoe UI", system-ui, sans-serif; --caixa: none; --raio: 6px; --brilho: 0 8px 26px #000a;
+  --fundo-img: radial-gradient(ellipse 30% 40% at 85% 0%, #ff9d3d33, transparent 70%), linear-gradient(transparent 88%, #2a2f3d 88%);
+}
+
+/* descrição curta na prévia da galeria (só os temas que têm) */
+.previa .pv-desc { display: block; margin-top: 2px; font-size: 11px; line-height: 1.3; color: var(--fraco); text-transform: none; font-weight: 400; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: left; }
+.previa .pv-desc:empty { display: none; }
