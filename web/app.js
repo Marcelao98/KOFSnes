@@ -1499,7 +1499,7 @@ const FRASES = {
   folhas: "Esse é o meu jeito ninja!",
   mar: "Eu vou ser o Rei dos Piratas… do ranking!",
   alquimia: "Troca equivalente: um save por uma fase.",
-  cadernomorte: "Eu me tornarei o deus do novo mundo dos jogos.",
+  cadernomorte: "Este mundo está podre… e cabe a nós curá-lo. Agora, vai jogar!",
   lamina: "Bankai! Hora de jogar a sério.",
   digital: "Digievolua! Hora do jogo.",
   cartas: "Chave mágica, mostre o seu poder!",
@@ -1567,7 +1567,7 @@ const FRASES = {
   panda: "Bambu, calma e um joguinho.",
   flamingo: "Numa perna só e jogando.",
 };
-const LOGOS = { smw: '🍄', alttp: '🗡️', metroid: '🛸', dkc: '🍌', mmx: '🤖', chrono: '⏳', ff6: '⚙️', earthbound: '🎈', kirby: '⭐', fzero: '🏎️', starfox: '🦊', cv4: '🦇', contra: '💥', sf2: '👊', mk: '🐉', mana: '🌱', mariokart: '🏁', yoshi: '🥚', ghouls: '🪦', terranigma: '🌍', tropicalia: '🌺', bossa: '🎸', samba: '🪘', choro: '🪕', frevo: '☂️', maracatu: '👑', cordel: '📜', azulejo: '🔷', modernismo: '🟨', brasilia: '🏛️', mataatlantica: '🌿', amazonica: '🌴', sertao: '🌵', pantanal: '🐊', cerrado: '🌾', litoral: '🌊', ouropreto: '⛪', baiana: '🥥', junina: '🔥', carnaval: '🎊', detetive: '👁️', folhas: '🍥', mar: '🏴‍☠️', alquimia: '⚗️', cadernomorte: '📓', lamina: '⚔️', digital: '🧬', cartas: '🌸', cacadores: '🎣', respiracao: '🔥', maldicao: '🌀', motosserra: '🪚', alem: '✨', familia: '🥂', caos: '👽', trem: '🚂', mononoke: '🌲', sessao: '📺', globinho: '🖍️', lanhouse: '🖥️', orkutmsn: '💬', dvdcamelo: '📀', locadora: '📼', caderno: '📓', recreio: '🍬', boteco: '🍺', chuva: '🌧️', almoco: '🍲', feira: '🍅', brasil98: '🛰️', hexa2002: '⚽', ferias: '🏖️', juninaescola: '🎏', casavo: '🧶', mp3: '🎧', gibi: '🦸', interior: '🏘️', encanador: '🍄', heroi: '🗡️', cacadora: '🚀', corredor: '💨', blocos: '🧱', arena: '🥊', onca: '🐆', arara: '🦜', capivara: '🦫', gato: '🐈‍⬛', raposa: '🦊', panda: '🐼', flamingo: '🦩', cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
+const LOGOS = { smw: '🍄', alttp: '🗡️', metroid: '🛸', dkc: '🍌', mmx: '🤖', chrono: '⏳', ff6: '⚙️', earthbound: '🎈', kirby: '⭐', fzero: '🏎️', starfox: '🦊', cv4: '🦇', contra: '💥', sf2: '👊', mk: '🐉', mana: '🌱', mariokart: '🏁', yoshi: '🥚', ghouls: '🪦', terranigma: '🌍', tropicalia: '🌺', bossa: '🎸', samba: '🪘', choro: '🪕', frevo: '☂️', maracatu: '👑', cordel: '📜', azulejo: '🔷', modernismo: '🟨', brasilia: '🏛️', mataatlantica: '🌿', amazonica: '🌴', sertao: '🌵', pantanal: '🐊', cerrado: '🌾', litoral: '🌊', ouropreto: '⛪', baiana: '🥥', junina: '🔥', carnaval: '🎊', detetive: '👁️', folhas: '🍥', mar: '🏴‍☠️', alquimia: '⚗️', cadernomorte: '🍎', lamina: '⚔️', digital: '🧬', cartas: '🌸', cacadores: '🎣', respiracao: '🔥', maldicao: '🌀', motosserra: '🪚', alem: '✨', familia: '🥂', caos: '👽', trem: '🚂', mononoke: '🌲', sessao: '📺', globinho: '🖍️', lanhouse: '🖥️', orkutmsn: '💬', dvdcamelo: '📀', locadora: '📼', caderno: '📓', recreio: '🍬', boteco: '🍺', chuva: '🌧️', almoco: '🍲', feira: '🍅', brasil98: '🛰️', hexa2002: '⚽', ferias: '🏖️', juninaescola: '🎏', casavo: '🧶', mp3: '🎧', gibi: '🦸', interior: '🏘️', encanador: '🍄', heroi: '🗡️', cacadora: '🚀', corredor: '💨', blocos: '🧱', arena: '🥊', onca: '🐆', arara: '🦜', capivara: '🦫', gato: '🐈‍⬛', raposa: '🦊', panda: '🐼', flamingo: '🦩', cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
   branco: '🤍', laminas: '🟢', neon: '🕹️', classico98: '🪟', luna: '🌄', mensageiro: '💬', rosa2004: '💌', terminal: '⌨️', vapor: '🌴',
   web1: '🚧', esferas: '⭐', unidade01: '🤖', lua: '🌙', dourado: '✨', pokebola: '🔴', floresta: '🌿', desenho: '📺', camelo: '🎁', brasil: '🇧🇷' };
 const DICAS = [
@@ -1741,7 +1741,7 @@ const TEMAS = [
     ['mar', 'Mar de Aventuras', 'Azul oceânico, vermelho de bandana e ouro de tesouro.'],
     ['pokebola', 'Mundo Pokémon', 'Amarelo, vermelho e azul, alegre e cheio de energia.'],
     ['alquimia', 'Círculo da Alquimia', 'Vinho, aço e vermelho de círculo de transmutação.'],
-    ['cadernomorte', 'Caderno da Morte', 'Preto, branco e cinza, com um fio de vermelho.'],
+    ['cadernomorte', 'Caderno da Morte', 'Capa preta, etiqueta branca e a maçã vermelha.'],
     ['lamina', 'Lâmina Espiritual', 'Preto e branco de tinta, com laranja de lâmina.'],
     ['digital', 'Mundo Digital', 'Azul e verde digitais num painel claro de grade.'],
     ['cartas', 'Cartas Mágicas', 'Rosa, creme, lilás e um dourado delicado.'],

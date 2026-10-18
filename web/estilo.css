@@ -1075,12 +1075,14 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
 }
 [data-tema="alquimia"] .titulo-j { border-bottom: 2px solid #c9ced6; }
 [data-tema="cadernomorte"] {
-  --fundo: #ececec; --painel: #ffffff; --painel2: #f6f6f6; --texto: #0d0d0d; --fraco: #4d4d4d;
-  --destaque: #b3121f; --borda: #bcbcbc; --sel: #dcdcdc; --tela-borda: #0d0d0d;
-  --fonte: "Times New Roman", Georgia, serif; --caixa: uppercase; --raio: 0px; --brilho: 0 6px 18px #0000001c;
-  --fundo-img: linear-gradient(#ececec, #e2e2e2);
+  --fundo: #080808; --painel: #141414; --painel2: #1d1d1d; --texto: #f4f4f4; --fraco: #a9a9a9;
+  --destaque: #ff5258; --borda: #5a5a5a; --sel: #2a2a2a; --tela-borda: #f4f4f4;
+  --botao-fundo: #c4121a; --botao-texto: #ffffff;
+  --fonte: "Old English Text MT", "UnifrakturMaguntia", "Times New Roman", Georgia, serif; --caixa: none; --raio: 0px; --brilho: 0 10px 30px #000d;
+  --fundo-img: linear-gradient(90deg, transparent 34px, #ffffff1c 34px 35px, transparent 35px), radial-gradient(ellipse 60% 40% at 80% 0%, #ef2b3322, transparent 70%), repeating-linear-gradient(45deg, #ffffff05 0 1px, transparent 1px 5px);
 }
-[data-tema="cadernomorte"] .titulo-j { background: #0d0d0d; color: #ffffff; border-bottom: 2px solid #b3121f; letter-spacing: .12em; }
+[data-tema="cadernomorte"] .janela, [data-tema="cadernomorte"] .sub, [data-tema="cadernomorte"] #rapido { border: 1px solid #5a5a5a; }
+[data-tema="cadernomorte"] .titulo-j { background: #f4f4f4; color: #080808; border-bottom: 3px solid #ef2b33; letter-spacing: .08em; text-transform: uppercase; }
 [data-tema="lamina"] {
   --fundo: #f7f7f5; --painel: #ffffff; --painel2: #f0f0ee; --texto: #101010; --fraco: #505050;
   --destaque: #b84400; --borda: #101010; --sel: #ffd9b8; --tela-borda: #ff7a1a;
