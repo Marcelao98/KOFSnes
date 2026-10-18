@@ -10,7 +10,7 @@ long long inet_baixar(const wchar_t *url, const wchar_t *destino, unsigned long 
     *http = 0; *codigo = 0;
     HINTERNET s = InternetOpenW(L"KOFnes", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
     if (!s) { *codigo = GetLastError(); return -1; }
-    DWORD t1 = 10000, t2 = 20000;
+    DWORD t1 = 3000, t2 = 20000;
     InternetSetOptionW(s, INTERNET_OPTION_CONNECT_TIMEOUT, &t1, sizeof(t1));
     InternetSetOptionW(s, INTERNET_OPTION_RECEIVE_TIMEOUT, &t2, sizeof(t2));
     HINTERNET r = InternetOpenUrlW(s, url, NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_NO_UI, 0);

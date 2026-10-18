@@ -191,6 +191,11 @@ function mudarVolume(d) {
   if (d > 0 && mudo) { mudo = false; guardar('mudo', '0'); }
   marcarSom(); avisar((volume ? '🔊 ' : '🔇 ') + volume + '%');
 }
+// o mudo fica guardado entre as aberturas e o único sinal era o "mudo" no menu Som: parecia que o
+// som tinha quebrado. Avisa ao abrir um jogo (depois dos avisos de "continuando de...") e no play da jukebox
+function avisarMudo(atraso) {
+  setTimeout(() => { if (mudo) avisar('🔇 o som está desligado: aperte M pra ligar', 4000); }, atraso || 0);
+}
 function marcarSom() {
   $('#vol-valor').textContent = mudo ? 'mudo' : volume + '%';
   $('[data-acao="mudo"]').classList.toggle('ativo', mudo);
@@ -438,13 +443,13 @@ function jukeTocar(i) {
     juke.apu = apu; juke.atual = i; juke.amostras = 0;
   } catch (e) { avisar('não consegui tocar: ' + e.message, 4000); return; }
   if (snes && !pausado) pausado = true;             // o jogo espera; P volta pro jogo
-  ini = fim = 0; juke.tocando = true; ligarSom();
+  ini = fim = 0; juke.tocando = true; ligarSom(); avisarMudo();
   montarJuke();
 }
 function jukePausar() { juke.tocando = false; ini = fim = 0; montarJuke(); }
 function jukeAlternar() {
   if (juke.tocando) jukePausar();
-  else if (juke.apu) { if (snes && !pausado) pausado = true; juke.tocando = true; ligarSom(); montarJuke(); }
+  else if (juke.apu) { if (snes && !pausado) pausado = true; juke.tocando = true; ligarSom(); avisarMudo(); montarJuke(); }
   else if (juke.lista.length) jukeTocar(0);
 }
 function jukeProxima(d) {
@@ -807,7 +812,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
     for (let i = 0; i < b.length && i < s.cart.sram.length; i++) s.cart.sram[i] = b.charCodeAt(i);
   }
   s.reset();
-  snes = s; romAtual = bytes; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob();
+  snes = s; romAtual = bytes; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob(); avisarMudo(2200);
   document.body.classList.remove('vazio');
   fecharJanelas();
   $('#st-jogo').textContent = romNome + ' · ' + (s.cart.title.trim() || '?');
