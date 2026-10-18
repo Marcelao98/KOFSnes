@@ -1810,6 +1810,62 @@ $('[data-acao="capas"]').textContent = capasNet ? '🖼 Capas oficiais: ligadas'
 ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
+// ---------------- teste de desempenho (celular) ----------------
+// Abra "KOFnes-bench.html" (ou ...#bench): escolha uma ROM sua, entre no jogo e toque em "Medir".
+// Ele pausa, guarda o estado, roda o núcleo o mais rápido que der (sem esperar o relógio) e depois
+// devolve o jogo exatamente de onde estava. O resultado diz quantas vezes o aparelho é mais rápido
+// que o SNES de verdade (60 fps = 1,0×).
+if (/bench/i.test(location.pathname + location.hash)) {
+  document.body.classList.add('bench');
+  const painel = $('#bench'), saida = $('#bench-saida'), cont = (t) => { saida.value = t; };
+  const aparelho = () => {
+    let gpu = 'sem WebGL';
+    try { const e = gl && gl.getExtension('WEBGL_debug_renderer_info'); gpu = e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : (gl ? 'WebGL (nome oculto)' : gpu); } catch (e) { /* sem info */ }
+    return `${navigator.userAgent.replace(/^Mozilla\/5\.0 /, '')}\nnúcleos ${navigator.hardwareConcurrency || '?'} · RAM ~${navigator.deviceMemory || '?'} GB · tela ${screen.width}x${screen.height} @${devicePixelRatio}x\nGPU: ${gpu}`;
+  };
+  const cedo = () => new Promise((ok) => setTimeout(ok, 0));
+  async function rodar(segs, comDesenho) {
+    let n = 0; const t0 = performance.now();
+    while (performance.now() - t0 < segs * 1000) {
+      for (let i = 0; i < 30; i++) { snes.pad[0] = 0; snes.runFrame(); snes.apu.dsp.outCount = 0; if (comDesenho) desenhar(); n++; }
+      await cedo();
+    }
+    return n * 1000 / (performance.now() - t0);
+  }
+  const veredito = (x) => x >= 1.6 ? 'ÓTIMO: sobra velocidade, dá pra ter filtros e rebobinar tranquilo'
+    : x >= 1.2 ? 'BOM: roda cheio a 60 fps'
+    : x >= 1.0 ? 'NO LIMITE: pode engasgar em jogos pesados'
+    : 'FRACO: precisa pular quadros (modo econômico)';
+  $('#bench-medir').addEventListener('click', async () => {
+    if (!snes) { cont('Escolha uma ROM primeiro e entre no jogo.'); return; }
+    const antes = pausado, estadoAntes = JSON.stringify(KofEstado.capturar(snes));
+    pausado = true; $('#bench-medir').disabled = true;
+    try {
+      cont('Medindo… (uns 12 s, não mexa)'); await cedo();
+      await rodar(1, false);                                  // esquenta o JIT
+      const puro = await rodar(5, false); cont('Medindo… só o núcleo: ' + puro.toFixed(0) + ' fps'); await cedo();
+      const comDesenho = await rodar(5, true);
+      const x = comDesenho / 60.0988;
+      cont(`KOFnes — teste de desempenho\n${aparelho()}\nJogo: ${romNome}\n\nSó emulação:        ${puro.toFixed(0)} fps (${(puro / 60.0988).toFixed(2)}×)\nEmulação + desenho: ${comDesenho.toFixed(0)} fps (${x.toFixed(2)}×)\n\n${veredito(x)}`);
+    } finally {
+      KofEstado.restaurar(snes, JSON.parse(estadoAntes));
+      snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0; snes.runFrame(); snes.apu.dsp.outCount = 0; desenhar();
+      pausado = antes; $('#bench-medir').disabled = false; novoMarco(true);
+    }
+  });
+  $('#bench-rom').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { await abrirArquivo(f); cont('Jogando ' + romNome + '.\nChegue numa parte com ação e toque em "Medir".'); } catch (err) { cont('Erro: ' + err.message); }
+  });
+  $('#bench-copiar').addEventListener('click', async () => {
+    saida.select();
+    try { await navigator.clipboard.writeText(saida.value); } catch (e) { document.execCommand('copy'); }
+    $('#bench-copiar').textContent = 'Copiado ✔';
+  });
+  cont(aparelho() + '\n\n1) Toque em "Escolher ROM" e abra um jogo seu.\n2) Chegue numa parte com ação.\n3) Toque em "Medir".');
+  painel.hidden = false;
+}
+
 window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },

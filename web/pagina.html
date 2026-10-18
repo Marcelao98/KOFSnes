@@ -326,6 +326,15 @@
 
   <div id="aviso" hidden></div>
   <div id="ampulheta" hidden><span></span></div>
+  <section id="bench" hidden>
+    <b>📱 Teste de desempenho</b>
+    <div class="bench-bt">
+      <label class="grande">Escolher ROM<input type="file" id="bench-rom" accept=".sfc,.smc,.zip" hidden></label>
+      <button class="grande" id="bench-medir">Medir</button>
+      <button class="grande sec" id="bench-copiar">Copiar resultado</button>
+    </div>
+    <textarea id="bench-saida" readonly rows="11"></textarea>
+  </section>
 </main>
 
 <footer id="status">

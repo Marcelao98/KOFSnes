@@ -24,6 +24,7 @@ if command -v x86_64-w64-mingw32-gcc >/dev/null; then
     (cd "$T" && cp "$RAIZ/empacotar/kofnes.rc" . && x86_64-w64-mingw32-windres kofnes.rc -O coff -o res.o)
     x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFnes.exe" "$AQUI/lancador_win.c" "$AQUI/lancador_inet.c" "$T/res.o" -lshlwapi -lwinhttp -lwininet -lws2_32
 fi
+cp "$SAIDA/KOFnes.html" "$SAIDA/KOFnes-bench.html"   # a mesma página; o nome liga o painel de teste de desempenho
 cp "$AQUI/lancador_linux.sh" "$SAIDA/kofnes.sh" && chmod +x "$SAIDA/kofnes.sh"
 cp "$T/icone.png" "$SAIDA/KOFnes.png"
 # versao.txt: o atualizador do KOFnes.exe compara a versão da página e a do lançador

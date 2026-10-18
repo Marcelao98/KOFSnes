@@ -700,3 +700,11 @@ body.rebobinando #tela { animation: rebob-cinza .22s steps(2, jump-none) infinit
   color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); pointer-events: none;
   background: linear-gradient(90deg, var(--sel) var(--enche, 0%), var(--painel) var(--enche, 0%));
 }
+
+/* teste de desempenho (celular): painel fixo por cima de tudo, só no KOFnes-bench.html */
+#bench { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 40; max-width: 560px; margin: 0 auto; padding: 10px;
+  background: var(--painel); color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); font-size: 14px; }
+#bench[hidden] { display: none; }
+.bench-bt { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.bench-bt .grande { flex: 1 1 auto; text-align: center; min-height: 44px; }
+#bench-saida { width: 100%; box-sizing: border-box; font: 12px monospace; background: var(--painel2); color: var(--texto); border: 1px solid var(--borda); }
