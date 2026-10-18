@@ -1050,13 +1050,14 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
   --fundo-img: radial-gradient(ellipse 50% 40% at 85% 0%, #b36bff30, transparent 70%), radial-gradient(ellipse 50% 40% at 10% 100%, #3ec6ff22, transparent 70%);
 }
 [data-tema="folhas"] {
-  --fundo: #e9d9b8; --painel: #f6ecd4; --painel2: #fdf6e4; --texto: #1a1a1a; --fraco: #5a4f38;
-  --destaque: #b04a05; --borda: #b9a47a; --sel: #f2d49a; --tela-borda: #2f7d32;
-  --botao-fundo: #1a1a1a; --botao-texto: #f6ecd4;
-  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 3px; --brilho: 0 8px 22px #3a2a1a30;
-  --fundo-img: repeating-radial-gradient(circle at 100% 0, #00000009 0 2px, transparent 2px 22px);
+  --fundo: #ff9a2e; --painel: #ffe2b8; --painel2: #fff3dc; --texto: #101828; --fraco: #2a2f55;
+  --destaque: #1d3fa8; --borda: #101828; --sel: #ffc266; --tela-borda: #1d3fa8;
+  --botao-fundo: #1d3fa8; --botao-texto: #ffffff;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 6px; --brilho: 4px 4px 0 #101828;
+  --fundo-img: repeating-radial-gradient(circle at 92% 8%, #10182822 0 3px, transparent 3px 14px), linear-gradient(#ffa63e, #ff8a1a);
 }
-[data-tema="folhas"] .titulo-j { background: #1a1a1a; color: #ffb15c; border-bottom-color: #2f7d32; }
+[data-tema="folhas"] .janela, [data-tema="folhas"] .sub, [data-tema="folhas"] #rapido { border: 2px solid #101828; }
+[data-tema="folhas"] .titulo-j { background: #1d3fa8; color: #ffffff; border-bottom: 4px solid #c8ccd4; }
 [data-tema="mar"] {
   --fundo: #062a4a; --painel: #0b3d66; --painel2: #11507f; --texto: #fdf3d6; --fraco: #b4d3ee;
   --destaque: #ffcf4a; --borda: #2a7ab5; --sel: #1a5f94; --tela-borda: #e0352b;
