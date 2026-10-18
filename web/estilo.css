@@ -688,3 +688,15 @@ body.cheia #lateral, body.sofa #lateral { display: none; }
 [data-tema="classico98"] .lat-itens button:hover, [data-tema="classico98"] .lat-itens button.ativo,
 [data-tema="luna"] .lat-itens button:hover, [data-tema="luna"] .lat-itens button.ativo,
 [data-tema="classico98"] .gu-menu button.ativo, [data-tema="luna"] .gu-menu button.ativo { color: #fff; }
+
+/* rebobinar: preto e branco que tremula enquanto o tempo volta; ampulheta recarregando */
+body.rebobinando #tela { animation: rebob-cinza .22s steps(2, jump-none) infinite; }
+@keyframes rebob-cinza {
+  from { filter: grayscale(1) contrast(1.15) brightness(.9); }
+  to   { filter: grayscale(1) contrast(1.45) brightness(1.08) blur(.4px); }
+}
+#ampulheta {
+  position: absolute; right: 14px; bottom: 14px; z-index: 2; padding: 5px 12px; font: 700 13px var(--fonte);
+  color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); pointer-events: none;
+  background: linear-gradient(90deg, var(--sel) var(--enche, 0%), var(--painel) var(--enche, 0%));
+}

@@ -5,8 +5,10 @@
 // Perfil próprio em %LOCALAPPDATA%\KOFnes\navegador: os saves, o tema e a
 // pasta de ROMs ficam guardados lá.
 //
-// Atualizador: ao abrir, lê publicado/versao.txt do GitHub (WinHTTP, com
-// prazos próprios). Se a versão de lá for maior que a do versao.txt daqui,
+// Atualizador: ao abrir, lê publicado/versao.txt do GitHub. Testa os IPs do
+// GitHub ao mesmo tempo e baixa pelo curl.exe do Windows no que respondeu
+// (tem rede que só alcança um dos quatro); de reserva, WinINet e WinHTTP.
+// Se a versão de lá for maior que a do versao.txt daqui,
 // baixa o KOFnes.html novo, confere tamanho e começo do arquivo e troca. Se
 // "lancador=" de lá for maior que LANCADOR, troca também este .exe (o Windows
 // deixa renomear um .exe em uso: o velho vira KOFnes.exe.old e some na próxima
@@ -14,6 +16,8 @@
 // termina por trás (vale na próxima vez). Tudo fica anotado em
 // atualizacao.log. Os saves não moram aqui, então trocar os arquivos não mexe
 // neles. Um arquivo "nao-atualizar" do lado do .exe desliga isso.
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #include <shlwapi.h>
 #include <winhttp.h>
@@ -23,7 +27,7 @@
 #include <stdarg.h>
 #include <time.h>
 
-#define LANCADOR 4
+#define LANCADOR 5
 #define HOST L"raw.githubusercontent.com"
 #define CAMINHO L"/Marcelao98/KOFSnes/main/publicado/"
 #ifndef WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
@@ -75,7 +79,7 @@ static long long baixar_winhttp(const wchar_t *nome, const wchar_t *destino) {
     HINTERNET s = WinHttpOpen(L"KOFnes", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
     if (!s) s = WinHttpOpen(L"KOFnes", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
     if (!s) { anotar("WinHttpOpen falhou (erro %lu)", GetLastError()); return -1; }
-    WinHttpSetTimeouts(s, 8000, 8000, 15000, 20000);
+    WinHttpSetTimeouts(s, 8000, 3000, 15000, 20000);
     long long total = -1;
     HINTERNET c = WinHttpConnect(s, HOST, INTERNET_DEFAULT_HTTPS_PORT, 0);
     wchar_t caminho[512];
@@ -125,9 +129,101 @@ static long long baixar_inet(const wchar_t *nome, const wchar_t *destino) {
     return b;
 }
 
-// tenta o WinINet e, se não der, o WinHTTP
+// Tem rede que só alcança alguns dos IPs do GitHub (aqui: 1 de 4) e o IPv6 não sai; o WinHTTP e o
+// WinINet tentam um IP de cada vez e travam no primeiro morto (12002). Então: pede os IPv4 ao DNS,
+// conecta em todos ao mesmo tempo e fica com o primeiro que responder (o Edge faz igual).
+// Escolhe uma vez só; os downloads seguintes usam o mesmo.
+static char ipBom[64];
+static int ipTestado = 0;
+
+static const char *escolher_ip(void) {
+    if (ipTestado) return ipBom[0] ? ipBom : NULL;
+    ipTestado = 1;
+    WSADATA w;
+    if (WSAStartup(MAKEWORD(2, 2), &w) != 0) { anotar("WSAStartup falhou"); return NULL; }
+    struct addrinfo dica = { 0 }, *lista = NULL;
+    dica.ai_family = AF_INET;
+    dica.ai_socktype = SOCK_STREAM;
+    int e = getaddrinfo("raw.githubusercontent.com", "443", &dica, &lista);
+    if (e != 0) { anotar("DNS não achou o GitHub (erro %d)", e); return NULL; }
+    SOCKET s[8];
+    char ips[8][64];
+    int n = 0;
+    for (struct addrinfo *p = lista; p && n < 8; p = p->ai_next) {
+        SOCKET k = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (k == INVALID_SOCKET) continue;
+        u_long sim = 1;
+        ioctlsocket(k, FIONBIO, &sim);
+        connect(k, p->ai_addr, (int)p->ai_addrlen);
+        inet_ntop(AF_INET, &((struct sockaddr_in *)p->ai_addr)->sin_addr, ips[n], sizeof(ips[n]));
+        s[n++] = k;
+    }
+    freeaddrinfo(lista);
+    DWORD ini = GetTickCount();
+    int vivos = n;
+    while (!ipBom[0] && vivos > 0) {
+        long resta = 2500 - (long)(GetTickCount() - ini);
+        if (resta <= 0) break;
+        fd_set ok, erro;
+        FD_ZERO(&ok); FD_ZERO(&erro);
+        for (int i = 0; i < n; i++) if (s[i] != INVALID_SOCKET) { FD_SET(s[i], &ok); FD_SET(s[i], &erro); }
+        struct timeval tv = { resta / 1000, (resta % 1000) * 1000 };
+        if (select(0, NULL, &ok, &erro, &tv) <= 0) break;
+        for (int i = 0; i < n; i++) {
+            if (s[i] == INVALID_SOCKET) continue;
+            if (FD_ISSET(s[i], &ok) && !ipBom[0]) {
+                strcpy(ipBom, ips[i]);
+            } else if (FD_ISSET(s[i], &erro)) {
+                closesocket(s[i]); s[i] = INVALID_SOCKET; vivos--;
+            }
+        }
+    }
+    for (int i = 0; i < n; i++) if (s[i] != INVALID_SOCKET) closesocket(s[i]);
+    WSACleanup();
+    if (ipBom[0]) anotar("IP do GitHub: %s (de %d; respondeu em %lu ms)", ipBom, n, GetTickCount() - ini);
+    else anotar("nenhum dos %d IPs do GitHub respondeu em 2,5 s", n);
+    return ipBom[0] ? ipBom : NULL;
+}
+
+// pelo curl.exe do Windows (10/11), preso no IP que respondeu; o certificado continua conferido pelo nome
+static long long baixar_curl(const wchar_t *nome, const wchar_t *destino) {
+    const char *ip = escolher_ip();
+    if (!ip) return -1;
+    wchar_t curl[MAX_PATH], linha[2048];
+    if (!GetSystemDirectoryW(curl, MAX_PATH)) return -1;
+    wcscat(curl, L"\\curl.exe");
+    if (GetFileAttributesW(curl) == INVALID_FILE_ATTRIBUTES) { anotar("sem curl.exe no Windows"); return -1; }
+    swprintf(linha, 2048, L"\"%ls\" -sSf -4 --connect-timeout 5 --max-time 60 --resolve " HOST L":443:%hs "
+             L"-o \"%ls\" \"https://" HOST CAMINHO L"%ls?t=%lu\"", curl, ip, destino, nome, GetTickCount());
+    STARTUPINFOW si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi;
+    if (!CreateProcessW(curl, linha, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+        anotar("não consegui rodar o curl.exe (erro %lu)", GetLastError());
+        return -1;
+    }
+    DWORD saida = 1;
+    if (WaitForSingleObject(pi.hProcess, 70000) == WAIT_TIMEOUT) TerminateProcess(pi.hProcess, 1);
+    GetExitCodeProcess(pi.hProcess, &saida);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    WIN32_FILE_ATTRIBUTE_DATA info;
+    if (saida != 0 || !GetFileAttributesExW(destino, GetFileExInfoStandard, &info)) {
+        anotar("curl: falhou (saída %lu) pra %ls", saida, nome);
+        return -1;
+    }
+    long long b = ((long long)info.nFileSizeHigh << 32) | info.nFileSizeLow;
+    anotar("curl: baixou %ls (%lld bytes)", nome, b);
+    return b;
+}
+
+// tenta o curl no IP que respondeu; se não der, o WinINet e depois o WinHTTP
 static long long baixar(const wchar_t *nome, const wchar_t *destino) {
-    long long b = baixar_inet(nome, destino);
+    long long b = baixar_curl(nome, destino);
+    if (b > 0) return b;
+    anotar("tentando pelo WinINet");
+    b = baixar_inet(nome, destino);
     if (b > 0) return b;
     anotar("tentando de novo pelo WinHTTP");
     return baixar_winhttp(nome, destino);
