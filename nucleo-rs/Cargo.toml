@@ -1,0 +1,14 @@
+[package]
+name = "nucleo-rs"
+version = "0.0.1"
+edition = "2021"
+description = "Núcleo de SNES em Rust (WebAssembly) pro KOFnes no celular. O núcleo em Kof (snes/) é o gabarito."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
