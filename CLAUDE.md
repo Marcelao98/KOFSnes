@@ -118,6 +118,11 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   sozinho), o showcase passa só os temas filtrados, e o **menu do botão direito** (menu rápido) ganhou o item
   "🎨 Tema" (◀▶ troca, Enter abre a galeria). Pra adicionar tema: bloco `[data-tema="id"]` no `estilo.css` + uma
   linha em `TEMAS`; o contador "N temas" do Início e do Guia se atualiza sozinho. Teste: `testes/navegador/temas-menu.cjs`.
+- **Pacote Café (branch `temas-menu`, não publicado):** categoria "Café" com 8 temas: `cafe` (Café queimado, o
+  original e o padrão, **não mexer**), `espresso`, `cappuccino`, `latte`, `mocha`, `caramelo`, `coldbrew`, `canela`.
+  Tokens do sistema: `--fundo`, `--painel`/`--painel2`, `--texto`, `--fraco`, `--destaque`, `--borda`, `--sel` e (novos,
+  opcionais) `--botao-fundo`/`--botao-texto` pro `.grande`. Foco de teclado e `:disabled` agora valem pra todos os temas.
+  Testes: `testes/node/contraste.cjs` (WCAG dos 8) e `testes/navegador/pacote-cafe.cjs`.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;

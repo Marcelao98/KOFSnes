@@ -1473,9 +1473,11 @@ const FRASES = {
   vapor: 'ｋｏｆｎｅｓ　ａｅｓｔｈｅｔｉｃ', web1: '🚧 Bem-vindo à minha homepage!!! Você é o visitante nº 000427 🚧',
   esferas: 'Junte as 7 esferas… ou só jogue mesmo.', unidade01: 'Entre no robô… digo, no jogo.', lua: 'Em nome da lua, vamos jogar!',
   dourado: 'Eleve seu cosmo e aperte Start.', pokebola: 'Um jogo selvagem apareceu!', floresta: 'Um bom lugar pra se perder num jogo.',
+  espresso: 'Curto, forte e sem açúcar.', cappuccino: 'Com espuma e tudo.', latte: 'Leve, cremoso e sem pressa.', mocha: 'Café com chocolate: fase boa.',
+  caramelo: 'Doce o bastante pra mais uma fase.', coldbrew: 'Devagar, gelado e no ponto.', canela: 'Um cheirinho de canela e bora.',
   desenho: 'Tá na hora do desenho… digo, do jogo!', camelo: '9999 JOGOS EM 1 (e esse funciona)', brasil: 'Bora jogar, Brasil!',
 };
-const LOGOS = { cafe: '☕', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
+const LOGOS = { cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
   branco: '🤍', laminas: '🟢', neon: '🕹️', classico98: '🪟', luna: '🌄', mensageiro: '💬', rosa2004: '💌', terminal: '⌨️', vapor: '🌴',
   web1: '🚧', esferas: '⭐', unidade01: '🤖', lua: '🌙', dourado: '✨', pokebola: '🔴', floresta: '🌿', desenho: '📺', camelo: '🎁', brasil: '🇧🇷' };
 const DICAS = [
@@ -1634,7 +1636,9 @@ function avisar(t, ms) {
   clearTimeout(avisar.t); avisar.t = setTimeout(() => { a.hidden = true; }, ms || 1800);
 }
 const TEMAS = [
-  ['Clássicos do KOFnes', [['cafe', '☕ Café queimado'], ['escuro', '🌙 Escuro'], ['claro', '☀️ Claro'], ['zsnes', '🕹️ ZSNES']]],
+  ['Clássicos do KOFnes', [['escuro', '🌙 Escuro'], ['claro', '☀️ Claro'], ['zsnes', '🕹️ ZSNES']]],
+  ['Café', [['cafe', '☕ Café queimado'], ['espresso', 'Espresso'], ['cappuccino', 'Cappuccino'], ['latte', 'Latte'], ['mocha', 'Mocha'],
+    ['caramelo', 'Caramelo'], ['coldbrew', 'Cold Brew'], ['canela', 'Café com canela']]],
   ['Consoles', [['super16', 'Super 16-bit'], ['portatil', 'Portátil verde'], ['atomico', 'Roxo atômico'], ['blast16', 'Blast 16'],
     ['cinza32', 'Cinza 32-bit'], ['branco', 'Branco console'], ['laminas', 'Verde lâminas'], ['neon', 'Fliperama neon']]],
   ['Computador e internet antiga', [['classico98', 'Clássico 98'], ['luna', 'Azul Luna'], ['mensageiro', 'Mensageiro'], ['rosa2004', 'Rede social 2004'],

@@ -37,6 +37,9 @@ body {
   display: flex; flex-direction: column; overflow: hidden; user-select: none;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
+/* foco de teclado visível em qualquer tema (os componentes que têm o seu próprio estilo de foco o mantêm) */
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+button:disabled { opacity: .5; cursor: default; }
 
 #menu { display: flex; background: var(--painel); border-bottom: 1px solid var(--borda); padding: 0 4px; z-index: 7; }   /* acima do menu lateral (6): o submenu desce por cima dele */
 #menu .m { position: relative; }
@@ -75,7 +78,7 @@ body.vazio #tela { visibility: hidden; }
 .sub-t { color: var(--fraco); margin: 4px 0 18px; }
 .grande {
   display: block; width: 280px; margin: 8px auto; padding: 11px; border-radius: var(--raio);
-  background: var(--destaque); color: var(--painel); border: 0; font-weight: 700; text-transform: var(--caixa);
+  background: var(--botao-fundo, var(--destaque)); color: var(--botao-texto, var(--painel)); border: 0; font-weight: 700; text-transform: var(--caixa);
 }
 .grande.sec { background: none; color: var(--texto); border: 1px solid var(--borda); }
 .dica { color: var(--fraco); font-size: 13px; }
@@ -720,3 +723,82 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
 #temas-cats .cat:disabled { opacity: .4; cursor: default; }
 /* o valor do item selecionado do menu rápido usa a cor do texto (em alguns temas o destaque some em cima da seleção) */
 #rapido-lista li.sel .ajuste b { color: inherit; }
+
+/* =====================================================================================
+   Pacote Café: oito interpretações do café. "cafe" (Café queimado) é o original, lá em cima.
+   Tokens: --fundo (background) · --painel/--painel2 (surface) · --texto (text) · --fraco (mutedText)
+   · --destaque (accent) · --borda (border) · --sel (selection) · --botao-fundo/--botao-texto (opcionais).
+   Os contrastes de todos são conferidos por testes/node/contraste.cjs.
+   ===================================================================================== */
+
+/* Espresso: preto café, carvão e chocolate amargo; só um fio de cobre */
+[data-tema="espresso"] {
+  --fundo: #0c0806; --painel: #16100d; --painel2: #211813; --texto: #f1e8de; --fraco: #a39385;
+  --destaque: #cf8553; --borda: #392a22; --sel: #33241c; --tela-borda: #cf8553;
+  --fonte: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; --raio: 3px; --brilho: 0 12px 44px #000c;
+  --fundo-img: radial-gradient(ellipse 70% 45% at 50% -12%, #cf855318, transparent 70%);
+}
+[data-tema="espresso"] .titulo-j { border-bottom-color: var(--destaque); letter-spacing: .1em; text-transform: uppercase; font-size: 12px; }
+[data-tema="espresso"] .sub, [data-tema="espresso"] #rapido, [data-tema="espresso"] .janela { border: 1px solid var(--borda); }
+[data-tema="espresso"] .sub button:hover, [data-tema="espresso"] #rapido-lista li.sel { box-shadow: inset 2px 0 0 var(--destaque); }
+
+/* Cappuccino: espuma de leite sobre cerâmica, tudo arredondado e macio */
+[data-tema="cappuccino"] {
+  --fundo: #e6d6c0; --painel: #f6ecdd; --painel2: #fdf7ee; --texto: #38261b; --fraco: #6a5646;
+  --destaque: #6a4128; --borda: #cdb597; --sel: #e8d3b6; --tela-borda: #b99b79;
+  --fonte: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; --raio: 16px; --brilho: 0 10px 28px #5a3b2a2e;
+  --fundo-img: radial-gradient(ellipse 80% 45% at 18% -5%, #fffaf0cc, transparent 70%);
+}
+[data-tema="cappuccino"] .janela, [data-tema="cappuccino"] .sub, [data-tema="cappuccino"] #rapido { border: 2px solid var(--painel2); box-shadow: 0 0 0 1px var(--borda), var(--brilho); }
+[data-tema="cappuccino"] #tela { border-width: 4px; }
+
+/* Latte: marfim e areia, ar de revista; texto com serifa */
+[data-tema="latte"] {
+  --fundo: #f1e9dc; --painel: #faf6ee; --painel2: #ffffff; --texto: #2b2620; --fraco: #6f6559;
+  --destaque: #7d5a3c; --borda: #dcd0bd; --sel: #ece1cf; --tela-borda: #cbbca5;
+  --fonte: Georgia, "Iowan Old Style", "Palatino Linotype", "DejaVu Serif", serif; --raio: 2px; --brilho: 0 1px 0 #0001, 0 10px 24px #4a3a2a14;
+}
+[data-tema="latte"] .titulo-j { font-style: italic; letter-spacing: .02em; }
+[data-tema="latte"] .grande { letter-spacing: .02em; }
+
+/* Mocha: cacau e chocolate com bronze; as janelas ganham degradê pra não virar uma massa só */
+[data-tema="mocha"] {
+  --fundo: #1b0c0a; --painel: #3b1c14; --painel2: #54291d; --texto: #f8e9dc; --fraco: #cfae98;
+  --destaque: #dca557; --borda: #8a5338; --sel: #6e3a28; --tela-borda: #dca557;
+  --botao-fundo: #dca557; --botao-texto: #2a120b;
+  --fonte: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif; --raio: 12px; --brilho: 0 10px 34px #000a;
+  --fundo-img: radial-gradient(circle at 85% 0%, #8a53382e, transparent 45%), radial-gradient(circle at 0% 100%, #dca5571a, transparent 40%);
+}
+[data-tema="mocha"] .janela, [data-tema="mocha"] .sub, [data-tema="mocha"] #rapido { background: linear-gradient(160deg, var(--painel2), var(--painel)); }
+[data-tema="mocha"] .titulo-j { background: linear-gradient(90deg, #dca55733, transparent); }
+
+/* Caramelo: cafeteria com sol; botões claros de mel, texto escuro */
+[data-tema="caramelo"] {
+  --fundo: #f0c98a; --painel: #fbe6bd; --painel2: #fff3d6; --texto: #3c2208; --fraco: #6c4818;
+  --destaque: #9a4f10; --borda: #d19a4e; --sel: #f2cd8c; --tela-borda: #c27a1e;
+  --botao-fundo: #eaa83f; --botao-texto: #3c2208;
+  --fonte: "Segoe UI", system-ui, sans-serif; --raio: 12px; --brilho: 0 10px 26px #8a5a1a38;
+  --fundo-img: radial-gradient(circle at 88% 6%, #fff6d4e6 0, #fff6d400 34%), linear-gradient(#f4d79f, #eab870);
+}
+[data-tema="caramelo"] .grande.sec { color: var(--texto); }
+[data-tema="caramelo"] .titulo-j { background: #f2cd8c88; }
+
+/* Cold Brew: azul-petróleo e cinza gelado, com bege de gelo derretendo no café */
+[data-tema="coldbrew"] {
+  --fundo: #0a1b21; --painel: #11282f; --painel2: #183943; --texto: #e4eef0; --fraco: #86a5ad;
+  --destaque: #dccaa6; --borda: #2b5663; --sel: #1f4a56; --tela-borda: #2b5663;
+  --fonte: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; --raio: 6px; --brilho: 0 0 30px #3fb4c01f, 0 10px 34px #0009;
+  --fundo-img: linear-gradient(180deg, #123b45 0, transparent 60%), repeating-linear-gradient(115deg, transparent 0 38px, #dccaa606 38px 39px);
+}
+[data-tema="coldbrew"] .titulo-j { background: linear-gradient(90deg, #1f4a56, transparent); border-bottom-color: #dccaa655; }
+[data-tema="coldbrew"] .sub button:hover, [data-tema="coldbrew"] #rapido-lista li.sel { box-shadow: inset 3px 0 0 var(--destaque); }
+
+/* Café com canela: papel artesanal sobre argila, madeira e ferrugem; serifa humanista */
+[data-tema="canela"] {
+  --fundo: #d9a27c; --painel: #f2e2c6; --painel2: #f9eeda; --texto: #34190d; --fraco: #5a3620;
+  --destaque: #9a3b1a; --borda: #c89c73; --sel: #e8c9a2; --tela-borda: #9a3b1a;
+  --fonte: "Palatino Linotype", "Book Antiqua", Palatino, "URW Palladio L", serif; --raio: 4px; --brilho: 0 8px 22px #5a2c1840;
+  --fundo-img: repeating-linear-gradient(90deg, #5a2c180a 0 2px, transparent 2px 11px), linear-gradient(#dfaa86, #d19871);
+}
+[data-tema="canela"] .janela, [data-tema="canela"] .sub, [data-tema="canela"] #rapido { box-shadow: inset 0 0 0 3px var(--painel), inset 0 0 0 4px var(--borda), var(--brilho); }
+[data-tema="canela"] .titulo-j { background: var(--destaque); color: var(--painel); border-bottom-color: var(--destaque); }

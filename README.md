@@ -27,7 +27,7 @@ Dois cliques no `KOFnes.exe` e você cai numa tela de Início bonita, com a sua 
 | 🏠 **Início** | continuar de onde parou (com print), jogados recentemente, atalhos e dica do dia. Até a frase de boas-vindas muda com o tema |
 | 🧭 **Navegação** | menu lateral, botão **Voltar** com histórico (`Alt+←`, `Esc`, botão voltar do mouse) e um **Guia do KOFnes** dentro do próprio emulador |
 | 📚 **Biblioteca** | estilo ZSNES: escolha a pasta de ROMs uma vez, busque por palavras em qualquer ordem, esconda hacks e variantes com **Só os principais**, capas oficiais ([libretro-thumbnails](https://github.com/libretro-thumbnails)) e **modo sofá** (grade de capas pra jogar de longe, com o controle) |
-| 🎨 **28 temas** | consoles, Windows antigo, internet de 1999, anime e bem brasileiro, com galeria de prévias ao vivo |
+| 🎨 **35 temas** | oito jeitos de café (do Espresso ao Café com canela), consoles, Windows antigo, internet de 1999, anime e bem brasileiro, com galeria de prévias ao vivo |
 | 📺 **Imagem** | filtros WebGL (nítido, suave, CRT, fliperama, Game Boy, sépia, LCD), proporção 4:3 / 8:7 / esticar, tela cheia de verdade e **molduras** |
 | 💾 **Savestates** | por jogo, com print do momento, e **salvar automático** pra continuar de onde parou |
 | ⏪ **Rebobinar** | deu ruim? segure `Backspace` (ou `Select+Y`) e o jogo volta no tempo, em preto e branco, até 5 s. Depois uma ampulheta ⏳ recarrega enquanto você joga, estilo Príncipe da Pérsia |
