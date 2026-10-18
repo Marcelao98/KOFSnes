@@ -19,13 +19,13 @@ const [,, html, rom, saida] = process.argv;
   await p.keyboard.down('ShiftLeft'); await p.keyboard.down('Enter'); await p.waitForTimeout(150);
   await p.keyboard.up('Enter'); await p.keyboard.up('ShiftLeft'); await p.waitForTimeout(100);
   r.abriu = await p.evaluate(() => KOFnes.rapido()); r.pausouNoMenu = await p.evaluate(() => KOFnes.pausado());
-  for (let i = 0; i < 10; i++) await p.keyboard.press("ArrowDown");       // até Volume
+  for (let i = 0; i < 11; i++) await p.keyboard.press("ArrowDown");       // até Volume
   r.itemSel = await p.textContent('#rapido-lista li.sel span');
   await p.keyboard.press('ArrowLeft'); await p.keyboard.press('ArrowLeft');
   r.volume = await p.evaluate(() => KOFnes.volume());
   r.valorMostrado = await p.textContent('#rapido-lista li.sel b');
   await p.screenshot({ path: saida + '/rapido.png' });
-  for (let i = 0; i < 9; i++) await p.keyboard.press("ArrowUp");         // Salvar estado
+  for (let i = 0; i < 10; i++) await p.keyboard.press("ArrowUp");         // Salvar estado
   await p.keyboard.press('Enter'); await p.waitForTimeout(1200);
   r.fechouAoSalvar = !(await p.evaluate(() => KOFnes.rapido()));
   r.voltouAoJogo = !(await p.evaluate(() => KOFnes.pausado()));

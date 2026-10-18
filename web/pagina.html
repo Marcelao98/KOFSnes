@@ -113,7 +113,7 @@
         <button data-acao="abrir"><i>＋</i><b>Abrir uma ROM</b><small>.sfc, .smc ou .zip (ou arraste)</small></button>
         <button data-acao="jukebox"><i>🎵</i><b>Jukebox</b><small>as trilhas que você guardou</small></button>
         <button data-acao="estatisticas"><i>📊</i><b>Estatísticas</b><small>quanto você jogou, e o quê</small></button>
-        <button data-acao="temas"><i>🎨</i><b>Temas</b><small>28 jeitos de deixar com a sua cara</small></button>
+        <button data-acao="temas"><i>🎨</i><b>Temas</b><small><span class="n-temas">28</span> jeitos de deixar com a sua cara</small></button>
         <button data-acao="guia"><i>📖</i><b>Guia</b><small>tudo que o KOFnes sabe fazer</small></button>
       </div>
     </div>
@@ -239,7 +239,7 @@
         </div>
         <div data-pagina="temas" hidden>
           <h3>🎨 Temas e o Início</h3>
-          <p>São 28 temas: consoles, computador e internet antiga, anime e bem brasileiro. Clique em <b>🎨 Tema</b>, passe o mouse pra experimentar e clique pra escolher. A tela de Início muda junto, até a frase de boas-vindas.</p>
+          <p>São <span class="n-temas">28</span> temas: consoles, computador e internet antiga, anime e bem brasileiro. Clique em <b>🎨 Tema</b>, passe o mouse pra experimentar e clique pra escolher. A tela de Início muda junto, até a frase de boas-vindas.</p>
           <p>O <b>Início</b> mostra o que você jogou por último, com o print de onde parou, os jogados recentemente e uma dica do dia.</p>
         </div>
         <div data-pagina="bugs" hidden>
@@ -309,6 +309,10 @@
   <div id="veu" hidden></div>
   <section id="temas" class="janela" hidden>
     <div class="titulo-j"><span>🎨 Temas <small id="tema-nome" class="dica"></small></span><button class="x" data-acao="fechar-temas">×</button></div>
+    <div class="temas-barra">
+      <input id="temas-busca" type="search" placeholder="🔎 buscar tema (nome ou categoria)" autocomplete="off" spellcheck="false">
+      <div id="temas-cats"></div>
+    </div>
     <div id="grade-temas"></div>
     <button class="grande sec" data-acao="showcase">▶ Showcase: passar todos os temas sozinho</button>
     <p class="dica">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p>

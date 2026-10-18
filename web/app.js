@@ -333,7 +333,17 @@ addEventListener('keydown', (e) => {
   if (e.code === 'F7') { e.preventDefault(); guardarMusica(); return; }
   if (!$('#jukebox').hidden && e.code === 'Space') { e.preventDefault(); jukeAlternar(); return; }
   if (!$('#temas').hidden) {
-    if (e.code === 'Escape') { acao('fechar-temas'); return; }
+    const busca = $('#temas-busca'), emBusca = document.activeElement === busca;
+    if (e.code === 'Escape') {
+      if (emBusca && busca.value) { busca.value = ''; temasBusca = ''; montarTemas(); return; }   // 1º Esc limpa a busca, o 2º fecha
+      acao('fechar-temas'); return;
+    }
+    if (emBusca) {   // digitando: ↓ vai pros temas, Enter escolhe o primeiro; o resto é texto
+      if (e.code === 'ArrowDown') { e.preventDefault(); const p = $('#grade-temas .previa'); if (p) p.focus(); }
+      else if (e.code === 'Enter') { e.preventDefault(); const p = $('#grade-temas .previa'); if (p) p.click(); }
+      return;
+    }
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && e.code !== 'Space') { busca.focus(); return; }   // começou a digitar: vai pra busca
     if (temasTecla(e)) return;
     if (e.code === 'Enter' || e.code === 'Space') return;   // o botão em foco recebe o clique
   }
@@ -1361,6 +1371,7 @@ const ITENS_RAPIDO = [
   { t: '🐞 Reportar bug', f: () => { fecharRapido(); abrirBug(); } },
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
+  { t: '🎨 Tema', v: () => TODOS_TEMAS.find(([k]) => k === temaSalvo)[1], aj: (d) => tema(ciclar(TODOS_TEMAS, temaSalvo, d)), f: () => { fecharRapido(); acao('temas'); } },
   { t: 'Filtro', v: () => FILTROS.find(([k]) => k === filtro)[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, filtro, d)) },
   { t: 'Proporção', v: () => PROPORCOES.find(([k]) => k === proporcao)[1], aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
   { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS, moldura, d)) },
@@ -1633,6 +1644,7 @@ const TEMAS = [
   ['Bem brasileiro', [['desenho', 'Manhã de desenho'], ['camelo', 'Console de camelô'], ['brasil', 'Brasil']]],
 ];
 const TODOS_TEMAS = TEMAS.flatMap(([, l]) => l);
+document.querySelectorAll('.n-temas').forEach((e) => { e.textContent = TODOS_TEMAS.length; });
 // galeria (pop-up): passar o mouse (ou o foco das setas) experimenta o tema na
 // janela toda; clicar escolhe; sair da galeria sem escolher volta ao de antes
 let temaSalvo = 'cafe';
@@ -1642,9 +1654,35 @@ function experimentar(id) {
   const t = TODOS_TEMAS.find(([k]) => k === id);
   $('#tema-nome').textContent = t ? '· ' + t[1] + (id === temaSalvo ? ' (em uso)' : '') : '';
 }
+// A galeria tem uma caixa de busca e uma fileira de categorias (os grupos de TEMAS, mais "Todos").
+// Pra colocar tema novo: um bloco [data-tema="id"] no estilo.css + uma linha em TEMAS (o grupo novo
+// aparece sozinho como categoria). A busca acha por nome, categoria ou id, sem ligar pra acento.
+let temasCat = 'todos', temasBusca = '';
+const semAcento = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function achaTema(grupo, id, nome) {
+  const palavras = semAcento(temasBusca).split(/\s+/).filter(Boolean), alvo = semAcento(`${nome} ${grupo} ${id}`);
+  return palavras.every((p) => alvo.includes(p));
+}
+function temasFiltrados() {   // [[grupo, [[id, nome]...]]...] só com o que passa na categoria e na busca
+  return TEMAS.map(([grupo, lista]) => [grupo, lista.filter(([id, nome]) => (temasCat === 'todos' || temasCat === grupo) && achaTema(grupo, id, nome))]).filter(([, l]) => l.length);
+}
+function montarCategorias() {
+  const c = $('#temas-cats'); c.innerHTML = '';
+  const cont = TEMAS.map(([grupo, lista]) => [grupo, lista.filter(([id, nome]) => achaTema(grupo, id, nome)).length]);
+  const total = cont.reduce((t, [, n]) => t + n, 0);
+  for (const [cat, rotulo, n] of [['todos', 'Todos', total], ...cont.map(([g, n]) => [g, g, n])]) {
+    const b = document.createElement('button'); b.className = 'cat' + (cat === temasCat ? ' ativo' : ''); b.dataset.cat = cat;
+    b.textContent = `${rotulo} · ${n}`; b.disabled = n === 0 && cat !== temasCat; c.appendChild(b);
+  }
+}
+$('#temas-cats').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (b) { temasCat = b.dataset.cat; montarTemas(); } });
+$('#temas-busca').addEventListener('input', (e) => { temasBusca = e.target.value.trim(); montarTemas(); });
 function montarTemas() {
   const g = $('#grade-temas'); g.innerHTML = '';
-  for (const [grupo, lista] of TEMAS) {
+  montarCategorias();
+  const filtrados = temasFiltrados();
+  if (!filtrados.length) { const p = document.createElement('p'); p.className = 'dica'; p.textContent = 'nenhum tema encontrado' + (temasBusca ? ` pra "${temasBusca}"` : ''); g.appendChild(p); }
+  for (const [grupo, lista] of filtrados) {
     const h = document.createElement('h3'); h.textContent = grupo; g.appendChild(h);
     const d = document.createElement('div'); d.className = 'temas-grupo';
     for (const [id, nome] of lista) {
@@ -1668,16 +1706,17 @@ $('#veu').addEventListener('click', () => acao('fechar-temas'));
 // ---------------- showcase dos temas ----------------
 // Botão na galeria: passa por todos os temas sozinho (3,5 s cada), pra mostrar o visual do KOFnes.
 // Esc ou "Parar" volta pro tema de antes; "Ficar com este" escolhe o que estiver na tela.
-let showTimer = 0, showI = 0;
+let showTimer = 0, showI = 0, showLista = [];
 function passarTema() {
-  const [id, nome] = TODOS_TEMAS[showI % TODOS_TEMAS.length]; showI++;
+  const [id, nome] = showLista[showI % showLista.length]; showI++;
   experimentar(id);
-  $('#showcase-nome').textContent = nome; $('#showcase-n').textContent = ((showI - 1) % TODOS_TEMAS.length + 1) + '/' + TODOS_TEMAS.length;
+  $('#showcase-nome').textContent = nome; $('#showcase-n').textContent = ((showI - 1) % showLista.length + 1) + '/' + showLista.length;
 }
 function iniciarShowcase() {
   if (showTimer) return;
   if (!snes && telaAtual() === 'jogo') abrirHome();
-  showI = Math.max(0, TODOS_TEMAS.findIndex(([k]) => k === temaSalvo));
+  showLista = temasFiltrados().flatMap(([, l]) => l); if (!showLista.length) showLista = TODOS_TEMAS;   // respeita a categoria e a busca da galeria
+  showI = Math.max(0, showLista.findIndex(([k]) => k === temaSalvo));
   document.documentElement.classList.add('showcase'); $('#showcase').hidden = false;
   passarTema(); showTimer = setInterval(passarTema, 3500);
 }
@@ -1692,6 +1731,7 @@ let temasVoltar = null;   // a janela que estava aberta (biblioteca...) volta qu
 function abrirTemas() {
   temasVoltar = ['home', 'biblioteca', 'estatisticas', 'jukebox', 'estados', 'guia'].find((id) => !$('#' + id).hidden) || null;
   fecharMenus(); if (rapidoAberto) fecharRapido();   // a tela de trás fica (aparece sob o véu e muda ao vivo)
+  temasCat = 'todos'; temasBusca = ''; $('#temas-busca').value = '';
   montarTemas(); $('#temas').hidden = false; $('#veu').hidden = false;
   const b = $(`.previa[data-tema="${temaSalvo}"]`); if (b) { b.focus({ preventScroll: true }); b.scrollIntoView({ block: 'nearest' }); }
 }

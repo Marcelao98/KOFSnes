@@ -113,6 +113,11 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   zera e a ampulheta ⏳ leva 30 s de jogo pra recarregar. Sem item no menu (savestates guardam momentos);
   só roda com o jogo andando. Chave `kofnes.rebobLimite` (3/5/10/15) só pros testes. Teste:
   `testes/navegador/rebob.cjs`.
+- **Temas com categorias e busca (branch `temas-menu`, ainda não publicado):** a galeria tem busca (sem acento,
+  por nome/categoria/id) e fileira de categorias (os grupos de `TEMAS` em `web/app.js`; grupo novo vira categoria
+  sozinho), o showcase passa só os temas filtrados, e o **menu do botão direito** (menu rápido) ganhou o item
+  "🎨 Tema" (◀▶ troca, Enter abre a galeria). Pra adicionar tema: bloco `[data-tema="id"]` no `estilo.css` + uma
+  linha em `TEMAS`; o contador "N temas" do Início e do Guia se atualiza sozinho. Teste: `testes/navegador/temas-menu.cjs`.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;

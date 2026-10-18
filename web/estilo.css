@@ -709,3 +709,14 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
 #showcase[hidden] { display: none; }
 #showcase small { opacity: .7; margin-left: 4px; }
 #showcase .grande { width: auto; min-width: 0; margin: 0; padding: 6px 12px; flex: 0 0 auto; font-size: 13px; }
+
+/* galeria de temas: busca e categorias */
+.temas-barra { display: flex; flex-direction: column; gap: 8px; padding: 2px 4px 8px; }
+#temas-busca { width: 100%; box-sizing: border-box; padding: 8px 10px; font: inherit; color: var(--texto); background: var(--painel2); border: 1px solid var(--borda); border-radius: var(--raio); }
+#temas-cats { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+#temas-cats .cat { flex: 0 0 auto; white-space: nowrap; padding: 5px 12px; font: inherit; font-size: 13px; color: var(--texto); background: var(--painel2); border: 1px solid var(--borda); border-radius: 999px; cursor: pointer; }
+#temas-cats .cat:hover:not(:disabled) { border-color: var(--destaque); }
+#temas-cats .cat.ativo { background: var(--sel); border-color: var(--destaque); font-weight: 700; }
+#temas-cats .cat:disabled { opacity: .4; cursor: default; }
+/* o valor do item selecionado do menu rápido usa a cor do texto (em alguns temas o destaque some em cima da seleção) */
+#rapido-lista li.sel .ajuste b { color: inherit; }
