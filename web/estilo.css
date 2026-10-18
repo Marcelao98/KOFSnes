@@ -700,3 +700,12 @@ body.rebobinando #tela { animation: rebob-cinza .22s steps(2, jump-none) infinit
   color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); pointer-events: none;
   background: linear-gradient(90deg, var(--sel) var(--enche, 0%), var(--painel) var(--enche, 0%));
 }
+
+/* showcase dos temas: troca suave de cor e a barrinha com o nome do tema */
+html.showcase *, html.showcase *::before, html.showcase *::after { transition: background-color .7s, color .7s, border-color .7s, box-shadow .7s; }
+#showcase { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; max-width: 94vw; flex-wrap: wrap; justify-content: center; background: var(--painel); color: var(--texto);
+  border: 1px solid var(--borda); border-radius: var(--raio); box-shadow: var(--brilho, 0 4px 18px #0008); }
+#showcase[hidden] { display: none; }
+#showcase small { opacity: .7; margin-left: 4px; }
+#showcase .grande { width: auto; min-width: 0; margin: 0; padding: 6px 12px; flex: 0 0 auto; font-size: 13px; }

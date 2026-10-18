@@ -310,6 +310,7 @@
   <section id="temas" class="janela" hidden>
     <div class="titulo-j"><span>🎨 Temas <small id="tema-nome" class="dica"></small></span><button class="x" data-acao="fechar-temas">×</button></div>
     <div id="grade-temas"></div>
+    <button class="grande sec" data-acao="showcase">▶ Showcase: passar todos os temas sozinho</button>
     <p class="dica">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p>
   </section>
 
@@ -326,6 +327,11 @@
 
   <div id="aviso" hidden></div>
   <div id="ampulheta" hidden><span></span></div>
+  <div id="showcase" hidden>
+    <span>🎨 <b id="showcase-nome"></b> <small id="showcase-n"></small></span>
+    <button class="grande" data-acao="showcase-ficar">Ficar com este</button>
+    <button class="grande sec" data-acao="showcase-parar">⏹ Parar</button>
+  </div>
 </main>
 
 <footer id="status">

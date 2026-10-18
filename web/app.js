@@ -326,6 +326,7 @@ function semCombo(b) {
 addEventListener('keydown', (e) => {
   ligarSom();
   if (capturando) { capturar(e); return; }
+  if (showTimer && e.code === 'Escape') { e.preventDefault(); pararShowcase(false); return; }
   if (!$('#bug').hidden) { if (e.code === 'Escape') fecharBug(); return; }   // digitando a descrição
   if (rapidoAberto) { rapidoTecla(e); return; }
   if (e.code === 'F9') { e.preventDefault(); abrirBug(); return; }
@@ -1664,6 +1665,29 @@ $('#grade-temas').addEventListener('mouseleave', () => {
   experimentar(f && f.classList.contains('previa') ? f.dataset.tema : temaSalvo);
 });
 $('#veu').addEventListener('click', () => acao('fechar-temas'));
+// ---------------- showcase dos temas ----------------
+// Botão na galeria: passa por todos os temas sozinho (3,5 s cada), pra mostrar o visual do KOFnes.
+// Esc ou "Parar" volta pro tema de antes; "Ficar com este" escolhe o que estiver na tela.
+let showTimer = 0, showI = 0;
+function passarTema() {
+  const [id, nome] = TODOS_TEMAS[showI % TODOS_TEMAS.length]; showI++;
+  experimentar(id);
+  $('#showcase-nome').textContent = nome; $('#showcase-n').textContent = ((showI - 1) % TODOS_TEMAS.length + 1) + '/' + TODOS_TEMAS.length;
+}
+function iniciarShowcase() {
+  if (showTimer) return;
+  if (!snes && telaAtual() === 'jogo') abrirHome();
+  showI = Math.max(0, TODOS_TEMAS.findIndex(([k]) => k === temaSalvo));
+  document.documentElement.classList.add('showcase'); $('#showcase').hidden = false;
+  passarTema(); showTimer = setInterval(passarTema, 3500);
+}
+function pararShowcase(ficar) {
+  if (!showTimer) return;
+  clearInterval(showTimer); showTimer = 0; $('#showcase').hidden = true;
+  const atual = document.documentElement.dataset.tema;
+  if (ficar) { tema(atual); avisar('🎨 tema: ' + TODOS_TEMAS.find(([k]) => k === atual)[1]); } else experimentar(temaSalvo);
+  setTimeout(() => document.documentElement.classList.remove('showcase'), 700);
+}
 let temasVoltar = null;   // a janela que estava aberta (biblioteca...) volta quando a galeria fecha
 function abrirTemas() {
   temasVoltar = ['home', 'biblioteca', 'estatisticas', 'jukebox', 'estados', 'guia'].find((id) => !$('#' + id).hidden) || null;
@@ -1756,6 +1780,9 @@ async function acao(a) {
       avisar(pausaAuto ? 'pausa ao sair da janela ligada' : 'pausa ao sair da janela desligada'); break;
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
     case 'temas': if ($('#temas').hidden) abrirTemas(); else fecharTemas(); break;
+    case 'showcase': fecharTemas(); iniciarShowcase(); break;
+    case 'showcase-parar': pararShowcase(false); break;
+    case 'showcase-ficar': pararShowcase(true); break;
     case 'fechar-temas': fecharTemas(); if (!snes && telaAtual() === 'jogo') abrirHome(); break;
     case 'estatisticas': await mostrarEstat(); break;
     case 'fechar-estat': voltar(); break;
