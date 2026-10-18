@@ -1,4 +1,4 @@
-// Nostalgia BR: 20 temas na galeria (categoria própria, nome + descrição), sem duplicar id, os 8 de café
+// Nostalgia BR (agora dentro de 'Bem brasileiro'): 20 temas na galeria (nome + descrição), sem duplicar id, os 8 de café
 // intactos, persistência ao reabrir, busca pela descrição, prints da galeria e do Início de cada tema.
 //   node testes/navegador/nostalgia-br.cjs dist/web/KOFnes.html saida/
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -14,11 +14,12 @@ const NOMES = ['Sessão da Tarde', 'TV Globinho', 'Lan House 2007', 'Orkut & MSN
   await p.goto('file://' + html); await p.waitForTimeout(500);
   r.padrao = (await tema()) === 'cafe';
   await p.click('#home [data-acao="temas"]'); await p.waitForTimeout(300);
-  const cat = (await p.$$eval('#temas-cats .cat', (l) => l.map((x) => x.textContent))).find((t) => /^Nostalgia BR/.test(t));
+  const cat = (await p.$$eval('#temas-cats .cat', (l) => l.map((x) => x.textContent))).find((t) => /^Bem brasileiro/.test(t));
   await p.click(`#temas-cats .cat:text-is("${cat}")`); await p.waitForTimeout(200);
-  const cards = await p.$$eval('#grade-temas .previa', (l) => l.map((x) => ({ id: x.dataset.tema, nome: x.querySelector('.pv-nome').textContent, desc: x.querySelector('.pv-desc').textContent })));
+  const todosCards = await p.$$eval('#grade-temas .previa', (l) => l.map((x) => ({ id: x.dataset.tema, nome: x.querySelector('.pv-nome').textContent, desc: x.querySelector('.pv-desc').textContent })));
+  const cards = NOMES.map((n) => todosCards.find((c) => c.nome === n)).filter(Boolean);
   r.categoria = cat; r.vinte = cards.length === 20;
-  r.nomesExatos = NOMES.every((n, i) => cards[i] && cards[i].nome === n);
+  r.nomesExatos = cards.length === 20;
   r.todosComDescricao = cards.every((c) => c.desc.length > 10);
   await p.click('#temas-cats .cat[data-cat="todos"]'); await p.waitForTimeout(200);
   const todos = await p.$$eval('#grade-temas .previa', (l) => l.map((x) => x.dataset.tema));
@@ -28,7 +29,7 @@ const NOMES = ['Sessão da Tarde', 'TV Globinho', 'Lan House 2007', 'Orkut & MSN
   r.total = todos.length;
   // prévias distintas: o fundo/destaque computado de cada cartão
   const cores = await p.$$eval('#grade-temas .previa', (l) => l.map((x) => { const c = getComputedStyle(x.querySelector('.pv-bot')).backgroundColor + '|' + getComputedStyle(x.querySelector('.pv-corpo')).backgroundColor; return c; }));
-  r.previasDistintas = new Set(cores).size === 20;
+  r.previasDistintas = new Set(cores).size === cores.length;
   await p.screenshot({ path: saida + '/nostalgia-galeria.png' });
   // busca pela descrição
   await p.fill('#temas-busca', 'luz amarela'); await p.waitForTimeout(200);

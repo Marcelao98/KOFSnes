@@ -706,6 +706,7 @@ body.rebobinando #tela { animation: rebob-cinza .22s steps(2, jump-none) infinit
 
 /* showcase dos temas: troca suave de cor e a barrinha com o nome do tema */
 html.showcase *, html.showcase *::before, html.showcase *::after { transition: background-color .7s, color .7s, border-color .7s, box-shadow .7s; }
+html.showcase-rapido *, html.showcase-rapido *::before, html.showcase-rapido *::after { transition-duration: .22s; }
 #showcase { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 10px;
   padding: 8px 14px; max-width: 94vw; flex-wrap: wrap; justify-content: center; background: var(--painel); color: var(--texto);
   border: 1px solid var(--borda); border-radius: var(--raio); box-shadow: var(--brilho, 0 4px 18px #0008); }
@@ -907,20 +908,18 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
 }
 [data-tema="globinho"] .janela, [data-tema="globinho"] .sub, [data-tema="globinho"] #rapido { border: 3px solid #ffd400; }
 [data-tema="lanhouse"] {
-  --fundo: #050a06; --painel: #0b140d; --painel2: #121f15; --texto: #c9f7c9; --fraco: #7fb589;
-  --destaque: #39ff6a; --borda: #1f4a2a; --sel: #174a26; --tela-borda: #39ff6a;
-  --fonte: "Consolas", "Lucida Console", "DejaVu Sans Mono", monospace; --caixa: uppercase; --raio: 0px; --brilho: 0 0 22px #39ff6a1c, 0 10px 30px #000c;
-  --fundo-img: repeating-linear-gradient(0deg, #39ff6a0b 0 1px, transparent 1px 3px), radial-gradient(ellipse 80% 70% at 50% 40%, #39ff6a10, transparent 75%);
+  --fundo: #141a10; --painel: #2b3326; --painel2: #2f3829; --texto: #ffc247; --fraco: #cfc38a;
+  --destaque: #ffd770; --borda: #6e7a62; --sel: #46533b; --tela-borda: #ffb000;
+  --fonte: Tahoma, Verdana, "Segoe UI", sans-serif; --caixa: none; --raio: 0px; --brilho: 0 8px 24px #000c;
+  --fundo-img: repeating-linear-gradient(0deg, #00000026 0 1px, transparent 1px 3px), radial-gradient(ellipse 80% 70% at 50% 40%, #ffb0000f, transparent 75%);
 }
-[data-tema="lanhouse"] .titulo-j { border-bottom: 1px solid #39ff6a; letter-spacing: .08em; }
 [data-tema="orkutmsn"] {
-  --fundo: #1c1240; --painel: #2a1a66; --painel2: #36237f; --texto: #f3eeff; --fraco: #bfb0f0;
-  --destaque: #5cc8ff; --borda: #5a46b8; --sel: #4a35a0; --tela-borda: #5cc8ff;
-  --botao-fundo: #ff5fb0; --botao-texto: #1c1240;
-  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 10px; --brilho: 0 8px 28px #0009;
-  --fundo-img: radial-gradient(circle at 15% 10%, #5b34c966 0, transparent 45%), radial-gradient(circle at 85% 90%, #2f7be055 0, transparent 45%), linear-gradient(#1c1240, #170e36);
+  --fundo: #cfe3f7; --painel: #ffffff; --painel2: #eaf3fc; --texto: #10305a; --fraco: #46658f;
+  --destaque: #b81c70; --borda: #8fb4de; --sel: #cfe3fb; --tela-borda: #3cb44b;
+  --botao-fundo: #1f6ad0; --botao-texto: #ffffff;
+  --fonte: Tahoma, "Segoe UI", Verdana, sans-serif; --caixa: none; --raio: 8px; --brilho: 0 6px 18px #1f6ad033;
+  --fundo-img: radial-gradient(ellipse 70% 40% at 50% -10%, #ffffffcc, transparent 70%), linear-gradient(#d6e8f9, #bcd7f1);
 }
-[data-tema="orkutmsn"] .titulo-j { background: linear-gradient(90deg, #5b34c9, #2f7be0); color: #fff; border-bottom-color: #5cc8ff; }
 [data-tema="dvdcamelo"] {
   --fundo: #0a0a0c; --painel: #151518; --painel2: #1f1f24; --texto: #f1f1f5; --fraco: #a8a8b4;
   --destaque: #ff4a4a; --borda: #5a5a66; --sel: #2c2c34; --tela-borda: #c8c8d2;
@@ -1449,3 +1448,16 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
   --fonte: Georgia, "Times New Roman", serif; --caixa: none; --raio: 8px; --brilho: 0 8px 28px #000a;
   --fundo-img: radial-gradient(ellipse 60% 35% at 50% -8%, #e6b84a2e, transparent 70%), repeating-linear-gradient(90deg, #3fb88a08 0 2px, transparent 2px 60px);
 }
+[data-tema="orkutmsn"] .janela, [data-tema="orkutmsn"] .sub, [data-tema="orkutmsn"] #rapido { border: 1px solid #6f9ad0; box-shadow: inset 0 1px 0 #fff, var(--brilho); }
+[data-tema="orkutmsn"] .titulo-j { background: linear-gradient(#7db6f2 0, #3a82db 48%, #2468c4 50%, #3c8be6 100%); color: #ffffff; border-bottom: 1px solid #1d57a6; text-shadow: 0 1px 1px #0a2f6a99; }
+[data-tema="orkutmsn"] .titulo-j::before { content: "● "; color: #6ee26e; }
+[data-tema="lanhouse"] .janela, [data-tema="lanhouse"] .sub, [data-tema="lanhouse"] #rapido { border: 1px solid #6e7a62; box-shadow: inset 1px 1px 0 #8a9680, inset -1px -1px 0 #11150d, var(--brilho); }
+[data-tema="lanhouse"] .titulo-j { background: #11150d; color: #ffc247; border-bottom: 1px solid #6e7a62; letter-spacing: .04em; }
+[data-tema="lanhouse"] .previa .pv-tela { border-style: solid; }
+[data-tema="clube"] {
+  --fundo: #2b1710; --painel: #3d2418; --painel2: #4d2f20; --texto: #f3e3c8; --fraco: #cdb391;
+  --destaque: #e8b04a; --borda: #7a4a30; --sel: #5a3422; --tela-borda: #e8b04a;
+  --fonte: Georgia, "Times New Roman", serif; --caixa: none; --raio: 6px; --brilho: 0 8px 28px #000a;
+  --fundo-img: linear-gradient(transparent 78%, #9a4a2a40 78% 84%, #6a3a2440 84%), radial-gradient(ellipse 60% 35% at 50% 0%, #e8b04a24, transparent 70%), repeating-linear-gradient(0deg, #f3e3c807 0 1px, transparent 1px 4px);
+}
+[data-tema="clube"] .titulo-j { border-bottom: 2px solid #e8b04a; font-style: italic; }

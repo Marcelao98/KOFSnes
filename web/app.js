@@ -1495,6 +1495,7 @@ const FRASES = {
   mp3: "Faixa 01 · Repetir tudo",
   gibi: "Edição especial · 52 páginas",
   interior: "Praça vazia, poste aceso.",
+  clube: "Travessia: pé na estrada e o jogo na mão.",
   detetive: "Não vim parar no outro mundo por querer… foi o jogo.",
   folhas: "Esse é o meu jeito ninja!",
   mar: "Eu vou ser o Rei dos Piratas… do ranking!",
@@ -1567,7 +1568,7 @@ const FRASES = {
   panda: "Bambu, calma e um joguinho.",
   flamingo: "Numa perna só e jogando.",
 };
-const LOGOS = { smw: '🍄', alttp: '🗡️', metroid: '🛸', dkc: '🍌', mmx: '🤖', chrono: '⏳', ff6: '⚙️', earthbound: '🎈', kirby: '⭐', fzero: '🏎️', starfox: '🦊', cv4: '🦇', contra: '💥', sf2: '👊', mk: '🐉', mana: '🌱', mariokart: '🏁', yoshi: '🥚', ghouls: '🪦', terranigma: '🌍', tropicalia: '🌺', bossa: '🎸', samba: '🪘', choro: '🪕', frevo: '☂️', maracatu: '👑', cordel: '📜', azulejo: '🔷', modernismo: '🟨', brasilia: '🏛️', mataatlantica: '🌿', amazonica: '🌴', sertao: '🌵', pantanal: '🐊', cerrado: '🌾', litoral: '🌊', ouropreto: '⛪', baiana: '🥥', junina: '🔥', carnaval: '🎊', detetive: '👁️', folhas: '🍥', mar: '🏴‍☠️', alquimia: '⚗️', cadernomorte: '🍎', lamina: '⚔️', digital: '🧬', cartas: '🌸', cacadores: '🎣', respiracao: '🔥', maldicao: '🌀', motosserra: '🪚', alem: '✨', familia: '🥂', caos: '👽', trem: '🚂', mononoke: '🌲', sessao: '📺', globinho: '🖍️', lanhouse: '🖥️', orkutmsn: '💬', dvdcamelo: '📀', locadora: '📼', caderno: '📓', recreio: '🍬', boteco: '🍺', chuva: '🌧️', almoco: '🍲', feira: '🍅', brasil98: '🛰️', hexa2002: '⚽', ferias: '🏖️', juninaescola: '🎏', casavo: '🧶', mp3: '🎧', gibi: '🦸', interior: '🏘️', encanador: '🍄', heroi: '🗡️', cacadora: '🚀', corredor: '💨', blocos: '🧱', arena: '🥊', onca: '🐆', arara: '🦜', capivara: '🦫', gato: '🐈‍⬛', raposa: '🦊', panda: '🐼', flamingo: '🦩', cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
+const LOGOS = { clube: '🎶', smw: '🍄', alttp: '🗡️', metroid: '🛸', dkc: '🍌', mmx: '🤖', chrono: '⏳', ff6: '⚙️', earthbound: '🎈', kirby: '⭐', fzero: '🏎️', starfox: '🦊', cv4: '🦇', contra: '💥', sf2: '👊', mk: '🐉', mana: '🌱', mariokart: '🏁', yoshi: '🥚', ghouls: '🪦', terranigma: '🌍', tropicalia: '🌺', bossa: '🎸', samba: '🪘', choro: '🪕', frevo: '☂️', maracatu: '👑', cordel: '📜', azulejo: '🔷', modernismo: '🟨', brasilia: '🏛️', mataatlantica: '🌿', amazonica: '🌴', sertao: '🌵', pantanal: '🐊', cerrado: '🌾', litoral: '🌊', ouropreto: '⛪', baiana: '🥥', junina: '🔥', carnaval: '🎊', detetive: '👁️', folhas: '🍥', mar: '🏴‍☠️', alquimia: '⚗️', cadernomorte: '🍎', lamina: '⚔️', digital: '🧬', cartas: '🌸', cacadores: '🎣', respiracao: '🔥', maldicao: '🌀', motosserra: '🪚', alem: '✨', familia: '🥂', caos: '👽', trem: '🚂', mononoke: '🌲', sessao: '📺', globinho: '🖍️', lanhouse: '🎯', orkutmsn: '🦋', dvdcamelo: '📀', locadora: '📼', caderno: '📓', recreio: '🍬', boteco: '🍺', chuva: '🌧️', almoco: '🍲', feira: '🍅', brasil98: '🛰️', hexa2002: '⚽', ferias: '🏖️', juninaescola: '🎏', casavo: '🧶', mp3: '🎧', gibi: '🦸', interior: '🏘️', encanador: '🍄', heroi: '🗡️', cacadora: '🚀', corredor: '💨', blocos: '🧱', arena: '🥊', onca: '🐆', arara: '🦜', capivara: '🦫', gato: '🐈‍⬛', raposa: '🦊', panda: '🐼', flamingo: '🦩', cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
   branco: '🤍', laminas: '🟢', neon: '🕹️', classico98: '🪟', luna: '🌄', mensageiro: '💬', rosa2004: '💌', terminal: '⌨️', vapor: '🌴',
   web1: '🚧', esferas: '⭐', unidade01: '🤖', lua: '🌙', dourado: '✨', pokebola: '🔴', floresta: '🌿', desenho: '📺', camelo: '🎁', brasil: '🇧🇷' };
 const DICAS = [
@@ -1757,14 +1758,12 @@ const TEMAS = [
     ['unidade01', 'Unidade 01', 'Roxo e verde de robô gigante, com alerta laranja.'],
     ['lua', 'Guerreira da lua', 'Rosa, azul e dourado de uma noite de lua cheia.'],
     ['floresta', 'Floresta encantada', 'Verdes fundos e luz de vaga-lume.']]],
-  ['Jogos', [['encanador', 'Mundo dos encanadores'], ['heroi', 'Herói de verde'], ['cacadora', 'Caçadora espacial'], ['corredor', 'Corredor azul'], ['blocos', 'Blocos que caem'], ['arena', 'Arena de luta']]],
   ['Animais', [['onca', 'Onça-pintada'], ['arara', 'Arara-azul'], ['capivara', 'Capivara zen'], ['gato', 'Gato preto'], ['raposa', 'Raposa'], ['panda', 'Panda'], ['flamingo', 'Flamingo']]],
-  ['Bem brasileiro', [['desenho', 'Manhã de desenho'], ['camelo', 'Console de camelô'], ['brasil', 'Brasil']]],
-  ['Nostalgia BR', [
+  ['Bem brasileiro', [['desenho', 'Manhã de desenho'], ['camelo', 'Console de camelô'], ['brasil', 'Brasil'],
     ['sessao', 'Sessão da Tarde', 'Azul de televisão, sol de tarde e laranja de VHS.'],
     ['globinho', 'TV Globinho', 'Azul elétrico, amarelo vibrante e vermelho de desenho animado.'],
-    ['lanhouse', 'Lan House 2007', 'Preto, verde de terminal e a luz de um monitor de tubo.'],
-    ['orkutmsn', 'Orkut & MSN', 'Roxo e azul com gradiente, de quando todo mundo tinha scrapbook.'],
+    ['lanhouse', 'Lan House 2007', 'Âmbar sobre verde-oliva de menu de FPS clássico e linhas de monitor de tubo.'],
+    ['orkutmsn', 'Orkut & MSN', 'Janela azul de mensageiro, rosa de rede social e bolinha verde: online.'],
     ['dvdcamelo', 'DVD de Camelô', 'Preto, prata e vermelho de capa de DVD e menu antigo.'],
     ['locadora', 'A Locadora', 'Azul-marinho, vinho e creme de capa de VHS.'],
     ['caderno', 'Caderno de Escola', 'Papel pautado, azul de caneta e margem vermelha.'],
@@ -1780,8 +1779,7 @@ const TEMAS = [
     ['casavo', 'Casa da Vó', 'Creme, madeira, verde antigo e a luz do abajur.'],
     ['mp3', 'MP3 & Fone de Ouvido', 'Prata metálico, preto e azul neon de tocador de MP3.'],
     ['gibi', 'Gibi da Banca', 'Vermelho, amarelo, azul e papel envelhecido de gibi.'],
-    ['interior', 'Cidade do Interior', 'Azul de anoitecer, laranja de poste e concreto de rua tranquila.']]],
-  ['Brasilidades', [
+    ['interior', 'Cidade do Interior', 'Azul de anoitecer, laranja de poste e concreto de rua tranquila.'],
     ['tropicalia', 'Tropicália', 'Verde, amarelo, rosa e cores psicodélicas de 1968.'],
     ['bossa', 'Bossa Nova', 'Creme, azul-petróleo e areia: minimalista e tranquilo.'],
     ['samba', 'Samba de Raiz', 'Vinho, dourado e madeira quente de roda de samba.'],
@@ -1801,7 +1799,8 @@ const TEMAS = [
     ['ouropreto', 'Ouro Preto', 'Pedra, terracota, creme e dourado envelhecido.'],
     ['baiana', 'Baiana', 'Branco, azul, vermelho e dourado da cultura baiana.'],
     ['junina', 'Festa Junina', 'Azul noturno, vermelho, amarelo e laranja de fogueira.'],
-    ['carnaval', 'Carnaval de Rua', 'Magenta, amarelo, verde e azul, vibrante e cheio de confete.']]],
+    ['carnaval', 'Carnaval de Rua', 'Magenta, amarelo, verde e azul, vibrante e cheio de confete.'],
+    ['clube', 'Clube da Esquina', 'MPB mineira: terra vermelha, sépia de foto antiga e a esquina de BH.']]],
   ['Clássicos do SNES', [
     ['smw', 'Super Mario World', 'Azul celeste, verde vivo e cores alegres de plataforma.'],
     ['alttp', 'The Legend of Zelda: A Link to the Past', 'Verde floresta, dourado e pergaminho de fantasia.'],
@@ -1822,7 +1821,8 @@ const TEMAS = [
     ['mariokart', 'Super Mario Kart', 'Vermelho, azul, amarelo e verde de pista e itens.'],
     ['yoshi', 'Yoshi\'s Island', 'Verde, rosa e amarelo de desenho feito à mão.'],
     ['ghouls', 'Super Ghouls \'n Ghosts', 'Roxo, cinza e azul noturno de fantasia sombria.'],
-    ['terranigma', 'Terranigma', 'Azul profundo, verde e dourado, épico e contemplativo.']]],
+    ['terranigma', 'Terranigma', 'Azul profundo, verde e dourado, épico e contemplativo.'],
+    ['encanador', 'Mundo dos encanadores', 'Céu azul, tijolo e cano de um mundo de plataforma.'], ['heroi', 'Herói de verde', 'Verde de floresta e dourado de relíquia, em clima de aventura.'], ['cacadora', 'Caçadora espacial', 'Escuro de nave com âmbar de visor de capacete.'], ['corredor', 'Corredor azul', 'Azul veloz e anéis dourados de um corredor sem freio.'], ['blocos', 'Blocos que caem', 'Cores primárias de peças que encaixam e descem.'], ['arena', 'Arena de luta', 'Preto, vermelho e dourado de arena de luta.']]],
 ];
 const TODOS_TEMAS = TEMAS.flatMap(([, l]) => l);
 document.querySelectorAll('.n-temas').forEach((e) => { e.textContent = TODOS_TEMAS.length; });
@@ -1886,28 +1886,29 @@ $('#grade-temas').addEventListener('mouseleave', () => {
 });
 $('#veu').addEventListener('click', () => acao('fechar-temas'));
 // ---------------- showcase dos temas ----------------
-// Botão na galeria: passa por todos os temas sozinho (3,5 s cada), pra mostrar o visual do KOFnes.
+// Dois botões na galeria: lento (3,5 s por tema, pra olhar) e rápido (0,5 s por tema, pra apresentar o KOFnes pros outros).
 // Esc ou "Parar" volta pro tema de antes; "Ficar com este" escolhe o que estiver na tela.
-let showTimer = 0, showI = 0, showLista = [];
+let showTimer = 0, showFim = 0, showI = 0, showLista = [];
 function passarTema() {
   const [id, nome] = showLista[showI % showLista.length]; showI++;
   experimentar(id);
   $('#showcase-nome').textContent = nome; $('#showcase-n').textContent = ((showI - 1) % showLista.length + 1) + '/' + showLista.length;
 }
-function iniciarShowcase() {
+function iniciarShowcase(ms = 3500) {
   if (showTimer) return;
+  clearTimeout(showFim);   // um Parar recente ainda ia tirar a classe do showcase novo
   if (!snes && telaAtual() === 'jogo') abrirHome();
   showLista = temasFiltrados().flatMap(([, l]) => l); if (!showLista.length) showLista = TODOS_TEMAS;   // respeita a categoria e a busca da galeria
   showI = Math.max(0, showLista.findIndex(([k]) => k === temaSalvo));
-  document.documentElement.classList.add('showcase'); $('#showcase').hidden = false;
-  passarTema(); showTimer = setInterval(passarTema, 3500);
+  document.documentElement.classList.add('showcase'); document.documentElement.classList.toggle('showcase-rapido', ms < 1000); $('#showcase').hidden = false;
+  passarTema(); showTimer = setInterval(passarTema, ms);
 }
 function pararShowcase(ficar) {
   if (!showTimer) return;
   clearInterval(showTimer); showTimer = 0; $('#showcase').hidden = true;
   const atual = document.documentElement.dataset.tema;
   if (ficar) { tema(atual); avisar('🎨 tema: ' + TODOS_TEMAS.find(([k]) => k === atual)[1]); } else experimentar(temaSalvo);
-  setTimeout(() => document.documentElement.classList.remove('showcase'), 700);
+  showFim = setTimeout(() => document.documentElement.classList.remove('showcase', 'showcase-rapido'), 700);
 }
 let temasVoltar = null;   // a janela que estava aberta (biblioteca...) volta quando a galeria fecha
 function abrirTemas() {
@@ -2002,7 +2003,8 @@ async function acao(a) {
       avisar(pausaAuto ? 'pausa ao sair da janela ligada' : 'pausa ao sair da janela desligada'); break;
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
     case 'temas': if ($('#temas').hidden) abrirTemas(); else fecharTemas(); break;
-    case 'showcase': fecharTemas(); iniciarShowcase(); break;
+    case 'showcase': fecharTemas(); iniciarShowcase(3500); break;
+    case 'showcase-rapido': fecharTemas(); iniciarShowcase(500); break;
     case 'showcase-parar': pararShowcase(false); break;
     case 'showcase-ficar': pararShowcase(true); break;
     case 'fechar-temas': fecharTemas(); if (!snes && telaAtual() === 'jogo') abrirHome(); break;

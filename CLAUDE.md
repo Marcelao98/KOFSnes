@@ -35,7 +35,7 @@ web/             A VERSÃO PRINCIPAL: o núcleo Kof → JavaScript num KOFnes.ht
                  rebobinar, jukebox, estatísticas, caçador de bugs, atualizações...
   estado.js      savestate genérico (KofEstado.capturar/restaurar) + Rebobinador (fotos delta)
   spc.js         ler/gravar arquivos .spc (jukebox)
-  pagina.html, estilo.css (125 temas por variáveis CSS), juntar.py (monta o HTML)
+  pagina.html, estilo.css (126 temas por variáveis CSS), juntar.py (monta o HTML)
   compilar.sh    build: kof build --target js → juntar.py → dist/web/KOFnes.html + KOFnes.exe
                  (mingw) + versao.txt + dist/KOFnes-windows.zip
   publicar.sh    compila e copia html/exe/versao.txt pra publicado/ (o atualizador lê de lá)
@@ -123,7 +123,7 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   Tokens do sistema: `--fundo`, `--painel`/`--painel2`, `--texto`, `--fraco`, `--destaque`, `--borda`, `--sel` e (novos,
   opcionais) `--botao-fundo`/`--botao-texto` pro `.grande`. Foco de teclado e `:disabled` agora valem pra todos os temas.
   Testes: `testes/node/contraste.cjs` (WCAG dos 8) e `testes/navegador/pacote-cafe.cjs`.
-- **Pacotes de temas (branch `temas-menu`, não publicado):** 125 temas no total: Café 8, Jogos 6, Animais 7, Animes 23 (a categoria 'Anime' virou 'Animes'), Nostalgia BR 20, Brasilidades 20, Clássicos do SNES 20. IDs de tema não podem ter hífen (viram chave de objeto no app.js). `TEMAS` aceita descrição
+- **Pacotes de temas (branch `temas-menu`, não publicado):** 126 temas: Café 8, Animais 7, Animes 23 (a categoria 'Anime' virou 'Animes'), Bem brasileiro 44 (os antigos 3 + Nostalgia BR 20 + Brasilidades 20 + Clube da Esquina), Clássicos do SNES 26 (20 jogos + os 6 de 'Jogos'); as categorias Nostalgia BR, Brasilidades e Jogos foram mescladas a pedido dele. IDs de tema não podem ter hífen (viram chave de objeto no app.js). Showcase tem dois botões: lento (3,5 s por tema) e rápido (0,5 s, pra apresentar pros outros). `TEMAS` aceita descrição
   opcional (`[id, nome, descrição]`, aparece na prévia e entra na busca); Nostalgia BR tem 20 com descrição. Só cor, gradiente e
   textura leve em `--fundo-img` (sem imagem, sem nome de marca). Testes: `testes/node/contraste.cjs` (lista de ids no topo; todo
   tema novo entra lá) e `testes/navegador/nostalgia-br.cjs` e `categorias-temas.cjs` (contagens, nomes, ids únicos, persistência, prints).

@@ -13,7 +13,7 @@
 
 **Um Super Nintendo escrito inteiro em [Kof](https://github.com/KofLang/Kof4j), uma linguagem brasileira com poucos meses de vida, e feito pra facilitar a sua jogatina.**
 
-Dois cliques no `KOFnes.exe` e você cai numa tela de Início bonita, com a sua biblioteca de jogos, capas, savestates com print, rebobinar o tempo, jukebox, 125 temas e até um caçador de bugs. Tudo isso num arquivo de ~500 KB.
+Dois cliques no `KOFnes.exe` e você cai numa tela de Início bonita, com a sua biblioteca de jogos, capas, savestates com print, rebobinar o tempo, jukebox, 126 temas e até um caçador de bugs. Tudo isso num arquivo de ~500 KB.
 
 <p align="center">
   <img src="docs/prints/inicio-4-telas.jpg" alt="A tela de Início do KOFnes em quatro situações: primeira vez, jogo pausado, tema Clássico 98 e tema Matrix" width="100%">
@@ -27,7 +27,7 @@ Dois cliques no `KOFnes.exe` e você cai numa tela de Início bonita, com a sua 
 | 🏠 **Início** | continuar de onde parou (com print), jogados recentemente, atalhos e dica do dia. Até a frase de boas-vindas muda com o tema |
 | 🧭 **Navegação** | menu lateral, botão **Voltar** com histórico (`Alt+←`, `Esc`, botão voltar do mouse) e um **Guia do KOFnes** dentro do próprio emulador |
 | 📚 **Biblioteca** | estilo ZSNES: escolha a pasta de ROMs uma vez, busque por palavras em qualquer ordem, esconda hacks e variantes com **Só os principais**, capas oficiais ([libretro-thumbnails](https://github.com/libretro-thumbnails)) e **modo sofá** (grade de capas pra jogar de longe, com o controle) |
-| 🎨 **125 temas** | oito jeitos de café, jogos, animais, consoles, Windows antigo, internet de 1999, anime, bem brasileiro Animes, 20 de Nostalgia BR, 20 de Brasilidades e 20 Clássicos do SNES, com galeria de prévias ao vivo |
+| 🎨 **126 temas** | oito jeitos de café, jogos, animais, consoles, Windows antigo, internet de 1999, anime, bem brasileiro Animes, 20 de Nostalgia BR, 20 de Brasilidades e 20 Clássicos do SNES, com galeria de prévias ao vivo |
 | 📺 **Imagem** | filtros WebGL (nítido, suave, CRT, fliperama, Game Boy, sépia, LCD), proporção 4:3 / 8:7 / esticar, tela cheia de verdade e **molduras** |
 | 💾 **Savestates** | por jogo, com print do momento, e **salvar automático** pra continuar de onde parou |
 | ⏪ **Rebobinar** | deu ruim? segure `Backspace` (ou `Select+Y`) e o jogo volta no tempo, em preto e branco, até 5 s. Depois uma ampulheta ⏳ recarrega enquanto você joga, estilo Príncipe da Pérsia |

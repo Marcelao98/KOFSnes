@@ -25,5 +25,11 @@ const [,, html] = process.argv;
   await p.click('#home [data-acao="temas"]'); await p.click('[data-acao="showcase"]'); await p.waitForTimeout(4000);
   const naTela = await tema(); await p.click('[data-acao="showcase-ficar"]'); await p.waitForTimeout(300);
   r.ficou = (await tema()) === naTela && (await p.evaluate(() => localStorage.getItem('kofnes.tema'))) === naTela;
+  // rápido: meio segundo por tema, em 2,6 s passa de uns 4 temas diferentes; Esc volta
+  await p.click('#home [data-acao="temas"]'); await p.click('[data-acao="showcase-rapido"]');
+  const rap = new Set([await tema()]); for (let i = 0; i < 5; i++) { await p.waitForTimeout(520); rap.add(await tema()); }
+  r.rapidoTemasVistos = rap.size; r.rapidoClasse = await p.evaluate(() => document.documentElement.classList.contains('showcase-rapido'));
+  await p.keyboard.press('Escape'); await p.waitForTimeout(900);
+  r.rapidoVoltou = !(await p.evaluate(() => document.documentElement.classList.contains('showcase-rapido'))) && !(await p.isVisible('#showcase'));
   console.log(JSON.stringify({ ...r, erros })); await b.close();
 })();

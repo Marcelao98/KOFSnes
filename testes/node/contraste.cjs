@@ -6,7 +6,7 @@ const IDS = ['cafe', 'espresso', 'cappuccino', 'latte', 'mocha', 'caramelo', 'co
   'detetive', 'folhas', 'mar', 'alquimia', 'cadernomorte', 'lamina', 'digital', 'cartas', 'cacadores', 'respiracao', 'maldicao', 'motosserra', 'alem', 'familia', 'caos', 'trem', 'mononoke',
   'encanador', 'heroi', 'cacadora', 'corredor', 'blocos', 'arena', 'onca', 'arara', 'capivara', 'gato', 'raposa', 'panda', 'flamingo',
   'sessao', 'globinho', 'lanhouse', 'orkutmsn', 'dvdcamelo', 'locadora', 'caderno', 'recreio', 'boteco', 'chuva', 'almoco', 'feira',
-  'brasil98', 'hexa2002', 'ferias', 'juninaescola', 'casavo', 'mp3', 'gibi', 'interior',
+  'brasil98', 'hexa2002', 'ferias', 'juninaescola', 'casavo', 'mp3', 'gibi', 'interior', 'clube',
   'tropicalia', 'bossa', 'samba', 'choro', 'frevo', 'maracatu', 'cordel', 'azulejo', 'modernismo', 'brasilia', 'mataatlantica', 'amazonica', 'sertao', 'pantanal', 'cerrado', 'litoral', 'ouropreto', 'baiana', 'junina', 'carnaval', 'smw', 'alttp', 'metroid', 'dkc', 'mmx', 'chrono', 'ff6', 'earthbound', 'kirby', 'fzero', 'starfox', 'cv4', 'contra', 'sf2', 'mk', 'mana', 'mariokart', 'yoshi', 'ghouls', 'terranigma'];
 const lum = (h) => { const n = h.replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 const razao = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
