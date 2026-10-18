@@ -25,6 +25,14 @@ if command -v x86_64-w64-mingw32-gcc >/dev/null; then
     x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFnes.exe" "$AQUI/lancador_win.c" "$AQUI/lancador_inet.c" "$T/res.o" -lshlwapi -lwinhttp -lwininet -lws2_32
 fi
 cp "$SAIDA/KOFnes.html" "$SAIDA/KOFnes-bench.html"   # a mesma página; o nome liga o painel de teste de desempenho
+if [ -f "$RAIZ/nucleo-snes9x/saida/snes9x.js" ]; then   # núcleo Snes9x (WebAssembly) embutido só no arquivo de teste
+    python3 - "$SAIDA/KOFnes-bench.html" "$RAIZ/nucleo-snes9x/saida/snes9x.js" <<'PY'
+import sys, pathlib
+h = pathlib.Path(sys.argv[1]); s = pathlib.Path(sys.argv[2]).read_text()
+t = h.read_text(); assert "<script>" in t
+h.write_text(t.replace("<script>", "<script>\n" + s + "\n</script>\n<script>", 1))   # antes do app, que olha pro Snes9xModulo ao abrir
+PY
+fi
 cp "$AQUI/lancador_linux.sh" "$SAIDA/kofnes.sh" && chmod +x "$SAIDA/kofnes.sh"
 cp "$T/icone.png" "$SAIDA/KOFnes.png"
 # versao.txt: o atualizador do KOFnes.exe compara a versão da página e a do lançador

@@ -1853,6 +1853,32 @@ if (/bench/i.test(location.pathname + location.hash)) {
       pausado = antes; $('#bench-medir').disabled = false; novoMarco(true);
     }
   });
+  // Snes9x (C++ compilado pra WebAssembly): só existe no KOFnes-bench.html com o núcleo embutido
+  if (typeof Snes9xModulo === 'function') {
+    $('#bench-s9x').hidden = false;
+    let M = null;
+    $('#bench-s9x').addEventListener('click', async () => {
+      if (!snes || !romAtual) { cont('Escolha uma ROM primeiro e entre no jogo.'); return; }
+      const antes = pausado, ant = saida.value.replace(/\n\n--- Snes9x[\s\S]*$/, '');
+      pausado = true; $('#bench-s9x').disabled = true;
+      try {
+        cont(ant + '\n\n--- Snes9x (WebAssembly) ---\nCarregando o núcleo…'); await cedo();
+        if (!M) { M = await Snes9xModulo(); M._s9x_init(); }
+        const rom = Uint8Array.from(romAtual), p = M._s9x_alloc(rom.length); M.HEAPU8.set(rom, p);
+        if (!M._s9x_load(p, rom.length)) throw new Error('o Snes9x não aceitou essa ROM');
+        M._s9x_run(120, 0);
+        const medir = async (segs, copia) => { let n = 0; const t0 = performance.now(); while (performance.now() - t0 < segs * 1000) { M._s9x_run(30, copia); n += 30; await cedo(); } return n * 1000 / (performance.now() - t0); };
+        const puro = await medir(5, 0), comImg = await medir(5, 1);
+        const w = M._s9x_w(), h = M._s9x_h(), c = $('#bench-s9x-tela');
+        c.hidden = false; c.width = w; c.height = h;
+        c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(M.HEAPU8.buffer, M._s9x_fb(), w * h * 4).slice(), w, h), 0, 0);
+        M._s9x_unload();
+        const x = comImg / 60.0988;
+        cont(`${ant}\n\n--- Snes9x (WebAssembly) ---\nSó emulação:        ${puro.toFixed(0)} fps (${(puro / 60.0988).toFixed(2)}×)\nEmulação + imagem:  ${comImg.toFixed(0)} fps (${x.toFixed(2)}×)\n\n${veredito(x)}`);
+      } catch (err) { cont(ant + '\n\n--- Snes9x ---\nErro: ' + err.message); }
+      finally { pausado = antes; $('#bench-s9x').disabled = false; }
+    });
+  }
   $('#bench-rom').addEventListener('change', async (e) => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     try { await abrirArquivo(f); cont('Jogando ' + romNome + '.\nChegue numa parte com ação e toque em "Medir".'); } catch (err) { cont('Erro: ' + err.message); }

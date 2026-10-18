@@ -113,6 +113,12 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   zera e a ampulheta ⏳ leva 30 s de jogo pra recarregar. Sem item no menu (savestates guardam momentos);
   só roda com o jogo andando. Chave `kofnes.rebobLimite` (3/5/10/15) só pros testes. Teste:
   `testes/navegador/rebob.cjs`.
+- **Celular (branch `celular`, em teste):** `dist/web/KOFnes-bench.html` mede a velocidade (em "× o tempo real")
+  do núcleo Kof e do **Snes9x em WebAssembly** (`nucleo-snes9x/`, licença não comercial: app só pode ser grátis,
+  sem anúncio nem doação). No container, com a CPU 6× mais lenta (como um celular): Kof 0,55× e Snes9x 3,2×
+  numa ROM pesada de CPU. Decisão do Marcelo: no celular usar um núcleo pronto (Snes9x); o PC fica com o Kof.
+  A CPU em Rust (`nucleo-rust`, idêntica à do Kof, só 2× mais rápida) ficou pausada. Falta o resultado no
+  celular dele (Yoshi's Island travou com o núcleo Kof).
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
