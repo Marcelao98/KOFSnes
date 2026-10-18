@@ -1,6 +1,6 @@
-versao=202610172207
-tamanho=500816
-lancador=4
-tamanho_exe=87040
+versao=202610180111
+tamanho=502190
+lancador=5
+tamanho_exe=95232
 lancador_linux=1
 tamanho_linux=7071
