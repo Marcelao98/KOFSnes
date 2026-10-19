@@ -1,22 +1,25 @@
 <p align="center">
-  <img src="docs/banner.png" alt="KOFnes: um Super Nintendo inteiro, escrito em Kof" width="100%">
+  <img src="docs/banner.png" alt="KOFstation: Super Nintendo e Game Boy num lugar só, feito em Kof" width="100%">
 </p>
 
 <p align="center">
   <img alt="feito em Kof" src="https://img.shields.io/badge/feito%20em-Kof%200.6.3-c08552?style=flat-square&labelColor=2b1d14">
-  <img alt="Windows" src="https://img.shields.io/badge/roda%20em-Windows%20(Edge)-d9b99b?style=flat-square&labelColor=2b1d14">
-  <img alt="tamanho" src="https://img.shields.io/badge/tamanho-~500%20KB-6f4e37?style=flat-square&labelColor=2b1d14">
+  <img alt="Windows e Android" src="https://img.shields.io/badge/roda%20em-Windows%20·%20Linux%20·%20Android-d9b99b?style=flat-square&labelColor=2b1d14">
+  <img alt="sistemas" src="https://img.shields.io/badge/sistemas-SNES%20·%20Game%20Boy-c08552?style=flat-square&labelColor=2b1d14">
+  <img alt="tamanho" src="https://img.shields.io/badge/tamanho-~1,5%20MB-6f4e37?style=flat-square&labelColor=2b1d14">
   <img alt="cputest 649/649" src="https://img.shields.io/badge/cputest-649%2F649-6f4e37?style=flat-square&labelColor=2b1d14">
 </p>
 
-# ☕ KOFnes
+# ☕ KOFstation
 
-**Um Super Nintendo escrito inteiro em [Kof](https://github.com/KofLang/Kof4j), uma linguagem brasileira com poucos meses de vida, e feito pra facilitar a sua jogatina.**
+**Super Nintendo e Game Boy num lugar só. O Super Nintendo é escrito inteiro em [Kof](https://github.com/KofLang/Kof4j), uma linguagem brasileira com poucos meses de vida; o resto é feito pra facilitar a sua jogatina.**
 
-Dois cliques no `KOFnes.exe` e você cai numa tela de Início bonita, com a sua biblioteca de jogos, capas, savestates com print, rebobinar o tempo, jukebox, 126 temas e até um caçador de bugs. Tudo isso num arquivo de ~500 KB.
+> O projeto começou como **KOFnes**, um emulador só de Super Nintendo. Quando chegou o Game Boy, virou **KOFstation**.
+
+Dois cliques no `KOFnes.exe` (no PC) ou no app do **Android** e você cai numa tela de Início bonita, com a sua biblioteca de jogos, capas, savestates com print, rebobinar o tempo, jukebox com osciloscópio, 126 temas e até um caçador de bugs.
 
 <p align="center">
-  <img src="docs/prints/inicio-4-telas.jpg" alt="A tela de Início do KOFnes em quatro situações: primeira vez, jogo pausado, tema Clássico 98 e tema Matrix" width="100%">
+  <img src="docs/prints/inicio-4-telas.jpg" alt="A tela de Início do KOFstation em quatro situações: primeira vez, jogo pausado, tema Clássico 98 e tema Matrix" width="100%">
   <br><sub>A tela de Início muda conforme o momento (primeira vez, jogo pausado, continuar) e conforme o tema.</sub>
 </p>
 
@@ -25,13 +28,15 @@ Dois cliques no `KOFnes.exe` e você cai numa tela de Início bonita, com a sua 
 | | |
 |---|---|
 | 🏠 **Início** | continuar de onde parou (com print), jogados recentemente, atalhos e dica do dia. Até a frase de boas-vindas muda com o tema |
-| 🧭 **Navegação** | menu lateral, botão **Voltar** com histórico (`Alt+←`, `Esc`, botão voltar do mouse) e um **Guia do KOFnes** dentro do próprio emulador |
+| 🧭 **Navegação** | menu lateral, botão **Voltar** com histórico (`Alt+←`, `Esc`, botão voltar do mouse) e um **Guia do KOFstation** dentro do próprio emulador |
+| 🕹️ **Sistemas** | **Super Nintendo** (`.sfc`, `.smc`) e **Game Boy / Game Boy Color** (`.gb`, `.gbc`) na mesma biblioteca, com o rótulo do sistema. No PC o SNES roda no núcleo em Kof e o Game Boy no [Gambatte](https://github.com/libretro/gambatte-libretro) (WebAssembly) |
+| 📱 **Android** | APK com controle virtual na tela (6 modelos, multitoque, canhoto), em pé ou deitado com a tela grande e os botões nas laterais. No celular o SNES roda no [Snes9x](https://github.com/libretro/snes9x) e o Game Boy no Gambatte, em WebAssembly |
 | 📚 **Biblioteca** | estilo ZSNES: escolha a pasta de ROMs uma vez, busque por palavras em qualquer ordem, esconda hacks e variantes com **Só os principais**, capas oficiais ([libretro-thumbnails](https://github.com/libretro-thumbnails)) e **modo sofá** (grade de capas pra jogar de longe, com o controle) |
 | 🎨 **126 temas** | oito jeitos de café, jogos, animais, consoles, Windows antigo, internet de 1999, anime, bem brasileiro Animes, 20 de Nostalgia BR, 20 de Brasilidades e 20 Clássicos do SNES, com galeria de prévias ao vivo |
 | 📺 **Imagem** | filtros WebGL (nítido, suave, CRT, fliperama, Game Boy, sépia, LCD), proporção 4:3 / 8:7 / esticar, tela cheia de verdade e **molduras** |
 | 💾 **Savestates** | por jogo, com print do momento, e **salvar automático** pra continuar de onde parou |
 | ⏪ **Rebobinar** | deu ruim? segure `Backspace` (ou `Select+Y`) e o jogo volta no tempo, em preto e branco, até 5 s. Depois uma ampulheta ⏳ recarrega enquanto você joga, estilo Príncipe da Pérsia |
-| 🎵 **Jukebox** | `F7` guarda a música que está tocando; abre e exporta `.spc`; mostra as 8 vozes do chip de som ao vivo e deixa silenciar cada uma |
+| 🎵 **Jukebox** | `F7` guarda a música que está tocando (SNES e Game Boy); abre e exporta `.spc`; mostra os canais do chip de som ao vivo (8 vozes no SNES, 4 canais no Game Boy) e deixa silenciar cada um. O modo **〰 Ondas** vira um osciloscópio: a forma da onda de cada canal, no estilo do tema, com **Mudo** e **Solo** |
 | 📊 **Estatísticas** | tempo jogado por jogo, sessões, primeira e última vez e o gráfico dos últimos 7 dias |
 | 🐞 **Caçador de bugs** | `F9` abre uma issue no GitHub já preenchida, com um pacote pra reproduzir o bug quadro a quadro |
 | 🎮 **Conforto** | controle USB/Xbox, volume, mudo, turbo, pausa sozinho quando você sai da janela, teclas configuráveis |
@@ -69,14 +74,16 @@ Cada jogo ganha capa oficial, baixada uma vez e guardada. Com o controle na mão
   <img src="docs/prints/estatisticas.jpg" alt="Estatísticas de tempo jogado" width="49%">
 </p>
 <p align="center">
-  <img src="docs/prints/guia-embutido.jpg" alt="Guia do KOFnes embutido no emulador" width="62%">
+  <img src="docs/prints/guia-embutido.jpg" alt="Guia do KOFstation embutido no emulador" width="62%">
 </p>
 
 ## 🎮 Como jogar
 
-1. Baixe a pasta [`publicado/`](publicado/) (`KOFnes.exe` e `KOFnes.html`, juntos) ou o zip gerado pelo `web/compilar.sh`, e deixe num lugar seu (Documentos, Área de Trabalho), **não** em *Arquivos de Programas*.
+1. Baixe a pasta [`publicado/`](publicado/) (`KOFnes.exe` e `KOFnes.html`, juntos; os arquivos mantêm o nome antigo pra quem já usa continuar atualizando) ou o zip `KOFstation-windows.zip` gerado pelo `web/compilar.sh`, e deixe num lugar seu (Documentos, Área de Trabalho), **não** em *Arquivos de Programas*.
 2. Dois cliques no **`KOFnes.exe`**. Ele abre o emulador numa janela do Microsoft Edge (que já vem no Windows 10 e 11) sem barra de endereço. Também dá pra abrir o `KOFnes.html` direto no Chrome ou no Edge.
-3. **Arquivo → Escolher pasta de ROMs** e pronto: a lista aparece dentro do emulador (`Ctrl+L`). Ou arraste uma ROM (`.sfc`, `.smc` ou `.zip`) pra janela.
+3. **Arquivo → Escolher pasta de ROMs** e pronto: a lista aparece dentro do emulador (`Ctrl+L`). Ou arraste uma ROM (`.sfc`, `.smc`, `.gb`, `.gbc` ou `.zip`) pra janela.
+
+**No Android:** instale o [`KOFstation.apk`](android/apk/KOFstation.apk) (app de teste, fora da Play Store: o Android vai pedir pra permitir instalar de fonte desconhecida) e toque em **Abrir uma ROM**.
 
 > Na primeira vez o Windows pode dizer *"o Windows protegeu o computador"*: o `.exe` não tem assinatura digital. Clique em **Mais informações → Executar assim mesmo**.
 
@@ -93,7 +100,7 @@ Cada jogo ganha capa oficial, baixada uma vez e guardada. Com o controle na mão
 | Turbo | segurar `Tab` | Biblioteca · Voltar | `Ctrl+L` · `Alt+←` |
 | Tela cheia · Mudo | `F11` ou duplo clique · `M` | Volume | `-` e `=` |
 
-No controle: `Select+L` salva, `Select+R` carrega e `Select+Y` rebobina. As teclas mudam em **Emulação → Configurar teclas**. Os saves de bateria ficam sozinhos no perfil do KOFnes (`%LOCALAPPDATA%\KOFnes`).
+No controle: `Select+L` salva, `Select+R` carrega e `Select+Y` rebobina. As teclas mudam em **Emulação → Configurar teclas**. Os saves de bateria ficam sozinhos no perfil do KOFstation (`%LOCALAPPDATA%\KOFnes`).
 
 ## 🔄 Atualiza sozinho
 
@@ -105,7 +112,7 @@ Ao abrir, o `KOFnes.exe` confere no GitHub (`publicado/versao.txt`) se existe ve
 
 ## 🐞 Caçador de bugs
 
-Achou um bug? Aperte `F9` (ou deixe o emulador oferecer sozinho quando ele quebrar). O KOFnes abre uma issue **já preenchida** (jogo, SHA-1, versão, navegador, erro) e baixa um pacote `kofbug` com o savestate de segundos antes e os botões apertados, quadro a quadro. É só arrastar o pacote pra dentro da issue. A ROM não vai junto.
+Achou um bug? Aperte `F9` (ou deixe o emulador oferecer sozinho quando ele quebrar). O KOFstation abre uma issue **já preenchida** (jogo, SHA-1, versão, navegador, erro) e baixa um pacote `kofbug` com o savestate de segundos antes e os botões apertados, quadro a quadro. É só arrastar o pacote pra dentro da issue. A ROM não vai junto.
 
 <p align="center">
   <img src="docs/prints/cacador-de-bugs.jpg" alt="Janela do caçador de bugs oferecendo abrir uma issue no GitHub" width="70%">
@@ -121,17 +128,21 @@ O núcleo do console é **Kof puro**, sem nenhuma biblioteca de emulação:
 |---|---|---|
 | CPU 65C816 | `snes/Cpu.kf` | os 256 opcodes, modos nativo e emulação, tempo por acesso à memória |
 | PPU | `snes/Ppu.kf` | modos 0 a 7 (com Mode 7), sprites, janelas, color math, mosaico, hi-res |
-| SPC700 + DSP + APU | `snes/Spc.kf`, `Dsp.kf`, `Apu.kf` | a CPU e o chip de som: 8 vozes BRR, ADSR, eco, 3 timers |
+| SPC700 + DSP + APU | `snes/Spc.kf`, `Dsp.kf`, `Apu.kf` | a CPU e o chip de som: 8 vozes BRR, ADSR, eco, 3 timers (e a "ponta de prova" do osciloscópio) |
 | Barramento | `snes/CpuBus.kf`, `Snes.kf` | mapa de memória, DMA/HDMA, IRQ/NMI, joypad |
 | Cartucho | `snes/Cartridge.kf` | LoROM, HiROM e ExHiROM |
 | Super FX | `snes/Gsu.kf` | o chip do *Star Fox* e do *Yoshi's Island* |
 
-O KOFnes roda direto no navegador: `web/compilar.sh` compila o mesmo `snes/` com `kof build --target js` e junta tudo num `KOFnes.html` de ~500 KB (zip de ~150 KB). O `KOFnes.exe` é um lançador pequeno em C que abre essa página numa janela do Edge. A saída é idêntica bit a bit à da versão em JVM, a 60 fps.
+Os outros sistemas não são reescritos: o KOFstation usa núcleos que já existem no padrão **libretro**, compilados pra WebAssembly com o emscripten e ligados por uma ponte pequena ([`nucleo-libretro/`](nucleo-libretro/)). Cada núcleo tem a sua licença (Snes9x: só uso não comercial; Gambatte: GPL-2).
+
+O KOFstation roda direto no navegador: `web/compilar.sh` compila o mesmo `snes/` com `kof build --target js` e junta tudo, com o Gambatte, num `KOFnes.html` de ~1,5 MB. O `KOFnes.exe` é um lançador pequeno em C que abre essa página numa janela do Edge. A saída é idêntica bit a bit à da versão em JVM, a 60 fps.
 
 ```
-KOFnes/
+KOFstation/
 ├── snes/        o console em Kof: Cpu, Ppu, Spc, Dsp, Apu, Snes, Cartridge, Gsu
 ├── web/         núcleo → JavaScript, interface, temas, lançador do .exe
+├── nucleo-libretro/  ponte pros núcleos libretro (Snes9x, Gambatte) em WebAssembly
+├── android/     o app do Android (WebView, sem Gradle) e o APK de teste
 ├── publicado/   a versão que o atualizador baixa (KOFnes.exe, .html, versao.txt)
 ├── bugs/        reproduzir.cjs: roda os pacotes do caçador de bugs
 ├── app/         janela da versão com Java       ├── nativo/   versão só-Kof (SDL2)
@@ -144,7 +155,9 @@ KOFnes/
 Precisa do [Kof](https://github.com/KofLang/Kof4j) **0.6.3** com o `web/kof-js-correcoes.patch` aplicado (4 correções no alvo JS do compilador), de `python3` e, pro `.exe`, do `mingw-w64`.
 
 ```bash
-web/compilar.sh     # gera dist/web/KOFnes.html, KOFnes.exe e o zip
+nucleo-libretro/construir.sh   # Snes9x e Gambatte em WebAssembly (precisa do emscripten)
+web/compilar.sh     # gera dist/web/KOFnes.html, KOFnes.exe, o KOFnes-android.html e os zips
+android/construir-apk.sh       # gera dist/KOFstation.apk
 web/publicar.sh     # sobe a versão pra publicado/ (depois é só commitar)
 ```
 
@@ -154,7 +167,7 @@ O mesmo núcleo também roda com **Java** (instalador pra Windows e pacote pra L
 
 ### Como foi testado
 
-Cada peça foi medida contra suítes públicas: **cputest do gilyon 649/649**, **SingleStepTests SPC700 76.200/76.200**, **SingleStepTests 65816 151.194/152.400** (o resto é MVN/MVP e um quirk em que o KOFnes segue o hardware), além das ROMs de teste do PeterLemon e do undisbeliever. Pra entender o hardware: [`docs/como-o-snes-funciona.md`](docs/como-o-snes-funciona.md).
+Cada peça foi medida contra suítes públicas: **cputest do gilyon 649/649**, **SingleStepTests SPC700 76.200/76.200**, **SingleStepTests 65816 151.194/152.400** (o resto é MVN/MVP e um quirk em que o KOFstation segue o hardware), além das ROMs de teste do PeterLemon e do undisbeliever. Pra entender o hardware: [`docs/como-o-snes-funciona.md`](docs/como-o-snes-funciona.md).
 
 ## 💜 Kof e a Mel
 
@@ -166,16 +179,18 @@ O Kof é uma linguagem brasileira nova, da **Mel Santos**: [github.com/KofLang/K
 
 ## 🚀 Próximos passos
 
-- [ ] 📱 Versão pra **Android** e pra navegador (GitHub Pages), já que o núcleo é JavaScript
-- [ ] 🐧 **Linux** com lançador próprio, como o do Windows
-- [ ] 🕹️ **Multi-sistema**: NES, Game Boy e Mega Drive na mesma biblioteca
+- [x] 📱 Versão pra **Android** (APK de teste)
+- [x] 🐧 **Linux** com lançador próprio (`kofnes.sh`), como o do Windows
+- [x] 🕹️ **Game Boy / Game Boy Color** na mesma biblioteca
+- [ ] 🕹️ Mais sistemas: NES, Mega Drive...
+- [ ] 📱 Play Store e escolher a pasta de ROMs inteira no Android
 - [ ] 🏆 **Conquistas**
 - [ ] Chips de cartucho que faltam: SA-1, DSP-1, Cx4, S-DD1, SPC7110
 
 ## ⚖️ Aviso
 
-O KOFnes **não inclui ROMs** nem ensina onde baixar. Use cópias dos seus próprios cartuchos.
+O KOFstation **não inclui ROMs** nem ensina onde baixar. Use cópias dos seus próprios cartuchos.
 
 ## Créditos
 
-Linguagem: [Kof / Kof4j](https://github.com/KofLang/Kof4j), da Mel Santos e contribuidores. Testes: [SingleStepTests](https://github.com/SingleStepTests), [gilyon](https://github.com/gilyon/snes-tests), [PeterLemon](https://github.com/PeterLemon/SNES), [undisbeliever](https://github.com/undisbeliever/snes-test-roms). Capas: [libretro-thumbnails](https://github.com/libretro-thumbnails). Versão só-Kof: [SDL2](https://www.libsdl.org/) (zlib).
+Linguagem: [Kof / Kof4j](https://github.com/KofLang/Kof4j), da Mel Santos e contribuidores. Núcleos libretro: [Snes9x](https://github.com/libretro/snes9x) (licença não comercial) e [Gambatte](https://github.com/libretro/gambatte-libretro) (GPL-2). Testes: [SingleStepTests](https://github.com/SingleStepTests), [gilyon](https://github.com/gilyon/snes-tests), [PeterLemon](https://github.com/PeterLemon/SNES), [undisbeliever](https://github.com/undisbeliever/snes-test-roms). Capas: [libretro-thumbnails](https://github.com/libretro-thumbnails). Versão só-Kof: [SDL2](https://www.libsdl.org/) (zlib).

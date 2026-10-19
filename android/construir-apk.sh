@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Monta o KOFnes.apk: uma WebView nativa (android/src) com o dist/web/KOFnes-android.html dentro (assets/index.html).
+# Monta o KOFstation.apk: uma WebView nativa (android/src) com o dist/web/KOFnes-android.html dentro (assets/index.html).
 # Sem Gradle e sem SDK completo: usa só as ferramentas do Ubuntu (apt install aapt apksigner zipalign libandroid-23-java
 # dalvik-exchange android-sdk-platform-23) + JDK. Antes: web/compilar.sh (gera o KOFnes-android.html).
-#   android/construir-apk.sh            -> dist/KOFnes.apk
+#   android/construir-apk.sh            -> dist/KOFstation.apk
 # A chave de assinatura (kofnes-teste.keystore) é de TESTE: serve pra instalar direto no celular e atualizar por cima.
 # Pra Play Store vai precisar de uma chave de verdade (e de um AAB), guardada fora do repositório.
 set -euo pipefail
@@ -32,7 +32,7 @@ aapt package -f -M "$W/AndroidManifest.xml" -S "$W/res" -A "$W/assets" -I "$ANDR
 zipalign -f -p 4 "$W/base.apk" "$W/alinhado.apk"
 KS="$AQUI/kofnes-teste.keystore"
 [ -f "$KS" ] || keytool -genkeypair -keystore "$KS" -storepass kofnes-teste -keypass kofnes-teste -alias kofnes -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=KOFnes teste, O=KOFnes, C=BR" 2>&1 | grep -v "^Picked up" || true
-OUT="$RAIZ/dist/KOFnes.apk"
+OUT="$RAIZ/dist/KOFstation.apk"
 apksigner sign --ks "$KS" --ks-pass pass:kofnes-teste --key-pass pass:kofnes-teste --ks-key-alias kofnes --out "$OUT" "$W/alinhado.apk" 2>&1 | grep -v "^Picked up" || true
 apksigner verify -v "$OUT" 2>&1 | grep -v "^Picked up" | head -8 || true
 ls -l "$OUT"

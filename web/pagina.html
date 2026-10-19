@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KOFnes</title>
+<title>KOFstation</title>
 <link rel="icon" href="{{ICONE}}">
 <style>
 {{CSS}}
@@ -68,7 +68,7 @@
   </div></div>
   <div class="m"><button data-acao="temas" title="galeria de temas">Tema</button></div>
   <div class="m"><button>Ajuda</button><div class="sub">
-    <button data-acao="guia">📖 Guia do KOFnes</button>
+    <button data-acao="guia">📖 Guia do KOFstation</button>
     <button data-acao="controles">Atalhos e controles</button>
     <hr>
     <button data-acao="bug">🐞 Reportar bug…<kbd>F9</kbd></button>
@@ -88,7 +88,7 @@
     <button data-acao="jukebox" data-tela="jukebox" title="Jukebox"><i>🎵</i><span>Jukebox</span></button>
     <button data-acao="estatisticas" data-tela="estatisticas" title="Estatísticas"><i>📊</i><span>Estatísticas</span></button>
     <button data-acao="temas" title="Mudar o tema"><i>🎨</i><span>Tema</span></button>
-    <button data-acao="guia" data-tela="guia" title="Guia do KOFnes"><i>📖</i><span>Guia</span></button>
+    <button data-acao="guia" data-tela="guia" title="Guia do KOFstation"><i>📖</i><span>Guia</span></button>
     <hr>
     <button data-acao="cheia" title="Tela cheia (F11)"><i>⛶</i><span>Tela cheia</span></button>
   </div>
@@ -100,8 +100,8 @@
       <div class="hm-marca">
         <span class="hm-logo" id="hm-logo">☕</span>
         <div>
-          <h1>KOFnes</h1>
-          <p class="hm-lema">Um Super Nintendo escrito em Kof, feito pra facilitar a sua jogatina.</p>
+          <h1>KOFstation</h1>
+          <p class="hm-lema">Super Nintendo e Game Boy num lugar só, feito em Kof pra facilitar a sua jogatina.</p>
         </div>
       </div>
       <p class="hm-saudacao" id="hm-saudacao"></p>
@@ -114,7 +114,7 @@
         <button data-acao="jukebox"><i>🎵</i><b>Jukebox</b><small>as trilhas que você guardou</small></button>
         <button data-acao="estatisticas"><i>📊</i><b>Estatísticas</b><small>quanto você jogou, e o quê</small></button>
         <button data-acao="temas"><i>🎨</i><b>Temas</b><small><span class="n-temas">28</span> jeitos de deixar com a sua cara</small></button>
-        <button data-acao="guia"><i>📖</i><b>Guia</b><small>tudo que o KOFnes sabe fazer</small></button>
+        <button data-acao="guia"><i>📖</i><b>Guia</b><small>tudo que o KOFstation sabe fazer</small></button>
       </div>
     </div>
     <section class="hm-bloco" id="hm-bloco-recentes">
@@ -139,8 +139,8 @@
       </div>
       <div class="bib-dir">
         <div class="capa"><img id="capa-img" alt=""><span id="capa-vazia">☕</span><img id="parou-img" alt="onde você parou" title="onde você parou" hidden></div>
-        <h2 id="info-nome">KOFnes</h2>
-        <p id="info-det" class="dica">Super Nintendo escrito em Kof</p>
+        <h2 id="info-nome">KOFstation</h2>
+        <p id="info-det" class="dica">Super Nintendo e Game Boy, feito em Kof</p>
         <div class="bib-botoes">
           <button class="grande" data-acao="jogar">▶ Jogar</button>
           <button class="grande sec" data-acao="do-zero" hidden>↺ Começar do zero</button>
@@ -169,7 +169,7 @@
   </section>
 
   <section id="guia" class="janela" hidden>
-    <div class="titulo-j">📖 Guia do KOFnes <button class="x" data-acao="fechar-guia">×</button></div>
+    <div class="titulo-j">📖 Guia do KOFstation <button class="x" data-acao="fechar-guia">×</button></div>
     <div class="gu">
       <nav class="gu-menu">
         <button data-guia="comecar">👋 Começando</button>
@@ -184,8 +184,8 @@
       </nav>
       <div class="gu-texto">
         <div data-pagina="comecar">
-          <h3>Bem-vindo ao KOFnes 👋</h3>
-          <p>O KOFnes é um <b>Super Nintendo inteiro escrito em Kof</b>, uma linguagem brasileira, que roda numa janela leve e se atualiza sozinho. A ideia é simples: abrir, escolher o jogo e jogar.</p>
+          <h3>Bem-vindo ao KOFstation 👋</h3>
+          <p>O KOFstation é um <b>Super Nintendo inteiro escrito em Kof</b>, uma linguagem brasileira, que roda numa janela leve e se atualiza sozinho. A ideia é simples: abrir, escolher o jogo e jogar.</p>
           <ol>
             <li><b>Traga seus jogos.</b> Em <b>Biblioteca → Escolher pasta de ROMs</b> você aponta a pasta uma vez só. Também dá pra arrastar uma ROM (.sfc, .smc, .gb, .gbc ou .zip) pra janela.</li>
             <li><b>Escolha e jogue.</b> Enter ou clique duplo. Na próxima vez, o jogo aparece no <b>Início</b> com <b>Continuar</b>.</li>
@@ -244,7 +244,7 @@
         </div>
         <div data-pagina="bugs" hidden>
           <h3>🐞 Bugs e atualizações</h3>
-          <p>O KOFnes é jovem, e cada bug encontrado ajuda o emulador <i>e</i> a linguagem Kof. Aperte <b>F9</b>: a issue abre no GitHub já preenchida e um pacote é baixado pra reproduzir o bug quadro a quadro. É só arrastar ele pra dentro da issue.</p>
+          <p>O KOFstation é jovem, e cada bug encontrado ajuda o emulador <i>e</i> a linguagem Kof. Aperte <b>F9</b>: a issue abre no GitHub já preenchida e um pacote é baixado pra reproduzir o bug quadro a quadro. É só arrastar ele pra dentro da issue.</p>
           <p>Se o emulador quebrar, ele mesmo oferece reportar. E ele <b>se atualiza sozinho</b>: ao abrir o KOFnes.exe, a versão nova já vem (Ajuda → Procurar atualização).</p>
         </div>
         <div data-pagina="atalhos" hidden>
@@ -273,7 +273,7 @@
       <button class="grande" data-acao="bug-enviar">Abrir issue no GitHub</button>
       <button class="grande sec" data-acao="bug-fechar">Agora não</button>
     </div>
-    <p class="dica">Abre a página de issue do KOFnes já preenchida; o pacote é baixado e você arrasta ele pra dentro da issue.</p>
+    <p class="dica">Abre a página de issue do KOFstation já preenchida; o pacote é baixado e você arrasta ele pra dentro da issue.</p>
   </section>
 
   <section id="jukebox" class="janela" hidden>

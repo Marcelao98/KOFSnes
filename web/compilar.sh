@@ -54,8 +54,9 @@ LANCADOR="$(sed -n 's/^#define LANCADOR \([0-9]*\).*/\1/p' "$AQUI/lancador_win.c
 } > "$SAIDA/versao.txt"
 sed "s/$/\r/" "$AQUI/LEIA-ME.txt" > "$SAIDA/LEIA-ME.txt"
 cp "$AQUI/LEIA-ME-linux.txt" "$SAIDA/LEIA-ME-linux.txt"
-rm -f "$RAIZ/dist/KOFnes-windows.zip" "$RAIZ/dist/KOFnes-linux.tar.gz"
-# Windows: html, exe e versao.txt; Linux: html, kofnes.sh, ícone e versao.txt
-(cd "$RAIZ/dist" && mkdir -p z/KOFnes && cd web && cp KOFnes.html KOFnes.exe LEIA-ME.txt versao.txt ../z/KOFnes/ && cd ../z && zip -qr -9 ../KOFnes-windows.zip KOFnes && cd .. && rm -rf z)
-(cd "$RAIZ/dist" && mkdir -p z/KOFnes && cd web && cp KOFnes.html kofnes.sh KOFnes.png LEIA-ME-linux.txt versao.txt ../z/KOFnes/ && cd ../z && tar czf ../KOFnes-linux.tar.gz KOFnes && cd .. && rm -rf z)
-ls -l "$SAIDA" "$RAIZ/dist/KOFnes-windows.zip" "$RAIZ/dist/KOFnes-linux.tar.gz"
+rm -f "$RAIZ/dist/KOFstation-windows.zip" "$RAIZ/dist/KOFstation-linux.tar.gz"
+# Windows: html, exe e versao.txt; Linux: html, kofnes.sh, ícone e versao.txt. A pasta e o pacote se chamam KOFstation;
+# os arquivos de dentro mantêm o nome KOFnes.* (o atualizador e o perfil do navegador de quem já usa dependem deles)
+(cd "$RAIZ/dist" && mkdir -p z/KOFstation && cd web && cp KOFnes.html KOFnes.exe LEIA-ME.txt versao.txt ../z/KOFstation/ && cd ../z && zip -qr -9 ../KOFstation-windows.zip KOFstation && cd .. && rm -rf z)
+(cd "$RAIZ/dist" && mkdir -p z/KOFstation && cd web && cp KOFnes.html kofnes.sh KOFnes.png LEIA-ME-linux.txt versao.txt ../z/KOFstation/ && cd ../z && tar czf ../KOFstation-linux.tar.gz KOFstation && cd .. && rm -rf z)
+ls -l "$SAIDA" "$RAIZ/dist/KOFstation-windows.zip" "$RAIZ/dist/KOFstation-linux.tar.gz"

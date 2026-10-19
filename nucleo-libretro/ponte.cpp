@@ -1,4 +1,4 @@
-// Ponte entre um núcleo libretro (Snes9x, Gambatte, ...) e o JavaScript do KOFnes.
+// Ponte entre um núcleo libretro (Snes9x, Gambatte, ...) e o JavaScript do KOFstation.
 // Faz o papel do "frontend" do libretro: responde às perguntas do núcleo, guarda o quadro de vídeo,
 // o áudio e os botões, e expõe poucas funções simples (lr_*) pro JS chamar.
 // É a mesma ponte pra qualquer núcleo: tamanho da tela, fps e taxa de áudio vêm de retro_get_system_av_info.

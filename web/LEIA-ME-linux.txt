@@ -1,4 +1,4 @@
-KOFnes - Super Nintendo escrito em Kof (Linux)
+KOFstation - Super Nintendo e Game Boy, feito em Kof (Linux)
 
 1. Extraia esta pasta onde quiser.
 2. Abra um terminal nela e rode:   ./kofnes.sh
@@ -17,4 +17,4 @@ No Flatpak, libere a pasta das ROMs, por exemplo:
   flatpak override --user --filesystem=$HOME/Jogos org.chromium.Chromium
 
 Jogos (ROMs) não vêm junto: use os seus. Dados (savestates, estatísticas) ficam no
-perfil do navegador do KOFnes; use "Meu perfil > Salvar perfil" pra levar pra outro computador.
+perfil do navegador do KOFstation; use "Meu perfil > Salvar perfil" pra levar pra outro computador.

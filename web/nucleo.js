@@ -28,7 +28,7 @@ const KofLibretro = (() => {
   async function iniciar(nucleo) {
     if (modulos[nucleo]) return modulos[nucleo];
     const f = fabrica(nucleo);
-    if (!f) throw new Error('esse KOFnes não tem o núcleo ' + nucleo);
+    if (!f) throw new Error('esse KOFstation não tem o núcleo ' + nucleo);
     modulos[nucleo] = f({ print: () => {}, printErr: () => {} }).then((m) => { m._lr_init(); return m; });
     return modulos[nucleo];
   }
@@ -207,7 +207,7 @@ const KofLibretro = (() => {
   // sem imagem e sem botão apertado; a sonda do núcleo entrega a onda de cada canal e o mudo por canal
   async function tocador(sis, rom, estadoB64) {
     const S = SISTEMAS[sis], f = fabrica(S.nucleo), chave = S.nucleo + ':jukebox';
-    if (!f) throw new Error('esse KOFnes não tem o núcleo ' + S.nucleo);
+    if (!f) throw new Error('esse KOFstation não tem o núcleo ' + S.nucleo);
     if (!modulos[chave]) modulos[chave] = f({ print: () => {}, printErr: () => {} }).then((m) => { m._lr_init(); return m; });
     const mod = await modulos[chave];
     const c = new Consolinho(Uint8Array.from(rom), sis, mod);

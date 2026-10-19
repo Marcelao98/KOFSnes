@@ -1,4 +1,12 @@
-# KOFnes — contexto pra próxima sessão
+# KOFstation (antigo KOFnes) — contexto pra próxima sessão
+
+> **Nome:** desde 19/10 o produto se chama **KOFstation** (SNES + Game Boy). O que o usuário vê, o README, o APK
+> (`android/apk/KOFstation.apk`, rótulo do app) e os pacotes (`dist/KOFstation-windows.zip`/`-linux.tar.gz`) usam o nome novo.
+> **De propósito ficaram com o nome antigo** (trocar apagaria dados ou travaria a atualização de quem já usa):
+> `KOFnes.exe`/`KOFnes.html`/`kofnes.sh` (o atualizador do lançador 5 baixa esses nomes de `publicado/`), o perfil do Edge
+> `%LOCALAPPDATA%\KOFnes` e o banco `kofnes` + chaves `kofnes.*` do navegador (saves, biblioteca, músicas), o pacote do APK
+> `dev.kofnes.android` (trocar = app novo, sem os dados) e o repositório `Marcelao98/KOFSnes`. Nomes internos de código
+> (`window.KOFnes`, `KOFnesApk`, `KOFnes-android.html`) também ficaram. Trocar os arquivos do PC exige um lançador novo (6).
 
 Emulador de Super Nintendo escrito em **Kof** (linguagem brasileira, github.com/KofLang/Kof4j,
 criada pela Mel Santos ~2 meses antes do projeto). Dono: Marcelo (Marcelao98). Repositório:

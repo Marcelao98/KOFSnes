@@ -1,7 +1,7 @@
 {
-  "name": "KOFnes",
-  "short_name": "KOFnes",
-  "description": "Emulador de Super Nintendo escrito em Kof",
+  "name": "KOFstation",
+  "short_name": "KOFstation",
+  "description": "Emulador de Super Nintendo e Game Boy feito em Kof",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

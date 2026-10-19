@@ -1,4 +1,4 @@
-// Interface do KOFnes no navegador. O emulador em si é o núcleo Kof
+// Interface do KOFstation no navegador. O emulador em si é o núcleo Kof
 // (snes/), compilado pra JavaScript: KofNucleo.Snes. Aqui fica só o que
 // é de "janela": tela, som, teclado/controle, ROMs, saves e temas.
 (() => {
@@ -497,7 +497,7 @@ async function jukeTocar(i) {
   try {
     let tk;
     if (f.sistema && f.sistema !== 'snes') {
-      if (typeof KofLibretro === 'undefined' || !KofLibretro.disponivel(f.sistema)) throw new Error('essa versão do KOFnes não toca música de ' + (SIS[f.sistema] ? SIS[f.sistema].nome : f.sistema));
+      if (typeof KofLibretro === 'undefined' || !KofLibretro.disponivel(f.sistema)) throw new Error('essa versão do KOFstation não toca música de ' + (SIS[f.sistema] ? SIS[f.sistema].nome : f.sistema));
       const rom = await bdPegar('roms', f.jogoId);
       if (!rom) throw new Error('a ROM de ' + f.jogo + ' não está mais na biblioteca: abra o jogo uma vez e tente de novo');
       tk = await KofLibretro.tocador(f.sistema, rom, f.lr);
@@ -746,7 +746,7 @@ $('#jk-vozes').addEventListener('click', (e) => {
 $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length) importarSpcs([...e.target.files]); e.target.value = ''; });
 
 // ---------------- caçador de bugs ----------------
-// Pra reproduzir um bug exatamente: a cada 10 s o KOFnes tira uma foto do
+// Pra reproduzir um bug exatamente: a cada 10 s o KOFstation tira uma foto do
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
@@ -809,10 +809,10 @@ async function enviarBug() {
   const L = [];
   L.push('### O que aconteceu', '', desc, '');
   if (jogo) L.push('### Jogo', '', `- **ROM:** ${jogo.nome}`, `- **Título interno:** ${jogo.titulo || '?'} · ${jogo.mapeamento}${jogo.superfx ? ' · Super FX' : ''} · ${Math.round(jogo.tamanho / 1024)} KB`, `- **SHA-1:** \`${jogo.sha1}\``, '');
-  L.push('### Ambiente', '', `- **KOFnes:** ${VERSAO}`, `- **Navegador:** ${navigator.userAgent}`, `- **Opções:** ${opcoes}`, '');
+  L.push('### Ambiente', '', `- **KOFstation:** ${VERSAO}`, `- **Navegador:** ${navigator.userAgent}`, `- **Opções:** ${opcoes}`, '');
   if (erro) L.push('### Erro do emulador', '', '```', erro.mensagem, erro.pilha.slice(0, 1200), '```', '');
-  if (arquivo) L.push('### Pacote pra reproduzir', '', `📎 **${CELULAR ? 'Anexe' : 'Arraste aqui'} o arquivo \`${arquivo}\`**, que o KOFnes acabou de baixar (pasta Downloads).`, 'Ele tem o savestate de alguns segundos antes e os botões apertados, pra reproduzir o bug quadro a quadro. A ROM **não** vai junto.', '');
-  L.push('---', '_Reportado pelo modo caçador de bugs do KOFnes_');
+  if (arquivo) L.push('### Pacote pra reproduzir', '', `📎 **${CELULAR ? 'Anexe' : 'Arraste aqui'} o arquivo \`${arquivo}\`**, que o KOFstation acabou de baixar (pasta Downloads).`, 'Ele tem o savestate de alguns segundos antes e os botões apertados, pra reproduzir o bug quadro a quadro. A ROM **não** vai junto.', '');
+  L.push('---', '_Reportado pelo modo caçador de bugs do KOFstation_');
   const titulo = `[bug] ${jogo ? jogo.nome + ': ' : ''}${desc.split('\n')[0].slice(0, 70)}`;
   const url = `https://github.com/${REPO}/issues/new?labels=bug&title=${encodeURIComponent(titulo)}&body=${encodeURIComponent(L.join('\n')).slice(0, 7000)}`;
   if (aba) aba.location.href = url; else window.open(url, '_blank');
@@ -837,13 +837,13 @@ async function procurarAtualizacao(manual) {
   try {
     const t = await (await fetch(URL_VERSAO + '?t=' + Date.now(), { cache: 'no-store' })).text();
     const nova = +((t.match(/versao=(\d+)/) || [])[1] || 0);
-    if (nova > BUILD) avisar('🆕 tem versão nova do KOFnes no GitHub: feche e abra o KOFnes pra atualizar', 8000);
+    if (nova > BUILD) avisar('🆕 tem versão nova do KOFstation no GitHub: feche e abra o KOFstation pra atualizar', 8000);
     else if (manual) avisar(`✔ você está na versão mais nova (${VERSAO})`, 4000);
   } catch (e) { if (manual) avisar('não consegui falar com o GitHub agora', 4000); }
 }
 function avisarSeAtualizou() {
   const vista = +(ler('versaoVista') || 0);
-  if (BUILD && vista && vista < BUILD) setTimeout(() => avisar(`✨ KOFnes atualizado! versão ${VERSAO}`, 5000), 1200);
+  if (BUILD && vista && vista < BUILD) setTimeout(() => avisar(`✨ KOFstation atualizado! versão ${VERSAO}`, 5000), 1200);
   if (BUILD) guardar('versaoVista', BUILD);
   setTimeout(() => procurarAtualizacao(false), 10000);
 }
@@ -1022,7 +1022,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   fecharJanelas();
   $('#st-jogo').textContent = romNome + ' · ' + (s.cart.title.trim() || '?');
   marcarLateral();
-  document.title = 'KOFnes — ' + romNome;
+  document.title = 'KOFstation — ' + romNome;
   ajustarEscala();
   // a ROM vai pra biblioteca: da próxima vez abre sem diálogo nenhum
   try {
@@ -1463,7 +1463,7 @@ function marcarSel(i) {
 }
 function mostrarInfo() {
   const r = visiveis[selecionada], img = $('#capa-img');
-  if (!r) { $('#info-nome').textContent = 'KOFnes'; $('#info-det').textContent = 'Super Nintendo escrito em Kof'; img.hidden = true; $('#capa-vazia').hidden = false; return; }
+  if (!r) { $('#info-nome').textContent = 'KOFstation'; $('#info-det').textContent = 'Super Nintendo e Game Boy, feito em Kof'; img.hidden = true; $('#capa-vazia').hidden = false; return; }
   $('#info-nome').textContent = r.nome;
   if (r.jogo) {
     const n = contagem[r.jogo.id] || 0;
@@ -1658,9 +1658,9 @@ const FRASES = {
   cafe: 'Um cafezinho e um clássico?', escuro: 'A noite é uma criança. E o jogo também.', claro: 'Dia bonito pra zerar um jogo.',
   zsnes: 'PRESS START', super16: 'Assopra o cartucho e bora.', portatil: 'Pilhas novas, jogo novo.',
   atomico: 'Transparente por fora, clássico por dentro.', blast16: 'Processamento a jato. Em Kof.', cinza32: '△ ○ ✕ □ … mas hoje é dia de 16 bits.',
-  branco: 'Clique, relaxe, jogue.', laminas: 'Conquista desbloqueada: abriu o KOFnes.', neon: 'INSERT COIN',
-  classico98: 'Bem-vindo ao KOFnes 98. Clique em Iniciar… digo, em Jogar.', luna: 'Seu emulador está pronto. Sem clipe de papel.',
-  mensageiro: '🟢 KOFnes ficou online.', rosa2004: 'Você tem 1 recado novo: "bora jogar?"', terminal: '> kofnes --jogar_',
+  branco: 'Clique, relaxe, jogue.', laminas: 'Conquista desbloqueada: abriu o KOFstation.', neon: 'INSERT COIN',
+  classico98: 'Bem-vindo ao KOFstation 98. Clique em Iniciar… digo, em Jogar.', luna: 'Seu emulador está pronto. Sem clipe de papel.',
+  mensageiro: '🟢 KOFstation ficou online.', rosa2004: 'Você tem 1 recado novo: "bora jogar?"', terminal: '> kofnes --jogar_',
   vapor: 'ｋｏｆｎｅｓ　ａｅｓｔｈｅｔｉｃ', web1: '🚧 Bem-vindo à minha homepage!!! Você é o visitante nº 000427 🚧',
   esferas: "Seu poder de jogo passa de 9 mil!", unidade01: 'Entre no robô… digo, no jogo.', lua: 'Em nome da lua, vamos jogar!',
   dourado: "Queime o seu cosmo!", pokebola: 'Um jogo selvagem apareceu!', floresta: 'Um bom lugar pra se perder num jogo.',
@@ -1931,7 +1931,7 @@ function avisar(t, ms) {
   clearTimeout(avisar.t); avisar.t = setTimeout(() => { a.hidden = true; }, ms || 1800);
 }
 const TEMAS = [
-  ['Clássicos do KOFnes', [['escuro', '🌙 Escuro'], ['claro', '☀️ Claro'], ['zsnes', '🕹️ ZSNES']]],
+  ['Clássicos do KOFstation', [['escuro', '🌙 Escuro'], ['claro', '☀️ Claro'], ['zsnes', '🕹️ ZSNES']]],
   ['Café', [['cafe', '☕ Café queimado'], ['espresso', 'Espresso'], ['cappuccino', 'Cappuccino'], ['latte', 'Latte'], ['mocha', 'Mocha'],
     ['caramelo', 'Caramelo'], ['coldbrew', 'Cold Brew'], ['canela', 'Café com canela']]],
   ['Consoles', [['super16', 'Super 16-bit'], ['portatil', 'Portátil verde'], ['atomico', 'Roxo atômico'], ['blast16', 'Blast 16'],
@@ -2090,7 +2090,7 @@ $('#grade-temas').addEventListener('mouseleave', () => {
 });
 $('#veu').addEventListener('click', () => acao('fechar-temas'));
 // ---------------- showcase dos temas ----------------
-// Dois botões na galeria: lento (3,5 s por tema, pra olhar) e rápido (0,5 s por tema, pra apresentar o KOFnes pros outros).
+// Dois botões na galeria: lento (3,5 s por tema, pra olhar) e rápido (0,5 s por tema, pra apresentar o KOFstation pros outros).
 // Esc ou "Parar" volta pro tema de antes; "Ficar com este" escolhe o que estiver na tela.
 let showTimer = 0, showFim = 0, showI = 0, showLista = [];
 function passarTema() {
