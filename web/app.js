@@ -216,8 +216,8 @@ function empurrarSom() {
   d.outCount = 0;
 }
 
-// celular: o KOFnes-android.html liga esta classe (controle virtual na tela, núcleo Snes9x, sem textos de teclado)
-const CELULAR = document.documentElement.classList.contains('celular') || typeof KofS9x !== 'undefined';
+// celular: o KOFnes-android.html liga esta classe (controle virtual na tela, núcleos libretro, sem textos de teclado)
+const CELULAR = document.documentElement.classList.contains('celular') || typeof KofLibretro !== 'undefined';
 
 // ---------------- controles ----------------
 // botões do SNES: nome, bit no registrador do controle e tecla padrão
@@ -632,7 +632,7 @@ async function enviarBug() {
     const base = marcoBugAnt || marcoBug;
     const entradas = base ? (marcoBugAnt ? marcoBugAnt.entradas.concat(marcoBug ? marcoBug.entradas : []) : base.entradas) : [];
     const pacote = {
-      formato: 'kofbug', versao: 1, nucleo: snes && snes.s9x ? 's9x' : 'kof', kofnes: VERSAO, quando: agora.toISOString(), descricao: desc, jogo, erro,
+      formato: 'kofbug', versao: 1, nucleo: !snes || !snes.lr ? 'kof' : snes.s9x ? 's9x' : snes.nucleo, kofnes: VERSAO, quando: agora.toISOString(), descricao: desc, jogo, erro,
       ambiente: { navegador: navigator.userAgent, opcoes },
       replay: base ? { estado: base.estado, entradas: b64(new Uint8Array(Uint16Array.from(entradas).buffer)), quadros: entradas.length } : null,
       agora: { estado: KofEstado.capturar(snes), assinatura: assinatura() },
@@ -830,14 +830,14 @@ async function abrirArquivo(arq) {
     await abrirBytes(nome, bytes, true);
   } catch (e) { avisar(e.message, 5000); }
 }
-// no celular o núcleo é o Snes9x (nucleo_s9x.js); no PC, o núcleo Kof
-async function novoNucleo(bytes) {
-  return typeof KofS9x !== 'undefined' ? KofS9x.criar(bytes) : new KofNucleo.Snes(Int32Array.from(bytes));
+// no celular os núcleos são libretro em WebAssembly (nucleo.js); no PC, o núcleo Kof
+async function novoNucleo(bytes, nome) {
+  return typeof KofLibretro !== 'undefined' ? KofLibretro.criar(bytes, nome) : new KofNucleo.Snes(Int32Array.from(bytes));
 }
 async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   if (bytes.length < 0x8000) throw new Error('isso não parece uma ROM de SNES');
   registrarTempo(); salvarSram(); await salvarAuto();
-  const s = await novoNucleo(bytes);
+  const s = await novoNucleo(bytes, nome);
   romNome = nome.replace(/\.[^.]+$/, '');
   jogoId = s.cart.title.trim() + '|' + bytes.length;
   chaveSram = 'sram.' + s.cart.title.trim() + '.' + bytes.length;

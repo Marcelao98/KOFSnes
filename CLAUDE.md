@@ -130,12 +130,12 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 - **Android (branch `android`, não publicado):** `web/compilar.sh` gera `dist/web/KOFnes-android.html` (e a pasta `dist/web/android/`
   = PWA: index.html + manifest + sw.js + ícones) quando existe `nucleo-libretro/saida/snes9x.js` (construir com
   `nucleo-libretro/construir.sh snes9x`, emscripten + libretro/snes9x; licença só NÃO comercial). Núcleo no celular = **Snes9x em WebAssembly**
-  (`web/nucleo_s9x.js` imita o núcleo Kof: pad, runFrame, ppu.frame, apu.dsp, cart.sram; savestate e rebobinar via
+  (`web/nucleo.js` imita o núcleo Kof: pad, runFrame, ppu.frame, apu.dsp, cart.sram; savestate e rebobinar via
   retro_serialize, ~820 KB por estado); o PC continua com o núcleo Kof. `juntar.py <...> <pasta-com-snes9x.js>` monta o modo celular:
   `web/android.js` entra DENTRO da função do app.js (mesmo escopo), `web/android.css` junto do CSS, `<html class="celular">`.
   Controle virtual (multitoque, deslizar entre botões) com 6 modelos (classico, moderno, minimo, arcade, portatil, tema), tela
   Controles (reaproveita a janela de teclas), barra de baixo no lugar do menu/lateral, voltar do Android = menu rápido, textos de PC
-  escondidos com `.so-pc` / `.so-cel` (no pagina.html) e `CELULAR` no app.js. Testes: `testes/android/nucleo-s9x.cjs` (Node) e
+  escondidos com `.so-pc` / `.so-cel` (no pagina.html) e `CELULAR` no app.js. Testes: `testes/libretro/nucleo.cjs` (Node) e
   `testes/android/celular.cjs` (Playwright com toque; aceita html, rom, pasta de prints). Pendente: testar no aparelho real
   (latência, desempenho do Snes9x), APK (Capacitor/GitHub Actions), seletor de pasta de ROMs (só no APK), guardar música e caçador
   de bugs não existem no celular, posições do arcade/portátil na horizontal usam o layout padrão.
@@ -154,8 +154,13 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   reescrever núcleo em Kof. Etapa 1 feita: `nucleo-libretro/ponte.cpp` (ponte genérica, funções `lr_*`; `lr_info()` dá
   tamanho/proporção/fps/taxa de áudio do `retro_get_system_av_info`) + `nucleo-libretro/construir.sh snes9x|gambatte` →
   `saida/<núcleo>.js` (módulo `Nucleo_<núcleo>`). Teste: `node testes/libretro/ponte.cjs gambatte rom.gb`. ROMs livres de GB:
-  dmg-acid2/cgb-acid2 (github.com/mattcurrie). Próximas: `web/nucleo.js` genérico, tirar 256x224 fixo do app.js, Game Boy no
-  app (A/B/Start/Select), APK com os dois núcleos, PC com Gambatte em WebAssembly.
+  dmg-acid2/cgb-acid2 (github.com/mattcurrie). Etapa 2 feita: `web/nucleo.js` (`KofLibretro`, substituiu o nucleo_s9x.js):
+  `SISTEMAS` (snes: .sfc/.smc/.fig/.swc → snes9x 256x224; gb: .gb/.gbc/.sgb → gambatte 160x144), `criar(bytes, nomeDoArquivo)`,
+  `sistemaDe(nome)`, `disponivel(sis)`; o objeto tem `sistema`, `nucleo`, `largura/altura`, `fps`, `taxaAudio`, `rgba` (já no
+  formato do canvas) e `ppu.frame` (getter no formato Kof). Estado: `{lr: núcleo, d}` (Snes9x mantém `s9x: 1`). O juntar.py
+  embute todo `nucleo-libretro/saida/*.js`. Pacote de bug: `nucleo` = 'kof' | 's9x' | 'gambatte'. Teste:
+  `node testes/libretro/nucleo.cjs rom.sfc|rom.gb`. Próximas: tirar 256x224/32 kHz/60,1 fps fixos do app.js, Game Boy no
+  app (A/B/Start/Select, extensões, biblioteca), APK com os dois núcleos, PC com Gambatte em WebAssembly.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;

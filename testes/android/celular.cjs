@@ -11,7 +11,7 @@ const MODELOS = ['classico', 'moderno', 'minimo', 'arcade', 'portatil', 'tema'];
   const p = await ctx.newPage(), erros = [], r = {};
   p.on('pageerror', (e) => erros.push(e.message)); p.on('console', (m) => { if (m.type() === 'error') erros.push(m.text()); });
   p.on("console", (m) => console.log("C:", m.text().slice(0, 200))); await p.goto("file://" + html); await p.waitForTimeout(800);
-  r.modoCelular = await p.evaluate(() => document.documentElement.classList.contains('celular') && typeof KofS9x !== 'undefined');
+  r.modoCelular = await p.evaluate(() => document.documentElement.classList.contains('celular') && typeof KofLibretro !== 'undefined');
   await p.screenshot({ path: saida + '/cel-inicio.png' });
   const [fc] = await Promise.all([p.waitForEvent('filechooser'), p.tap('#home:not([hidden]) [data-acao="abrir"]')]);
   await fc.setFiles(rom); await p.waitForTimeout(2500);

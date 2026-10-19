@@ -17,7 +17,8 @@ import re
 import sys
 
 saida_kof, web, icone, destino = (pathlib.Path(a) for a in sys.argv[1:5])
-# 5º argumento (opcional): a pasta com o snes9x.js -> gera o KOFnes-android.html (núcleo Snes9x + controle virtual)
+# 5º argumento (opcional): a pasta com os núcleos (nucleo-libretro/saida: snes9x.js, gambatte.js...) -> gera o
+# KOFnes-android.html (núcleos libretro + controle virtual)
 android = pathlib.Path(sys.argv[5]) if len(sys.argv) > 5 else None
 
 
@@ -65,9 +66,9 @@ partes = {
     "{{CSS}}": (web / "estilo.css").read_text() + ((web / "android.css").read_text() if android else ""),
     "{{NUCLEO}}": script,
     "{{APP}}": (
-        ((android / "snes9x.js").read_text() + "\n" if android else "")
+        ("".join(f.read_text() + "\n" for f in sorted(android.glob("*.js"))) if android else "")   # todos os núcleos compilados (snes9x.js, gambatte.js...)
         + (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
-        + ((web / "nucleo_s9x.js").read_text() + "\n" if android else "")   # depois do estado.js: ele troca o savestate pelo do Snes9x
+        + ((web / "nucleo.js").read_text() + "\n" if android else "")   # depois do estado.js: ele troca o savestate pelo do núcleo libretro
         + app_js
     ),
     "{{ICONE}}": "data:image/png;base64," + base64.b64encode(icone.read_bytes()).decode(),

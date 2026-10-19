@@ -1,19 +1,20 @@
-// Testa o adaptador do Snes9x no Node: roda uma ROM, confere imagem, áudio, savestate (volta igual) e rebobinar.
-//   node testes/android/nucleo-s9x.cjs rom.sfc
+// Testa o adaptador dos núcleos libretro (web/nucleo.js) no Node: roda uma ROM, confere imagem, áudio, savestate
+// (volta igual), rebobinar e, no SNES, a música (.spc). O sistema sai da extensão (.sfc/.smc SNES, .gb/.gbc Game Boy).
+//   node testes/libretro/nucleo.cjs rom.sfc|rom.gb
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const raiz = path.join(__dirname, '..', '..');
 const ctx = { console, setTimeout, atob: (s) => Buffer.from(s, 'base64').toString('binary'), btoa: (s) => Buffer.from(s, 'binary').toString('base64'), module: { exports: {} } };
 vm.createContext(ctx);
 const carregar = (f) => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
-carregar(path.join(raiz, 'nucleo-libretro/saida/snes9x.js'));
+for (const f of fs.readdirSync(path.join(raiz, 'nucleo-libretro/saida'))) if (f.endsWith('.js')) carregar(path.join(raiz, 'nucleo-libretro/saida', f));
 carregar(path.join(raiz, 'web/estado.js')); carregar(path.join(raiz, 'web/spc.js'));
 vm.runInContext('globalThis.KofEstado = KofEstado;', ctx);
-carregar(path.join(raiz, 'web/nucleo_s9x.js'));
-vm.runInContext('globalThis.KofS9x = KofS9x; globalThis.Nucleo_snes9x = typeof Nucleo_snes9x !== "undefined" ? Nucleo_snes9x : undefined;', ctx);
+carregar(path.join(raiz, 'web/nucleo.js'));
+vm.runInContext('globalThis.KofLibretro = KofLibretro;', ctx);
 (async () => {
   const rom = new Uint8Array(fs.readFileSync(process.argv[2])), r = {};
-  const s = await ctx.KofS9x.criar(rom);
-  r.titulo = s.cart.title.trim();
+  const s = await ctx.KofLibretro.criar(rom, process.argv[2]);
+  r.sistema = s.sistema; r.titulo = s.cart.title.trim(); r.tela = s.largura + 'x' + s.altura; r.fpsNucleo = +s.fps.toFixed(3); r.taxaAudio = Math.round(s.taxaAudio);
   for (let i = 0; i < 180; i++) { s.pad[0] = 0; s.runFrame(); if (i < 179) s.apu.dsp.outCount = 0; }
   const f = s.ppu.frame; let cores = new Set(); for (let i = 0; i < f.length; i += 37) cores.add(f[i]);
   r.coresNaImagem = cores.size; r.imagemNaoPreta = cores.size > 1;
@@ -31,15 +32,21 @@ vm.runInContext('globalThis.KofS9x = KofS9x; globalThis.Nucleo_snes9x = typeof N
   r.fotos = rb.fotos; r.bytesRebob = rb.bytes;
   for (let i = 0; i < 30; i++) rb.voltar();
   const agora = s.serializar();
-  r.rebobinou = rb.fotos === 29 && agora.length === guardado.length && agora.every((v, i) => v === guardado[i]);   // voltou exatamente ao estado do quadro 30
+  // voltou ao estado do quadro 30: rodando dali, dá a mesma imagem que restaurar o estado guardado naquele quadro
+  // (byte a byte pode mudar: o Gambatte recalcula um campo de cache ao restaurar)
+  r.estadoIgualByteAByte = agora.length === guardado.length && agora.every((v, i) => v === guardado[i]);
+  const ra = anda(30); s.desserializar(guardado); const rb2 = anda(30);
+  r.rebobinou = rb.fotos === 29 && ra === rb2;
   // música: o estado do chip de som vira um .spc válido (a Jukebox toca esse formato)
-  const KS = vm.runInContext('KofSpc', ctx), spc = s.gravarSpc({ titulo: 'teste', jogo: 'jogo' });
-  r.spcValido = KS.eSpc(spc) && spc.length === 0x10200; r.spcPC = spc[0x25] | (spc[0x26] << 8); r.spcDspVolEsq = spc[0x10100 + 0x0C];
+  if (s.s9x) {
+    const KS = vm.runInContext('KofSpc', ctx), spc = s.gravarSpc({ titulo: 'teste', jogo: 'jogo' });
+    r.spcValido = KS.eSpc(spc) && spc.length === 0x10200; r.spcPC = spc[0x25] | (spc[0x26] << 8); r.spcDspVolEsq = spc[0x10100 + 0x0C];
+  } else { try { s.gravarSpc({}); r.spcRecusado = false; } catch (e) { r.spcRecusado = true; } }
   // reprodução de bug: estado guardado + mesmas entradas, numa instância NOVA (como o bugs/reproduzir.cjs), dá a mesma imagem
   const marco = E.capturar(s), entradas = Array.from({ length: 90 }, (_, i) => (i % 5 ? 0x0100 : 0x0080));
   for (const b of entradas) { s.pad[0] = b; s.runFrame(); s.apu.dsp.outCount = 0; }
   const h1 = hash(s.ppu.frame);
-  const s2 = await ctx.KofS9x.criar(rom); E.restaurar(s2, marco);
+  const s2 = await ctx.KofLibretro.criar(rom, process.argv[2]); E.restaurar(s2, marco);
   for (const b of entradas) { s2.pad[0] = b; s2.runFrame(); s2.apu.dsp.outCount = 0; }
   r.replayEmInstanciaNova = hash(s2.ppu.frame) === h1;
   // SRAM
