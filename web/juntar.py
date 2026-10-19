@@ -17,6 +17,8 @@ import re
 import sys
 
 saida_kof, web, icone, destino = (pathlib.Path(a) for a in sys.argv[1:5])
+# 5º argumento (opcional): a pasta com o snes9x.js -> gera o KOFnes-android.html (núcleo Snes9x + controle virtual)
+android = pathlib.Path(sys.argv[5]) if len(sys.argv) > 5 else None
 
 
 def versao():
@@ -52,10 +54,22 @@ script = (
     + "\nreturn { Snes: snes_Snes, Apu: snes_Apu };\n})();\n"
 )
 pagina = (web / "pagina.html").read_text()
+if android:
+    pagina = pagina.replace('<html lang="pt-BR"', '<html class="celular" lang="pt-BR"', 1)
+    pagina = pagina.replace('<meta name="viewport" content="width=device-width, initial-scale=1">', '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">\n<meta name="theme-color" content="#1a110b">\n<link rel="manifest" href="manifest.webmanifest">\n<link rel="apple-touch-icon" href="icone-192.png">\n<meta name="mobile-web-app-capable" content="yes">', 1)
+app_js = (web / "app.js").read_text()
+if android:   # o app.js é uma função só ((() => {...})()): o código do celular entra por dentro, antes do fecha-parênteses final
+    fim = app_js.rstrip().rfind("})();")
+    app_js = app_js[:fim] + "\n" + (web / "android.js").read_text() + "\n" + app_js[fim:]
 partes = {
-    "{{CSS}}": (web / "estilo.css").read_text(),
+    "{{CSS}}": (web / "estilo.css").read_text() + ((web / "android.css").read_text() if android else ""),
     "{{NUCLEO}}": script,
-    "{{APP}}": (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n" + (web / "app.js").read_text(),
+    "{{APP}}": (
+        ((android / "snes9x.js").read_text() + "\n" if android else "")
+        + (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
+        + ((web / "nucleo_s9x.js").read_text() + "\n" if android else "")   # depois do estado.js: ele troca o savestate pelo do Snes9x
+        + app_js
+    ),
     "{{ICONE}}": "data:image/png;base64," + base64.b64encode(icone.read_bytes()).decode(),
     "{{VERSAO}}": versao(),
 }

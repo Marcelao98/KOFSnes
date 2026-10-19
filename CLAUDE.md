@@ -127,6 +127,18 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   opcional (`[id, nome, descrição]`, aparece na prévia e entra na busca); Nostalgia BR tem 20 com descrição. Só cor, gradiente e
   textura leve em `--fundo-img` (sem imagem, sem nome de marca). Testes: `testes/node/contraste.cjs` (lista de ids no topo; todo
   tema novo entra lá) e `testes/navegador/nostalgia-br.cjs` e `categorias-temas.cjs` (contagens, nomes, ids únicos, persistência, prints).
+- **Android (branch `android`, não publicado):** `web/compilar.sh` gera `dist/web/KOFnes-android.html` (e a pasta `dist/web/android/`
+  = PWA: index.html + manifest + sw.js + ícones) quando existe `nucleo-snes9x/saida/snes9x.js` (construir com
+  `nucleo-snes9x/construir.sh`, emscripten + libretro/snes9x; licença só NÃO comercial). Núcleo no celular = **Snes9x em WebAssembly**
+  (`web/nucleo_s9x.js` imita o núcleo Kof: pad, runFrame, ppu.frame, apu.dsp, cart.sram; savestate e rebobinar via
+  retro_serialize, ~820 KB por estado); o PC continua com o núcleo Kof. `juntar.py <...> <pasta-com-snes9x.js>` monta o modo celular:
+  `web/android.js` entra DENTRO da função do app.js (mesmo escopo), `web/android.css` junto do CSS, `<html class="celular">`.
+  Controle virtual (multitoque, deslizar entre botões) com 6 modelos (classico, moderno, minimo, arcade, portatil, tema), tela
+  Controles (reaproveita a janela de teclas), barra de baixo no lugar do menu/lateral, voltar do Android = menu rápido, textos de PC
+  escondidos com `.so-pc` / `.so-cel` (no pagina.html) e `CELULAR` no app.js. Testes: `testes/android/nucleo-s9x.cjs` (Node) e
+  `testes/android/celular.cjs` (Playwright com toque; aceita html, rom, pasta de prints). Pendente: testar no aparelho real
+  (latência, desempenho do Snes9x), APK (Capacitor/GitHub Actions), seletor de pasta de ROMs (só no APK), guardar música e caçador
+  de bugs não existem no celular, posições do arcade/portátil na horizontal usam o layout padrão.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;

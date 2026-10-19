@@ -20,6 +20,19 @@ cp -r "$RAIZ/snes" "$T/src/snes"
 kof build "$T/src/nucleo.kf" --target js --output "$T/out"
 python3 "$RAIZ/empacotar/icone.py" "$T" >/dev/null
 python3 "$AQUI/juntar.py" "$T/out" "$AQUI" "$T/icone.png" "$SAIDA/KOFnes.html"
+# Android: o mesmo app com o núcleo Snes9x e o controle virtual (precisa do nucleo-snes9x/saida/snes9x.js; veja nucleo-snes9x/construir.sh)
+if [ -f "$RAIZ/nucleo-snes9x/saida/snes9x.js" ]; then
+    python3 "$AQUI/juntar.py" "$T/out" "$AQUI" "$T/icone.png" "$SAIDA/KOFnes-android.html" "$RAIZ/nucleo-snes9x/saida"
+    # pasta pronta pra publicar como site (GitHub Pages) e instalar no celular como app (PWA)
+    mkdir -p "$SAIDA/android" && cp "$SAIDA/KOFnes-android.html" "$SAIDA/android/index.html" && cp "$AQUI/pwa/manifest.webmanifest" "$AQUI/pwa/sw.js" "$SAIDA/android/"
+    python3 - "$T/icone.png" "$SAIDA/android" <<'PY'
+import sys
+from PIL import Image
+im = Image.open(sys.argv[1]).convert("RGBA")
+for n in (192, 512):
+    im.resize((n, n), Image.NEAREST).save(f"{sys.argv[2]}/icone-{n}.png")
+PY
+fi
 if command -v x86_64-w64-mingw32-gcc >/dev/null; then
     (cd "$T" && cp "$RAIZ/empacotar/kofnes.rc" . && x86_64-w64-mingw32-windres kofnes.rc -O coff -o res.o)
     x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFnes.exe" "$AQUI/lancador_win.c" "$AQUI/lancador_inet.c" "$T/res.o" -lshlwapi -lwinhttp -lwininet -lws2_32

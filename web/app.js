@@ -106,8 +106,9 @@ const BORDAS = { nenhuma: [0, 0, 0, 0], tv80: [0.1, 0.44, 0.1, 0.1], tv90: [0.08
 let moldura = BORDAS[ler('moldura')] ? ler('moldura') : 'nenhuma';
 function mudarMoldura(v) { moldura = BORDAS[v] ? v : 'nenhuma'; guardar('moldura', moldura); ajustarEscala(); }
 function ajustarEscala() {
-  const p = $('#palco'), cheia = document.body.classList.contains('cheia'), folga = cheia ? 0 : 16;
-  const W = Math.max(256, p.clientWidth - folga), H = Math.max(224, p.clientHeight - folga);
+  const p = $('#palco'), cheia = document.body.classList.contains('cheia') || document.documentElement.classList.contains('celular'), folga = cheia ? 0 : 16;   // celular: sempre o maior que couber (sem múltiplo inteiro)
+  const pc = getComputedStyle(p), miolo = (l, r) => (parseFloat(pc[l]) || 0) + (parseFloat(pc[r]) || 0);   // celular na horizontal: o palco tem folga dos lados pros botões
+  const W = Math.max(256, p.clientWidth - folga - miolo('paddingLeft', 'paddingRight')), H = Math.max(224, p.clientHeight - folga - miolo('paddingTop', 'paddingBottom'));
   const [bc, bd, bb, be] = BORDAS[moldura], comMoldura = moldura !== 'nenhuma';
   let w, h;
   if (proporcao === 'esticar') { h = H / (1 + bc + bb); w = W - (bd + be) * h; } else {
@@ -215,6 +216,9 @@ function empurrarSom() {
   d.outCount = 0;
 }
 
+// celular: o KOFnes-android.html liga esta classe (controle virtual na tela, núcleo Snes9x, sem textos de teclado)
+const CELULAR = document.documentElement.classList.contains('celular') || typeof KofS9x !== 'undefined';
+
 // ---------------- controles ----------------
 // botões do SNES: nome, bit no registrador do controle e tecla padrão
 const BOTOES_SNES = [
@@ -307,8 +311,9 @@ function montarAjuda() {
 const BOTOES = [[0, 0x8000], [1, 0x0080], [2, 0x4000], [3, 0x0040], [4, 0x0020], [5, 0x0010],
   [8, 0x2000], [9, 0x1000], [12, 0x0800], [13, 0x0400], [14, 0x0200], [15, 0x0100]];
 let teclado = 0, turbo = false;
+let toque = 0;   // botões apertados na tela de toque (celular)
 function estado() {
-  let b = teclado;
+  let b = teclado | toque;
   for (const g of (navigator.getGamepads ? navigator.getGamepads() : [])) {
     if (!g) continue;
     for (const [i, bit] of BOTOES) if (g.buttons[i] && g.buttons[i].pressed) b |= bit;
@@ -520,7 +525,7 @@ function montarJuke() {
   $('#st-juke-tocar').textContent = juke.tocando ? '⏸' : '▶';
   if ($('#jukebox').hidden) return;
   $('#jk-titulo').textContent = f ? f.titulo : 'Nada tocando';
-  $('#jk-jogo').textContent = f ? [f.jogo, f.artista].filter(Boolean).join(' · ') : (juke.lista.length ? 'escolha uma música' : 'guarde uma música no jogo (F7) ou abra arquivos .spc');
+  $('#jk-jogo').textContent = f ? [f.jogo, f.artista].filter(Boolean).join(' · ') : (juke.lista.length ? 'escolha uma música' : (CELULAR ? 'abra arquivos .spc pra ouvir aqui' : 'guarde uma música no jogo (F7) ou abra arquivos .spc'));
   const capa = f ? (srcCapa({ nome: f.jogo }) || f.capa || '') : '';
   $('#jk-capa').hidden = !capa; $('.jk-capa span').hidden = !!capa; if (capa) $('#jk-capa').src = capa;
   if (f) capaPorNome(f.jogo).catch(() => {});
@@ -580,7 +585,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
 const VERSAO = '{{VERSAO}}', REPO = 'Marcelao98/KOFSnes';
-let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
+let cacador = !CELULAR && ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   const b = semCombo(estado());
   snes.pad[0] = b; snes.runFrame();
@@ -821,10 +826,14 @@ async function abrirArquivo(arq) {
     await abrirBytes(nome, bytes, true);
   } catch (e) { avisar(e.message, 5000); }
 }
+// no celular o núcleo é o Snes9x (nucleo_s9x.js); no PC, o núcleo Kof
+async function novoNucleo(bytes) {
+  return typeof KofS9x !== 'undefined' ? KofS9x.criar(bytes) : new KofNucleo.Snes(Int32Array.from(bytes));
+}
 async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   if (bytes.length < 0x8000) throw new Error('isso não parece uma ROM de SNES');
   registrarTempo(); salvarSram(); await salvarAuto();
-  const s = new KofNucleo.Snes(Int32Array.from(bytes));
+  const s = await novoNucleo(bytes);
   romNome = nome.replace(/\.[^.]+$/, '');
   jogoId = s.cart.title.trim() + '|' + bytes.length;
   chaveSram = 'sram.' + s.cart.title.trim() + '.' + bytes.length;
@@ -1008,7 +1017,7 @@ async function estadosDe(id) {
 async function carregarUltimo() {
   if (!snes) { avisar('abra um jogo primeiro'); return; }
   const l = await estadosDe(jogoId);
-  if (l.length) carregarEstado(l[0]); else avisar('nenhum estado salvo deste jogo (F5 salva)');
+  if (l.length) carregarEstado(l[0]); else avisar((CELULAR ? 'nenhum estado salvo deste jogo (☰ → Salvar estado)' : 'nenhum estado salvo deste jogo (F5 salva)'));
 }
 async function mostrarEstados(id) {
   fecharJanelas(); $('#estados').hidden = false;
@@ -1231,7 +1240,7 @@ function montarLista() {
   $('#lista-vazia').hidden = itens.length > 0;
   $('#lista-vazia').innerHTML = temPasta
     ? 'Nenhum jogo ainda. Escolha a <b>pasta de ROMs</b> (só uma vez) ou arraste uma ROM pra cá.'
-    : 'Nenhum jogo ainda. Arraste uma ROM pra cá ou use <b>Adicionar arquivo</b>.';
+    : (CELULAR ? 'Nenhum jogo ainda. Volte ao <b>Início</b> e toque em <b>Abrir uma ROM</b>.' : 'Nenhum jogo ainda. Arraste uma ROM pra cá ou use <b>Adicionar arquivo</b>.');
   marcarSel(selecionada);
 }
 function contarBib() {
@@ -1571,7 +1580,7 @@ const FRASES = {
 const LOGOS = { clube: '🎶', smw: '🍄', alttp: '🗡️', metroid: '🛸', dkc: '🍌', mmx: '🤖', chrono: '⏳', ff6: '⚙️', earthbound: '🎈', kirby: '⭐', fzero: '🏎️', starfox: '🦊', cv4: '🦇', contra: '💥', sf2: '👊', mk: '🐉', mana: '🌱', mariokart: '🏁', yoshi: '🥚', ghouls: '🪦', terranigma: '🌍', tropicalia: '🌺', bossa: '🎸', samba: '🪘', choro: '🪕', frevo: '☂️', maracatu: '👑', cordel: '📜', azulejo: '🔷', modernismo: '🟨', brasilia: '🏛️', mataatlantica: '🌿', amazonica: '🌴', sertao: '🌵', pantanal: '🐊', cerrado: '🌾', litoral: '🌊', ouropreto: '⛪', baiana: '🥥', junina: '🔥', carnaval: '🎊', detetive: '👁️', folhas: '🍥', mar: '🏴‍☠️', alquimia: '⚗️', cadernomorte: '🍎', lamina: '⚔️', digital: '🧬', cartas: '🌸', cacadores: '🎣', respiracao: '🔥', maldicao: '🌀', motosserra: '🪚', alem: '✨', familia: '🥂', caos: '👽', trem: '🚂', mononoke: '🌲', sessao: '📺', globinho: '🖍️', lanhouse: '🎯', orkutmsn: '🦋', dvdcamelo: '📀', locadora: '📼', caderno: '📓', recreio: '🍬', boteco: '🍺', chuva: '🌧️', almoco: '🍲', feira: '🍅', brasil98: '🛰️', hexa2002: '⚽', ferias: '🏖️', juninaescola: '🎏', casavo: '🧶', mp3: '🎧', gibi: '🦸', interior: '🏘️', encanador: '🍄', heroi: '🗡️', cacadora: '🚀', corredor: '💨', blocos: '🧱', arena: '🥊', onca: '🐆', arara: '🦜', capivara: '🦫', gato: '🐈‍⬛', raposa: '🦊', panda: '🐼', flamingo: '🦩', cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
   branco: '🤍', laminas: '🟢', neon: '🕹️', classico98: '🪟', luna: '🌄', mensageiro: '💬', rosa2004: '💌', terminal: '⌨️', vapor: '🌴',
   web1: '🚧', esferas: '⭐', unidade01: '🤖', lua: '🌙', dourado: '✨', pokebola: '🔴', floresta: '🌿', desenho: '📺', camelo: '🎁', brasil: '🇧🇷' };
-const DICAS = [
+const DICAS_PC = [
   'Deu ruim? Segure <b>Backspace</b> (ou Select+Y): o jogo volta até 5 segundos, em preto e branco. Depois a ampulheta ⏳ recarrega enquanto você joga.',
   'O <b>botão direito</b> do mouse abre o menu rápido no meio do jogo.',
   'Tocou aquela música que você ama? <b>F7</b> guarda ela na Jukebox.',
@@ -1586,6 +1595,17 @@ const DICAS = [
   'O <b>🛋 modo sofá</b> transforma a biblioteca numa grade de capas pra jogar de longe, com o controle.',
   '<b>Alt+←</b> (ou o ← do menu da esquerda) volta pra tela anterior.',
 ];
+const DICAS_CEL = [
+  'Toque em <b>☰</b> no meio do jogo pra salvar, carregar e mudar tema, filtro e volume.',
+  'Segure <b>⏪</b>: o jogo volta até 5 segundos, em preto e branco. Depois a ampulheta ⏳ recarrega enquanto você joga.',
+  'Em <b>Controles</b> você troca o modelo do controle, o tamanho, a transparência e liga o modo canhoto.',
+  'Gire o celular: na horizontal os botões ficam nos cantos e o jogo ganha a tela.',
+  'Toque em <b>Abrir uma ROM</b> pra escolher um jogo do seu celular (.sfc, .smc ou .zip).',
+  'Na Biblioteca, toque num jogo pra abrir; <b>Continuar</b> volta de onde você parou.',
+  'O modelo de controle <b>Segue o tema</b> usa as cores do tema que você escolheu.',
+  'Dá pra apertar vários botões ao mesmo tempo, e deslizar o dedo entre A, B, X e Y.',
+];
+const DICAS = CELULAR ? DICAS_CEL : DICAS_PC;
 let homeJogos = [], dicaAtual = -1;
 function fraseHome(id) {
   if ($('#home').hidden) return;
@@ -1625,7 +1645,7 @@ async function montarHome() {
   } else {                                      // primeira vez
     fig.textContent = LOGOS[temaSalvo] || '🎮';
     info.append(elem('small', 'hm-rotulo', '👋 Primeira vez por aqui?'), elem('h2', '', 'Vamos começar'),
-      elem('p', 'dica', 'Escolha a pasta onde ficam suas ROMs (uma vez só) ou arraste uma ROM pra esta janela.'));
+      elem('p', 'dica', CELULAR ? 'Toque em Abrir uma ROM e escolha o arquivo do jogo.' : 'Escolha a pasta onde ficam suas ROMs (uma vez só) ou arraste uma ROM pra esta janela.'));
     if (temPasta) info.appendChild(botao('📁 Escolher pasta de ROMs', 'pasta'));
     info.append(botao('＋ Abrir uma ROM', 'abrir', temPasta ? 'grande sec' : 'grande'), botao('📖 Ver o guia', 'guia', 'grande sec'));
   }

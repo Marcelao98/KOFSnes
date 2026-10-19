@@ -1,0 +1,16 @@
+{
+  "name": "KOFnes",
+  "short_name": "KOFnes",
+  "description": "Emulador de Super Nintendo escrito em Kof",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#1a110b",
+  "theme_color": "#1a110b",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

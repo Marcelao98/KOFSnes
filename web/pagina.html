@@ -110,7 +110,7 @@
       <article class="hm-destaque" id="hm-destaque"></article>
       <div class="hm-atalhos">
         <button data-acao="biblioteca"><i>📚</i><b>Biblioteca</b><small>seus jogos e a pasta de ROMs</small></button>
-        <button data-acao="abrir"><i>＋</i><b>Abrir uma ROM</b><small>.sfc, .smc ou .zip (ou arraste)</small></button>
+        <button data-acao="abrir"><i>＋</i><b>Abrir uma ROM</b><small>.sfc, .smc ou .zip<span class="so-pc"> (ou arraste)</span></small></button>
         <button data-acao="jukebox"><i>🎵</i><b>Jukebox</b><small>as trilhas que você guardou</small></button>
         <button data-acao="estatisticas"><i>📊</i><b>Estatísticas</b><small>quanto você jogou, e o quê</small></button>
         <button data-acao="temas"><i>🎨</i><b>Temas</b><small><span class="n-temas">28</span> jeitos de deixar com a sua cara</small></button>
@@ -128,7 +128,7 @@
   <div id="moldura"><canvas id="tela" width="256" height="224"></canvas><div class="mold-extra"></div></div>
 
   <section id="biblioteca" class="janela">
-    <div class="titulo-j">☕ Biblioteca <span><button class="x" data-acao="sofa" title="modo sofá (Select no controle)">🛋</button>
+    <div class="titulo-j">☕ Biblioteca <span><button class="x so-pc" data-acao="sofa" title="modo sofá (Select no controle)">🛋</button>
       <button class="x" data-acao="fechar-biblioteca" title="voltar ao jogo (Esc)">×</button></span></div>
     <div class="bib">
       <div class="bib-esq">
@@ -156,7 +156,7 @@
       <button class="sec" data-acao="so-principais">🧹 Só os principais: ligado</button>
       <button class="sec" data-acao="reler-pasta" title="ler a pasta de ROMs de novo (jogos novos que você colocou lá)">🔄 Reler pasta</button>
       <button class="sec" data-acao="capas">🖼 Capas oficiais: ligadas</button>
-      <span class="dica">setas navegam · Enter joga · Shift+Enter do zero · E estados · controle: A joga, X estados, Select sofá</span>
+      <span class="dica so-pc">setas navegam · Enter joga · Shift+Enter do zero · E estados · controle: A joga, X estados, Select sofá</span>
     </div>
   </section>
 
@@ -164,8 +164,8 @@
     <div class="titulo-j"><span>💾 Estados salvos — <select id="estados-jogo"></select></span>
       <button class="x" data-acao="fechar-estados">×</button></div>
     <div id="grade-estados"></div>
-    <p id="estados-vazio" class="dica">Nenhum estado salvo deste jogo. Aperte <b>F5</b> durante o jogo.</p>
-    <button class="grande" data-acao="salvar-estado">Salvar estado agora (F5)</button>
+    <p id="estados-vazio" class="dica">Nenhum estado salvo deste jogo. <span class="so-pc">Aperte <b>F5</b> durante o jogo.</span><span class="so-cel">Toque em ☰ e depois em Salvar estado.</span></p>
+    <button class="grande" data-acao="salvar-estado">Salvar estado agora<span class="so-pc"> (F5)</span></button>
   </section>
 
   <section id="guia" class="janela" hidden>
@@ -292,17 +292,17 @@
           <button class="x" data-acao="jk-repetir" title="repetir esta música pra sempre">🔁</button>
         </div>
         <div id="jk-vozes" title="as 8 vozes do chip de som: clique pra silenciar uma"></div>
-        <p class="dica">as 8 vozes do chip de som · clique numa pra silenciar</p>
+        <p class="dica">as 8 vozes do chip de som · <span class="so-pc">clique</span><span class="so-cel">toque</span> numa pra silenciar</p>
       </div>
       <div class="jk-lado">
         <ul id="jk-lista"></ul>
-        <p id="jk-vazia" class="dica">Nenhuma música ainda. No meio do jogo, aperte <b>F7</b> pra guardar a música que está tocando, ou abra arquivos <b>.spc</b>.</p>
+        <p id="jk-vazia" class="dica">Nenhuma música ainda. <span class="so-pc">No meio do jogo, aperte <b>F7</b> pra guardar a música que está tocando, ou abra arquivos <b>.spc</b>.</span><span class="so-cel">Abra arquivos <b>.spc</b> pra ouvir as trilhas aqui.</span></p>
       </div>
     </div>
     <div class="bib-rodape">
-      <button class="sec" data-acao="guardar-musica">🎵 Guardar a música do jogo (F7)</button>
+      <button class="sec so-pc" data-acao="guardar-musica">🎵 Guardar a música do jogo (F7)</button>
       <button class="sec" data-acao="abrir-spc">📂 Abrir arquivos .spc…</button>
-      <span class="dica">Espaço toca/pausa · P volta pro jogo · arraste arquivos .spc pra cá</span>
+      <span class="dica so-pc">Espaço toca/pausa · P volta pro jogo · arraste arquivos .spc pra cá</span>
     </div>
   </section>
 
@@ -316,7 +316,7 @@
     <div id="grade-temas"></div>
     <button class="grande sec" data-acao="showcase">▶ Showcase lento: um tema a cada 3,5 s</button>
     <button class="grande sec" data-acao="showcase-rapido">⚡ Showcase rápido: meio segundo por tema</button>
-    <p class="dica">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p>
+    <p class="dica so-pc">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p><p class="dica so-cel">toque num tema pra escolher</p>
   </section>
 
   <section id="estatisticas" class="janela" hidden>
@@ -327,7 +327,7 @@
   <section id="rapido" hidden>
     <div class="titulo-j">☕ Menu rápido</div>
     <ul id="rapido-lista"></ul>
-    <p class="dica">↑↓ escolhe · ◀▶ ajusta · Enter/A confirma · Esc/B fecha · botão direito abre e fecha</p>
+    <p class="dica so-pc">↑↓ escolhe · ◀▶ ajusta · Enter/A confirma · Esc/B fecha · botão direito abre e fecha</p><p class="dica so-cel">toque num item · ◀▶ ajusta · toque fora ou use o voltar do Android pra fechar</p>
   </section>
 
   <div id="aviso" hidden></div>
