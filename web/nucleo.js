@@ -25,11 +25,26 @@ const KofLibretro = (() => {
   const disponivel = (sis) => !!(SISTEMAS[sis] && fabrica(SISTEMAS[sis].nucleo));
 
   const modulos = {};
+  // opções dos núcleos (as do libretro, ex.: paleta do Game Boy): valem pra todas as instâncias, também as que nascerem depois
+  const opcoes = {};
+  const instancias = [];
+  function passarOpcoes(m, nucleo) {
+    for (const [k, v] of Object.entries(opcoes[nucleo] || {})) {
+      const t = k + '\0' + v + '\0', p = m._lr_alloc(t.length);
+      for (let i = 0; i < t.length; i++) m.HEAPU8[p + i] = t.charCodeAt(i);
+      m._lr_var(p, p + k.length + 1); m._free(p);
+    }
+  }
+  function opcao(nucleo, valores) {
+    opcoes[nucleo] = Object.assign(opcoes[nucleo] || {}, valores);
+    for (const [n, m] of instancias) if (n === nucleo) passarOpcoes(m, n);
+  }
+  const novaInstancia = (nucleo, f) => f({ print: () => {}, printErr: () => {} }).then((m) => { instancias.push([nucleo, m]); passarOpcoes(m, nucleo); m._lr_init(); return m; });
   async function iniciar(nucleo) {
     if (modulos[nucleo]) return modulos[nucleo];
     const f = fabrica(nucleo);
     if (!f) throw new Error('esse KOFstation não tem o núcleo ' + nucleo);
-    modulos[nucleo] = f({ print: () => {}, printErr: () => {} }).then((m) => { m._lr_init(); return m; });
+    modulos[nucleo] = novaInstancia(nucleo, f);
     return modulos[nucleo];
   }
 
@@ -208,7 +223,7 @@ const KofLibretro = (() => {
   async function tocador(sis, rom, estadoB64) {
     const S = SISTEMAS[sis], f = fabrica(S.nucleo), chave = S.nucleo + ':jukebox';
     if (!f) throw new Error('esse KOFstation não tem o núcleo ' + S.nucleo);
-    if (!modulos[chave]) modulos[chave] = f({ print: () => {}, printErr: () => {} }).then((m) => { m._lr_init(); return m; });
+    if (!modulos[chave]) modulos[chave] = novaInstancia(S.nucleo, f);
     const mod = await modulos[chave];
     const c = new Consolinho(Uint8Array.from(rom), sis, mod);
     c.carregar();
@@ -226,6 +241,6 @@ const KofLibretro = (() => {
       fechar() { mod._lr_sonda(0); mod._lr_mudas(0); },
     };
   }
-  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, SISTEMAS, EXTENSOES };
+  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, SISTEMAS, EXTENSOES };
 })();
 if (typeof module !== 'undefined') module.exports = KofLibretro;

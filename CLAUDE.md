@@ -6,7 +6,14 @@
 > `KOFnes.exe`/`KOFnes.html`/`kofnes.sh` (o atualizador do lançador 5 baixa esses nomes de `publicado/`), o perfil do Edge
 > `%LOCALAPPDATA%\KOFnes` e o banco `kofnes` + chaves `kofnes.*` do navegador (saves, biblioteca, músicas), o pacote do APK
 > `dev.kofnes.android` (trocar = app novo, sem os dados) e o repositório `Marcelao98/KOFSnes`. Nomes internos de código
-> (`window.KOFnes`, `KOFnesApk`, `KOFnes-android.html`) também ficaram. Trocar os arquivos do PC exige um lançador novo (6).
+> (`window.KOFnes`, `KOFnesApk`, `KOFnes-android.html`) também ficaram.
+> **Lançador 6 (publicado 19/10):** o exe agora é `KOFstation.exe` e abre `KOFstation.html`; se acha os arquivos com o nome antigo,
+> renomeia sozinho (`KOFnes.exe`→`KOFstation.exe`, `KOFnes.html`→`KOFstation.html`). O perfil do Edge continua em
+> `%LOCALAPPDATA%\KOFnes`. `publicar.sh` publica os dois nomes (`KOFstation.*` pro 6 e `KOFnes.*` pros lançadores antigos
+> e pro `kofnes.sh` do Linux, que segue com o nome antigo). Testado no Wine (renomeia e atualiza).
+> **Cores do Game Boy:** a ponte responde `GET_VARIABLE` (`lr_var`, `KofLibretro.opcao(núcleo, {chave: valor})`); menu
+> Imagem e menu rápido (só no GB) têm a paleta dos jogos de Game Boy original: automática (paletas do GBC por jogo, reserva
+> "GBC - Dark Green", padrão), verde (DMG) ou cinza (`kofnes.paletaGb`).
 
 Emulador de Super Nintendo escrito em **Kof** (linguagem brasileira, github.com/KofLang/Kof4j,
 criada pela Mel Santos ~2 meses antes do projeto). Dono: Marcelo (Marcelao98). Repositório:

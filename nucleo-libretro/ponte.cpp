@@ -26,6 +26,17 @@ static struct retro_system_av_info av;
 // av_info pro JS: [largura base, altura base, largura máx, altura máx, proporção, fps, taxa de áudio]
 static double infoJs[7];
 
+// opções do núcleo (RETRO_ENVIRONMENT_GET_VARIABLE): o JS define com lr_var("chave", "valor"); quem não foi definido,
+// o núcleo usa o padrão dele. Mudou alguma: o núcleo fica sabendo pelo GET_VARIABLE_UPDATE no próximo quadro
+static const int MAX_VARS = 32;
+static char varChave[MAX_VARS][64], varValor[MAX_VARS][64];
+static int nVars = 0;
+static bool varsMudaram = false;
+static const char* lerVar(const char* k) {
+    for (int i = 0; i < nVars; i++) if (!strcmp(varChave[i], k)) return varValor[i];
+    return nullptr;
+}
+
 static void guardarAv(const struct retro_system_av_info* i) {
     av = *i;
     unsigned l = av.geometry.max_width, a = av.geometry.max_height;
@@ -82,6 +93,12 @@ static bool ambiente(unsigned cmd, void* dado) {
     case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
     case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY: *(const char**)dado = "/"; return true;
     case RETRO_ENVIRONMENT_GET_CAN_DUPE: *(bool*)dado = true; return true;
+    case RETRO_ENVIRONMENT_GET_VARIABLE: {
+        struct retro_variable* v = (struct retro_variable*)dado;
+        v->value = v->key ? lerVar(v->key) : nullptr;
+        return v->value != nullptr;
+    }
+    case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE: *(bool*)dado = varsMudaram; varsMudaram = false; return true;
     case RETRO_ENVIRONMENT_GET_INPUT_BITMASKS: return true;
     case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO: guardarAv((const struct retro_system_av_info*)dado); return true;
     case RETRO_ENVIRONMENT_SET_GEOMETRY: {
@@ -113,6 +130,14 @@ EMSCRIPTEN_KEEPALIVE int16_t* lr_onda() { return kof_onda; }         // canal c,
 EMSCRIPTEN_KEEPALIVE unsigned lr_onda_pos() { return kof_ondaPos; }
 
 EMSCRIPTEN_KEEPALIVE void* lr_alloc(size_t n) { return malloc(n); }
+
+EMSCRIPTEN_KEEPALIVE void lr_var(const char* k, const char* v) {
+    int i = 0;
+    while (i < nVars && strcmp(varChave[i], k)) i++;
+    if (i == nVars) { if (nVars == MAX_VARS) return; nVars++; }
+    snprintf(varChave[i], 64, "%s", k); snprintf(varValor[i], 64, "%s", v);
+    varsMudaram = true;
+}
 
 EMSCRIPTEN_KEEPALIVE void lr_init() {
     retro_set_environment(ambiente);

@@ -150,6 +150,17 @@ function ajustarEscala() {
   document.querySelectorAll('[data-prop]').forEach((b) => b.classList.toggle('ativo', b.dataset.prop === proporcao));
   document.querySelectorAll('[data-moldura]').forEach((b) => { if (b.tagName === 'BUTTON') b.classList.toggle('ativo', b.dataset.moldura === moldura); });
 }
+// paleta dos jogos do Game Boy original (os de Game Boy Color têm cor própria): automática = as cores que o Game Boy
+// Color dava pra cada cartucho antigo; verde = a tela do Game Boy de 1989; cinza = Game Boy Pocket
+const PALETAS_GB = [['auto', 'Cores do Game Boy Color'], ['verde', 'Verde (o original)'], ['cinza', 'Cinza (Pocket)']];
+const OPCOES_PALETA = { auto: { gambatte_gb_colorization: 'auto', gambatte_gb_internal_palette: 'GBC - Dark Green' }, verde: { gambatte_gb_colorization: 'internal', gambatte_gb_internal_palette: 'GB - DMG' }, cinza: { gambatte_gb_colorization: 'disabled' } };
+let paletaGb = OPCOES_PALETA[ler('paletaGb')] ? ler('paletaGb') : 'auto';
+function mudarPaletaGb(v) {
+  paletaGb = OPCOES_PALETA[v] ? v : 'auto'; guardar('paletaGb', paletaGb);
+  if (typeof KofLibretro !== 'undefined') KofLibretro.opcao('gambatte', OPCOES_PALETA[paletaGb]);
+  document.querySelectorAll('[data-paleta-gb]').forEach((b) => b.classList.toggle('ativo', b.dataset.paletaGb === paletaGb));
+}
+mudarPaletaGb(paletaGb);
 function mudarProporcao(v) {
   proporcao = PROPORCOES.some(([k]) => k === v) ? v : '43'; guardar('proporcao', proporcao); ajustarEscala();
 }
@@ -1558,6 +1569,7 @@ const ITENS_RAPIDO = [
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
   { t: '🎨 Tema', v: () => TODOS_TEMAS.find(([k]) => k === temaSalvo)[1], aj: (d) => tema(ciclar(TODOS_TEMAS, temaSalvo, d)), f: () => { fecharRapido(); acao('temas'); } },
   { t: 'Filtro', v: () => FILTROS.find(([k]) => k === filtro)[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, filtro, d)) },
+  { t: 'Cores do Game Boy', so: () => !!(snes && snes.sistema === 'gb'), v: () => PALETAS_GB.find(([k]) => k === paletaGb)[1], aj: (d) => mudarPaletaGb(ciclar(PALETAS_GB, paletaGb, d)) },
   { t: 'Proporção', v: () => nomeProporcao(proporcao), aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
   { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS, moldura, d)) },
   { t: 'Volume', v: () => (mudo ? 'mudo' : volume + '%'), aj: (d) => mudarVolume(d * 10) },
@@ -2251,6 +2263,7 @@ addEventListener('click', (e) => {
   else if (b.dataset.filtro) { aplicarFiltro(b.dataset.filtro); fecharMenus(); }
   else if (b.dataset.prop) { mudarProporcao(b.dataset.prop); fecharMenus(); }
   else if (b.dataset.moldura) { mudarMoldura(b.dataset.moldura); fecharMenus(); }
+  else if (b.dataset.paletaGb) { mudarPaletaGb(b.dataset.paletaGb); fecharMenus(); }
 });
 
 document.body.classList.add('vazio');

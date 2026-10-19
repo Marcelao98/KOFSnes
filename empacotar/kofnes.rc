@@ -7,11 +7,11 @@ BEGIN
   BEGIN
     BLOCK "041604B0"
     BEGIN
-      VALUE "FileDescription", "KOFnes - emulador de Super Nintendo escrito em Kof"
-      VALUE "ProductName", "KOFnes"
+      VALUE "FileDescription", "KOFstation - Super Nintendo e Game Boy, feito em Kof"
+      VALUE "ProductName", "KOFstation"
       VALUE "ProductVersion", "1.0"
       VALUE "FileVersion", "1.0"
-      VALUE "OriginalFilename", "KOFnes.exe"
+      VALUE "OriginalFilename", "KOFstation.exe"
     END
   END
   BLOCK "VarFileInfo"

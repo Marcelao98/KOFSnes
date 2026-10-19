@@ -41,7 +41,7 @@ PY
 fi
 if command -v x86_64-w64-mingw32-gcc >/dev/null; then
     (cd "$T" && cp "$RAIZ/empacotar/kofnes.rc" . && x86_64-w64-mingw32-windres kofnes.rc -O coff -o res.o)
-    x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFnes.exe" "$AQUI/lancador_win.c" "$AQUI/lancador_inet.c" "$T/res.o" -lshlwapi -lwinhttp -lwininet -lws2_32
+    x86_64-w64-mingw32-gcc -O2 -s -municode -mwindows -o "$SAIDA/KOFstation.exe" "$AQUI/lancador_win.c" "$AQUI/lancador_inet.c" "$T/res.o" -lshlwapi -lwinhttp -lwininet -lws2_32
 fi
 cp "$AQUI/lancador_linux.sh" "$SAIDA/kofnes.sh" && chmod +x "$SAIDA/kofnes.sh"
 cp "$T/icone.png" "$SAIDA/KOFnes.png"
@@ -49,14 +49,14 @@ cp "$T/icone.png" "$SAIDA/KOFnes.png"
 LANCADOR="$(sed -n 's/^#define LANCADOR \([0-9]*\).*/\1/p' "$AQUI/lancador_win.c")"
 {
     printf 'versao=%s\ntamanho=%s\nlancador=%s\n' "$KOFNES_BUILD" "$(stat -c %s "$SAIDA/KOFnes.html")" "$LANCADOR"
-    [ -f "$SAIDA/KOFnes.exe" ] && printf 'tamanho_exe=%s\n' "$(stat -c %s "$SAIDA/KOFnes.exe")"
+    [ -f "$SAIDA/KOFstation.exe" ] && printf 'tamanho_exe=%s\n' "$(stat -c %s "$SAIDA/KOFstation.exe")"
     printf 'lancador_linux=%s\ntamanho_linux=%s\n' "$(sed -n 's/^LANCADOR=\([0-9]*\).*/\1/p' "$SAIDA/kofnes.sh")" "$(stat -c %s "$SAIDA/kofnes.sh")"
 } > "$SAIDA/versao.txt"
 sed "s/$/\r/" "$AQUI/LEIA-ME.txt" > "$SAIDA/LEIA-ME.txt"
 cp "$AQUI/LEIA-ME-linux.txt" "$SAIDA/LEIA-ME-linux.txt"
 rm -f "$RAIZ/dist/KOFstation-windows.zip" "$RAIZ/dist/KOFstation-linux.tar.gz"
 # Windows: html, exe e versao.txt; Linux: html, kofnes.sh, ícone e versao.txt. A pasta e o pacote se chamam KOFstation;
-# os arquivos de dentro mantêm o nome KOFnes.* (o atualizador e o perfil do navegador de quem já usa dependem deles)
-(cd "$RAIZ/dist" && mkdir -p z/KOFstation && cd web && cp KOFnes.html KOFnes.exe LEIA-ME.txt versao.txt ../z/KOFstation/ && cd ../z && zip -qr -9 ../KOFstation-windows.zip KOFstation && cd .. && rm -rf z)
+# no Windows vão KOFstation.exe + KOFstation.html; no Linux o html segue KOFnes.html (o kofnes.sh procura esse nome)
+(cd "$RAIZ/dist" && mkdir -p z/KOFstation && cd web && cp KOFstation.exe LEIA-ME.txt versao.txt ../z/KOFstation/ && cp KOFnes.html ../z/KOFstation/KOFstation.html && cd ../z && zip -qr -9 ../KOFstation-windows.zip KOFstation && cd .. && rm -rf z)
 (cd "$RAIZ/dist" && mkdir -p z/KOFstation && cd web && cp KOFnes.html kofnes.sh KOFnes.png LEIA-ME-linux.txt versao.txt ../z/KOFstation/ && cd ../z && tar czf ../KOFstation-linux.tar.gz KOFstation && cd .. && rm -rf z)
 ls -l "$SAIDA" "$RAIZ/dist/KOFstation-windows.zip" "$RAIZ/dist/KOFstation-linux.tar.gz"

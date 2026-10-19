@@ -1,4 +1,4 @@
-// KOFnes.exe: abre o KOFnes.html (o emulador Kof
+// KOFstation.exe (antigo KOFnes.exe): abre o KOFstation.html (o emulador Kof
 // compilado pra JavaScript) numa janela de app do Edge, que vem em todo
 // Windows 10/11, sem barra de endereço. Sem Edge, tenta o Chrome; sem os
 // dois, abre no navegador padrão.
@@ -9,9 +9,9 @@
 // GitHub ao mesmo tempo e baixa pelo curl.exe do Windows no que respondeu
 // (tem rede que só alcança um dos quatro); de reserva, WinINet e WinHTTP.
 // Se a versão de lá for maior que a do versao.txt daqui,
-// baixa o KOFnes.html novo, confere tamanho e começo do arquivo e troca. Se
+// baixa o KOFstation.html novo, confere tamanho e começo do arquivo e troca. Se
 // "lancador=" de lá for maior que LANCADOR, troca também este .exe (o Windows
-// deixa renomear um .exe em uso: o velho vira KOFnes.exe.old e some na próxima
+// deixa renomear um .exe em uso: o velho vira KOFstation.exe.old e some na próxima
 // vez). Sem internet abre o que tem; se o download demorar, abre o jogo e
 // termina por trás (vale na próxima vez). Tudo fica anotado em
 // atualizacao.log. Os saves não moram aqui, então trocar os arquivos não mexe
@@ -27,7 +27,7 @@
 #include <stdarg.h>
 #include <time.h>
 
-#define LANCADOR 5
+#define LANCADOR 6
 #define HOST L"raw.githubusercontent.com"
 #define CAMINHO L"/Marcelao98/KOFSnes/main/publicado/"
 #ifndef WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
@@ -76,8 +76,8 @@ static int comecaCom(const wchar_t *arq, const char *ini) {
 
 // baixa https://HOST/CAMINHO<nome> pra destino pelo WinHTTP; devolve os bytes baixados ou -1
 static long long baixar_winhttp(const wchar_t *nome, const wchar_t *destino) {
-    HINTERNET s = WinHttpOpen(L"KOFnes", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-    if (!s) s = WinHttpOpen(L"KOFnes", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    HINTERNET s = WinHttpOpen(L"KOFstation", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    if (!s) s = WinHttpOpen(L"KOFstation", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
     if (!s) { anotar("WinHttpOpen falhou (erro %lu)", GetLastError()); return -1; }
     WinHttpSetTimeouts(s, 8000, 3000, 15000, 20000);
     long long total = -1;
@@ -235,47 +235,52 @@ static DWORD WINAPI atualizar(LPVOID arg) {
     wchar_t eNovo[MAX_PATH], eAqui[MAX_PATH], eVelho[MAX_PATH];
     swprintf(vNova, MAX_PATH, L"%ls\\versao.txt.novo", a->dir);
     swprintf(vAqui, MAX_PATH, L"%ls\\versao.txt", a->dir);
-    swprintf(hNovo, MAX_PATH, L"%ls\\KOFnes.html.novo", a->dir);
-    swprintf(hAqui, MAX_PATH, L"%ls\\KOFnes.html", a->dir);
-    swprintf(eNovo, MAX_PATH, L"%ls\\KOFnes.exe.novo", a->dir);
-    swprintf(eAqui, MAX_PATH, L"%ls\\KOFnes.exe", a->dir);
-    swprintf(eVelho, MAX_PATH, L"%ls\\KOFnes.exe.old", a->dir);
+    swprintf(hNovo, MAX_PATH, L"%ls\\KOFstation.html.novo", a->dir);
+    swprintf(hAqui, MAX_PATH, L"%ls\\KOFstation.html", a->dir);
+    // o próprio .exe, com o nome que ele tiver na pasta (KOFstation.exe, ou KOFnes.exe se não deu pra renomear)
+    swprintf(eAqui, MAX_PATH, L"%ls\\KOFstation.exe", a->dir);   // depois de renomear, o Windows ainda dá o nome antigo pro processo
+    if (GetFileAttributesW(eAqui) == INVALID_FILE_ATTRIBUTES) GetModuleFileNameW(NULL, eAqui, MAX_PATH);
+    swprintf(eNovo, MAX_PATH, L"%ls.novo", eAqui);
+    swprintf(eVelho, MAX_PATH, L"%ls.old", eAqui);
     long long aqui = campo(vAqui, "versao=");
-    anotar("KOFnes.exe (lançador %d) · versão daqui: %lld", LANCADOR, aqui);
+    anotar("KOFstation.exe (lançador %d) · versão daqui: %lld", LANCADOR, aqui);
     if (baixar(L"versao.txt", vNova) <= 0) { DeleteFileW(vNova); return 0; }
     long long nova = campo(vNova, "versao="), tamHtml = campo(vNova, "tamanho="), lanc = campo(vNova, "lancador="), tamExe = campo(vNova, "tamanho_exe=");
     anotar("versão no GitHub: %lld (lançador %lld)", nova, lanc);
     int trocouHtml = 0;
     if (nova > aqui && tamHtml > 0) {
         InterlockedExchange(&a->baixando, 1);
-        long long b = baixar(L"KOFnes.html", hNovo);
+        long long b = baixar(L"KOFstation.html", hNovo);
         if (b != tamHtml || !comecaCom(hNovo, "<!doctype html")) {
-            anotar("KOFnes.html veio errado (%lld bytes, esperava %lld): fica a versão daqui", b, tamHtml);
+            anotar("KOFstation.html veio errado (%lld bytes, esperava %lld): fica a versão daqui", b, tamHtml);
             DeleteFileW(hNovo);
         } else if (!MoveFileExW(hNovo, hAqui, MOVEFILE_REPLACE_EXISTING)) {
-            anotar("não consegui trocar o KOFnes.html (erro %lu): a pasta deixa gravar?", GetLastError());
+            anotar("não consegui trocar o KOFstation.html (erro %lu): a pasta deixa gravar?", GetLastError());
             DeleteFileW(hNovo);
         } else {
             trocouHtml = 1;
             anotar("atualizado pra versão %lld", nova);
+            wchar_t antigo[MAX_PATH];   // a página com o nome antigo não serve mais
+            swprintf(antigo, MAX_PATH, L"%ls\\KOFnes.html", a->dir);
+            DeleteFileW(antigo);
         }
     } else {
         anotar("já está na versão mais nova");
     }
     if (lanc > LANCADOR && tamExe > 0) {
         InterlockedExchange(&a->baixando, 1);
-        long long b = baixar(L"KOFnes.exe", eNovo);
+        long long b = baixar(L"KOFstation.exe", eNovo);
         if (b == tamExe && comecaCom(eNovo, "MZ")) {
             DeleteFileW(eVelho);
             if (MoveFileExW(eAqui, eVelho, MOVEFILE_REPLACE_EXISTING) && MoveFileExW(eNovo, eAqui, MOVEFILE_REPLACE_EXISTING)) {
-                anotar("KOFnes.exe atualizado pro lançador %lld (vale na próxima vez)", lanc);
+                anotar("KOFstation.exe atualizado pro lançador %lld (vale na próxima vez)", lanc);
             } else {
-                anotar("não consegui trocar o KOFnes.exe (erro %lu)", GetLastError());
+                anotar("não consegui trocar o KOFstation.exe (erro %lu)", GetLastError());
                 MoveFileExW(eVelho, eAqui, 0);
                 DeleteFileW(eNovo);
             }
         } else {
-            anotar("KOFnes.exe veio errado (%lld bytes, esperava %lld)", b, tamExe);
+            anotar("KOFstation.exe veio errado (%lld bytes, esperava %lld)", b, tamExe);
             DeleteFileW(eNovo);
         }
     }
@@ -303,13 +308,25 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
     wchar_t dir[MAX_PATH], html[MAX_PATH], url[MAX_PATH * 3], nav[MAX_PATH];
     wchar_t perfil[MAX_PATH], local[MAX_PATH], linha[MAX_PATH * 6];
     DWORD n = MAX_PATH * 3;
-    GetModuleFileNameW(NULL, dir, MAX_PATH);
+    wchar_t eu[MAX_PATH];
+    GetModuleFileNameW(NULL, eu, MAX_PATH);
+    wcscpy(dir, eu);
     wchar_t *barra = wcsrchr(dir, L'\\');
     if (barra) *barra = 0;
-    swprintf(html, MAX_PATH, L"%ls\\KOFnes.html", dir);
+    // o KOFnes virou KOFstation: quem ainda tem os arquivos com o nome antigo ganha os nomes novos aqui
+    // (o Windows deixa renomear o .exe em uso; atalhos antigos pro KOFnes.exe param de funcionar)
+    wchar_t antigoHtml[MAX_PATH], novoExe[MAX_PATH], renomeou[160] = L"";
+    swprintf(html, MAX_PATH, L"%ls\\KOFstation.html", dir);
+    swprintf(antigoHtml, MAX_PATH, L"%ls\\KOFnes.html", dir);
+    swprintf(novoExe, MAX_PATH, L"%ls\\KOFstation.exe", dir);
+    if (GetFileAttributesW(html) == INVALID_FILE_ATTRIBUTES && GetFileAttributesW(antigoHtml) != INVALID_FILE_ATTRIBUTES
+            && MoveFileW(antigoHtml, html)) wcscat(renomeou, L"KOFnes.html → KOFstation.html ");
+    if (_wcsicmp(wcsrchr(eu, L'\\') ? wcsrchr(eu, L'\\') + 1 : eu, L"KOFnes.exe") == 0
+            && GetFileAttributesW(novoExe) == INVALID_FILE_ATTRIBUTES && MoveFileW(eu, novoExe)) wcscat(renomeou, L"KOFnes.exe → KOFstation.exe");
+    if (GetFileAttributesW(html) == INVALID_FILE_ATTRIBUTES) wcscpy(html, antigoHtml);   // não deu pra renomear: usa o antigo
     if (GetFileAttributesW(html) == INVALID_FILE_ATTRIBUTES) {
-        MessageBoxW(NULL, L"Não achei o KOFnes.html do lado do KOFnes.exe.\n"
-                          L"Extraia a pasta inteira antes de abrir.", L"KOFnes", MB_ICONERROR);
+        MessageBoxW(NULL, L"Não achei o KOFstation.html do lado do KOFstation.exe.\n"
+                          L"Extraia a pasta inteira antes de abrir.", L"KOFstation", MB_ICONERROR);
         return 1;
     }
 
@@ -320,6 +337,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
     swprintf(log, MAX_PATH, L"%ls\\atualizacao.log", dir);
     swprintf(velho, MAX_PATH, L"%ls\\KOFnes.exe.old", dir);
     DeleteFileW(velho);
+    swprintf(velho, MAX_PATH, L"%ls\\KOFstation.exe.old", dir);
+    DeleteFileW(velho);
     HANDLE t = NULL;
     static Atualizacao at;
     if (GetFileAttributesW(trava) == INVALID_FILE_ATTRIBUTES) {
@@ -328,6 +347,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
         int grande = GetFileAttributesExW(log, GetFileExInfoStandard, &info) && info.nFileSizeLow > 32768;
         registro = _wfopen(log, grande ? L"w" : L"a");
         anotar("---- abrindo (pasta: %ls)", dir);
+        if (renomeou[0]) anotar("arquivos renomeados: %ls", renomeou);
         wcscpy(at.dir, dir);
         at.baixando = 0;
         t = CreateThread(NULL, 0, atualizar, &at, 0, NULL);
@@ -337,6 +357,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
             if (at.baixando) WaitForSingleObject(t, 60000);
         }
     }
+    // a atualização pode ter criado o KOFstation.html agora (pasta que ainda tinha só o antigo)
+    { wchar_t h2[MAX_PATH]; swprintf(h2, MAX_PATH, L"%ls\\KOFstation.html", dir); if (GetFileAttributesW(h2) != INVALID_FILE_ATTRIBUTES) wcscpy(html, h2); }
     if (UrlCreateFromPathW(html, url, &n, 0) != S_OK) return 1;
 
     int achou = acharNavegador(L"msedge.exe", nav, MAX_PATH);
@@ -355,7 +377,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
         ShellExecuteW(NULL, L"open", html, NULL, dir, SW_SHOWNORMAL);
     } else {
         if (!GetEnvironmentVariableW(L"LOCALAPPDATA", local, MAX_PATH)) wcscpy(local, dir);
-        swprintf(perfil, MAX_PATH, L"%ls\\KOFnes", local);
+        swprintf(perfil, MAX_PATH, L"%ls\\KOFnes", local);   // nome antigo de propósito: é onde estão os saves e a biblioteca
         CreateDirectoryW(perfil, NULL);
         wcscat(perfil, L"\\navegador");
         swprintf(linha, MAX_PATH * 6,

@@ -8,7 +8,7 @@
 long long inet_baixar(const wchar_t *url, const wchar_t *destino, unsigned long *codigo, int *http) {
     long long total = -1;
     *http = 0; *codigo = 0;
-    HINTERNET s = InternetOpenW(L"KOFnes", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    HINTERNET s = InternetOpenW(L"KOFstation", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
     if (!s) { *codigo = GetLastError(); return -1; }
     DWORD t1 = 3000, t2 = 20000;
     InternetSetOptionW(s, INTERNET_OPTION_CONNECT_TIMEOUT, &t1, sizeof(t1));
