@@ -91,24 +91,30 @@ body.canhoto #ctl [data-b="L"] { --x: 83%; } body.canhoto #ctl [data-b="R"] { --
   html.celular body.cel-jogo #palco { grid-row: 1; grid-column: 1; }
   html.celular body.cel-jogo #ctl { position: fixed; inset: 0; height: auto; max-height: none; background: none; border: 0; pointer-events: none; z-index: 5; padding: 0; --u: 1cqh; --ctl-fundo: transparent; }
   html.celular body.cel-jogo #ctl .cb { pointer-events: auto; }
-  html.celular body.cel-jogo #palco { padding: 14% 24% 6%; box-sizing: border-box; }   /* o jogo fica no meio, os botões nos lados */
-  html.celular body.cel-jogo #ctl [data-b="dpad"] { --x: 11%; --y: 62%; }
-  html.celular body.cel-jogo #ctl [data-b="X"] { --x: 85%; --y: 40%; }
-  html.celular body.cel-jogo #ctl [data-b="B"] { --x: 85%; --y: 82%; }
-  html.celular body.cel-jogo #ctl [data-b="Y"] { --x: 75%; --y: 61%; }
-  html.celular body.cel-jogo #ctl [data-b="A"] { --x: 94%; --y: 61%; }
-  html.celular body.cel-jogo #ctl [data-b="L"] { --x: 8%; --y: 12%; }
-  html.celular body.cel-jogo #ctl [data-b="R"] { --x: 92%; --y: 12%; }
-  html.celular body.cel-jogo #ctl [data-b="Select"] { --x: 24%; --y: 92%; }
-  html.celular body.cel-jogo #ctl [data-b="Start"] { --x: 76%; --y: 92%; }
-  html.celular body.cel-jogo #ctl [data-b="dpad"] { --w: calc(var(--u) * 44); }
-  html.celular body.cel-jogo #ctl .face { --w: calc(var(--u) * 19); }
-  html.celular body.cel-jogo #ctl .menu, html.celular body.cel-jogo #ctl .rew, html.celular body.cel-jogo #ctl .turbo { --w: calc(var(--u) * 12); --y: 8%; }
-  html.celular body.cel-jogo #ctl .rew { --x: 44%; } html.celular body.cel-jogo #ctl .menu { --x: 50%; } html.celular body.cel-jogo #ctl .turbo { --x: 56%; }
-  html.celular body.cel-jogo.canhoto #ctl [data-b="dpad"] { --x: 89%; }
-  html.celular body.cel-jogo.canhoto #ctl [data-b="X"], html.celular body.cel-jogo.canhoto #ctl [data-b="B"] { --x: 10%; }
-  html.celular body.cel-jogo.canhoto #ctl [data-b="Y"] { --x: 3%; } html.celular body.cel-jogo.canhoto #ctl [data-b="A"] { --x: 20%; }
-  html.celular body.cel-jogo.canhoto #ctl [data-b="L"] { --x: 92%; } html.celular body.cel-jogo.canhoto #ctl [data-b="R"] { --x: 8%; }
+  /* o jogo usa a altura toda; os botões ficam nas duas faixas dos lados (40% da altura cada uma), sem cobrir a imagem.
+     Tudo medido pela altura (--u = 1% da altura): as posições valem pra qualquer largura de celular */
+  html.celular body.cel-jogo #palco { padding: 0 40vh; box-sizing: border-box; }
+  html.celular body.cel-jogo #ctl [data-b="dpad"] { --x: calc(var(--u) * 20); --y: 56%; --w: calc(var(--u) * 36); }
+  html.celular body.cel-jogo #ctl .face { --w: calc(var(--u) * 14); }
+  html.celular body.cel-jogo #ctl [data-b="X"] { --x: calc(100% - var(--u) * 20); --y: 44%; }
+  html.celular body.cel-jogo #ctl [data-b="B"] { --x: calc(100% - var(--u) * 20); --y: 68%; }
+  html.celular body.cel-jogo #ctl [data-b="Y"] { --x: calc(100% - var(--u) * 32); --y: 56%; }
+  html.celular body.cel-jogo #ctl [data-b="A"] { --x: calc(100% - var(--u) * 8); --y: 56%; }
+  html.celular body.cel-jogo #ctl .shoulder { --w: calc(var(--u) * 30); --h: calc(var(--u) * 12); }
+  html.celular body.cel-jogo #ctl [data-b="L"] { --x: calc(var(--u) * 18); --y: 9%; }
+  html.celular body.cel-jogo #ctl [data-b="R"] { --x: calc(100% - var(--u) * 18); --y: 9%; }
+  html.celular body.cel-jogo #ctl .pill { --w: calc(var(--u) * 18); --h: calc(var(--u) * 8); }
+  html.celular body.cel-jogo #ctl [data-b="Select"] { --x: calc(var(--u) * 20); --y: 92%; }
+  html.celular body.cel-jogo #ctl [data-b="Start"] { --x: calc(100% - var(--u) * 20); --y: 92%; }
+  html.celular body.cel-jogo #ctl .menu, html.celular body.cel-jogo #ctl .rew, html.celular body.cel-jogo #ctl .turbo { --w: calc(var(--u) * 10); --y: 25%; }
+  html.celular body.cel-jogo #ctl .rew { --x: calc(var(--u) * 9); } html.celular body.cel-jogo #ctl .menu { --x: calc(var(--u) * 21); }
+  html.celular body.cel-jogo #ctl .turbo { --x: calc(100% - var(--u) * 15); }
+  /* canhoto: espelhado */
+  html.celular body.cel-jogo.canhoto #ctl [data-b="dpad"] { --x: calc(100% - var(--u) * 20); }
+  html.celular body.cel-jogo.canhoto #ctl [data-b="X"], html.celular body.cel-jogo.canhoto #ctl [data-b="B"] { --x: calc(var(--u) * 20); }
+  html.celular body.cel-jogo.canhoto #ctl [data-b="Y"] { --x: calc(var(--u) * 8); } html.celular body.cel-jogo.canhoto #ctl [data-b="A"] { --x: calc(var(--u) * 32); }
+  html.celular body.cel-jogo.canhoto #ctl [data-b="L"] { --x: calc(100% - var(--u) * 18); } html.celular body.cel-jogo.canhoto #ctl [data-b="R"] { --x: calc(var(--u) * 18); }
+}
 }
 
 /* ---------- modelos ---------- */
@@ -197,6 +203,8 @@ html.celular body[data-sis="gb"] #ctl [data-b="B"] { --x: 66%; --y: 64%; --w: ca
 html.celular body[data-sis="gb"] #ctl [data-b="A"] { --x: 86%; --y: 48%; --w: calc(var(--u) * 24); }
 html.celular body.canhoto[data-sis="gb"] #ctl [data-b="B"] { --x: 14%; } html.celular body.canhoto[data-sis="gb"] #ctl [data-b="A"] { --x: 34%; }
 @media (orientation: landscape) {
-  html.celular body.cel-jogo[data-sis="gb"] #ctl [data-b="B"] { --x: 79%; --y: 70%; }
-  html.celular body.cel-jogo[data-sis="gb"] #ctl [data-b="A"] { --x: 93%; --y: 52%; }
+  html.celular body.cel-jogo[data-sis="gb"] #ctl [data-b="B"] { --x: calc(100% - var(--u) * 28); --y: 64%; --w: calc(var(--u) * 17); }
+  html.celular body.cel-jogo[data-sis="gb"] #ctl [data-b="A"] { --x: calc(100% - var(--u) * 11); --y: 48%; --w: calc(var(--u) * 17); }
+  html.celular body.cel-jogo.canhoto[data-sis="gb"] #ctl [data-b="B"] { --x: calc(var(--u) * 11); }
+  html.celular body.cel-jogo.canhoto[data-sis="gb"] #ctl [data-b="A"] { --x: calc(var(--u) * 28); }
 }
