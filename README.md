@@ -29,7 +29,7 @@ Dois cliques no `KOFnes.exe` (no PC) ou no app do **Android** e você cai numa t
 |---|---|
 | 🏠 **Início** | continuar de onde parou (com print), jogados recentemente, atalhos e dica do dia. Até a frase de boas-vindas muda com o tema |
 | 🧭 **Navegação** | menu lateral, botão **Voltar** com histórico (`Alt+←`, `Esc`, botão voltar do mouse) e um **Guia do KOFstation** dentro do próprio emulador |
-| 🕹️ **Sistemas** | **Super Nintendo** (`.sfc`, `.smc`) e **Game Boy / Game Boy Color** (`.gb`, `.gbc`) na mesma biblioteca, com o rótulo do sistema. No PC o SNES roda no núcleo em Kof e o Game Boy no [Gambatte](https://github.com/libretro/gambatte-libretro) (WebAssembly) |
+| 🕹️ **Sistemas** | **Super Nintendo** (`.sfc`, `.smc`), **NES** (`.nes`) e **Game Boy / Game Boy Color** (`.gb`, `.gbc`) na mesma biblioteca, com o rótulo do sistema. No PC o SNES roda no núcleo em Kof; o NES no [FCEUmm](https://github.com/libretro/libretro-fceumm) e o Game Boy no [Gambatte](https://github.com/libretro/gambatte-libretro), em WebAssembly |
 | 📱 **Android** | APK com controle virtual na tela (6 modelos, multitoque, canhoto), em pé ou deitado com a tela grande e os botões nas laterais. No celular o SNES roda no [Snes9x](https://github.com/libretro/snes9x) e o Game Boy no Gambatte, em WebAssembly |
 | 📚 **Biblioteca** | estilo ZSNES: escolha a pasta de ROMs uma vez, busque por palavras em qualquer ordem, esconda hacks e variantes com **Só os principais**, capas oficiais ([libretro-thumbnails](https://github.com/libretro-thumbnails)) e **modo sofá** (grade de capas pra jogar de longe, com o controle) |
 | 🎨 **126 temas** | oito jeitos de café, jogos, animais, consoles, Windows antigo, internet de 1999, anime, bem brasileiro Animes, 20 de Nostalgia BR, 20 de Brasilidades e 20 Clássicos do SNES, com galeria de prévias ao vivo |
@@ -181,8 +181,8 @@ O Kof é uma linguagem brasileira nova, da **Mel Santos**: [github.com/KofLang/K
 
 - [x] 📱 Versão pra **Android** (APK de teste)
 - [x] 🐧 **Linux** com lançador próprio (`kofnes.sh`), como o do Windows
-- [x] 🕹️ **Game Boy / Game Boy Color** na mesma biblioteca
-- [ ] 🕹️ Mais sistemas: NES, Mega Drive...
+- [x] 🕹️ **Game Boy / Game Boy Color** e **NES** na mesma biblioteca
+- [ ] 🕹️ Mais sistemas: Mega Drive, Master System, Game Boy Advance...
 - [ ] 📱 Play Store e escolher a pasta de ROMs inteira no Android
 - [ ] 🏆 **Conquistas**
 - [ ] Chips de cartucho que faltam: SA-1, DSP-1, Cx4, S-DD1, SPC7110
@@ -193,4 +193,4 @@ O KOFstation **não inclui ROMs** nem ensina onde baixar. Use cópias dos seus p
 
 ## Créditos
 
-Linguagem: [Kof / Kof4j](https://github.com/KofLang/Kof4j), da Mel Santos e contribuidores. Núcleos libretro: [Snes9x](https://github.com/libretro/snes9x) (licença não comercial) e [Gambatte](https://github.com/libretro/gambatte-libretro) (GPL-2). Testes: [SingleStepTests](https://github.com/SingleStepTests), [gilyon](https://github.com/gilyon/snes-tests), [PeterLemon](https://github.com/PeterLemon/SNES), [undisbeliever](https://github.com/undisbeliever/snes-test-roms). Capas: [libretro-thumbnails](https://github.com/libretro-thumbnails). Versão só-Kof: [SDL2](https://www.libsdl.org/) (zlib).
+Linguagem: [Kof / Kof4j](https://github.com/KofLang/Kof4j), da Mel Santos e contribuidores. Núcleos libretro: [Snes9x](https://github.com/libretro/snes9x) (licença não comercial), [FCEUmm](https://github.com/libretro/libretro-fceumm) (GPL-2) e [Gambatte](https://github.com/libretro/gambatte-libretro) (GPL-2). Testes: [SingleStepTests](https://github.com/SingleStepTests), [gilyon](https://github.com/gilyon/snes-tests), [PeterLemon](https://github.com/PeterLemon/SNES), [undisbeliever](https://github.com/undisbeliever/snes-test-roms). Capas: [libretro-thumbnails](https://github.com/libretro-thumbnails). Versão só-Kof: [SDL2](https://www.libsdl.org/) (zlib).

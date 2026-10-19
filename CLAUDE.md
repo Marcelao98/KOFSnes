@@ -14,6 +14,16 @@
 > **Cores do Game Boy:** a ponte responde `GET_VARIABLE` (`lr_var`, `KofLibretro.opcao(núcleo, {chave: valor})`); menu
 > Imagem e menu rápido (só no GB) têm a paleta dos jogos de Game Boy original: automática (paletas do GBC por jogo, reserva
 > "GBC - Dark Green", padrão), verde (DMG) ou cinza (`kofnes.paletaGb`).
+> **NES (branch `nes`, 19/10):** núcleo **FCEUmm** (`construir.sh fceumm`, GPL-2) em WebAssembly, sem reescrever nada. A ponte
+> agora entrega a ROM pela memória (`RETRO_ENVIRONMENT_GET_GAME_INFO_EXT`; sem isso o FCEUmm tenta abrir arquivo e trava no
+> 1º quadro). `.nes` (256x240, o app corta 8 linhas em cima e embaixo → 256x224; 4:3 "como na TV" via `tv43`), título =
+> "NES " + CRC32 da ROM sem cabeçalho, botões A/B/Start/Select (classe `body.so-ab` no `android.css`, vale pro GB também),
+> paletas no menu Imagem/menu rápido (`kofnes.paletaNes`: default, composite-direct-fbx "TV de tubo", wavebeam "Viva").
+> Jukebox: 5 canais (Pulso 1, Pulso 2, Triângulo, Ruído, DPCM) pelo remendo `nucleo-libretro/fceumm-sonda.patch` (cada
+> canal em volta da escrita no `WaveHi`; precisa do som em alta qualidade: `fceumm_sndquality=High`, padrão do sistema no
+> `nucleo.js`). Capas oficiais por sistema (`ACERVO`/`capaSis` no app.js: SNES, NES, GB, GBC). Áudio do FCEUmm é 48 kHz.
+> Famicom Disk System (.fds, BIOS disksys.rom) ficou pra depois. HTML do PC ~3 MB (o carregamento de núcleo sob demanda é
+> o próximo passo). ROMs de teste livres: christopherpow/nes-test-roms (cpu_timing_test passa) e uma de som gerada.
 
 Emulador de Super Nintendo escrito em **Kof** (linguagem brasileira, github.com/KofLang/Kof4j,
 criada pela Mel Santos ~2 meses antes do projeto). Dono: Marcelo (Marcelao98). Repositório:

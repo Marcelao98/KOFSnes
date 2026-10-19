@@ -196,15 +196,15 @@ body.canhoto #ctl [data-b="L"] { --x: 83%; } body.canhoto #ctl [data-b="R"] { --
 html.celular #rapido { position: fixed !important; top: 6px !important; left: 50% !important; transform: translateX(-50%) !important; max-height: calc(100dvh - 12px); overflow-y: auto; z-index: 40; padding: 12px 14px 8px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 html.celular #rapido-lista li { min-height: 42px; }
 
-/* Game Boy: só A, B, Start e Select; B embaixo à esquerda e A em cima à direita, como no aparelho */
-html.celular body[data-sis="gb"] #ctl [data-b="X"], html.celular body[data-sis="gb"] #ctl [data-b="Y"],
-html.celular body[data-sis="gb"] #ctl [data-b="L"], html.celular body[data-sis="gb"] #ctl [data-b="R"] { display: none; }
-html.celular body[data-sis="gb"] #ctl [data-b="B"] { --x: 66%; --y: 64%; --w: calc(var(--u) * 24); }
-html.celular body[data-sis="gb"] #ctl [data-b="A"] { --x: 86%; --y: 48%; --w: calc(var(--u) * 24); }
-html.celular body.canhoto[data-sis="gb"] #ctl [data-b="B"] { --x: 14%; } html.celular body.canhoto[data-sis="gb"] #ctl [data-b="A"] { --x: 34%; }
+/* Game Boy e NES: só A, B, Start e Select; B embaixo à esquerda e A em cima à direita, como no aparelho */
+html.celular body.so-ab #ctl [data-b="X"], html.celular body.so-ab #ctl [data-b="Y"],
+html.celular body.so-ab #ctl [data-b="L"], html.celular body.so-ab #ctl [data-b="R"] { display: none; }
+html.celular body.so-ab #ctl [data-b="B"] { --x: 66%; --y: 64%; --w: calc(var(--u) * 24); }
+html.celular body.so-ab #ctl [data-b="A"] { --x: 86%; --y: 48%; --w: calc(var(--u) * 24); }
+html.celular body.canhoto.so-ab #ctl [data-b="B"] { --x: 14%; } html.celular body.canhoto.so-ab #ctl [data-b="A"] { --x: 34%; }
 @media (orientation: landscape) {
-  html.celular body.cel-jogo[data-sis="gb"] #ctl [data-b="B"] { --x: calc(100% - var(--u) * 28); --y: 64%; --w: calc(var(--u) * 17); }
-  html.celular body.cel-jogo[data-sis="gb"] #ctl [data-b="A"] { --x: calc(100% - var(--u) * 11); --y: 48%; --w: calc(var(--u) * 17); }
-  html.celular body.cel-jogo.canhoto[data-sis="gb"] #ctl [data-b="B"] { --x: calc(var(--u) * 11); }
-  html.celular body.cel-jogo.canhoto[data-sis="gb"] #ctl [data-b="A"] { --x: calc(var(--u) * 28); }
+  html.celular body.cel-jogo.so-ab #ctl [data-b="B"] { --x: calc(100% - var(--u) * 28); --y: 64%; --w: calc(var(--u) * 17); }
+  html.celular body.cel-jogo.so-ab #ctl [data-b="A"] { --x: calc(100% - var(--u) * 11); --y: 48%; --w: calc(var(--u) * 17); }
+  html.celular body.cel-jogo.canhoto.so-ab #ctl [data-b="B"] { --x: calc(var(--u) * 11); }
+  html.celular body.cel-jogo.canhoto.so-ab #ctl [data-b="A"] { --x: calc(var(--u) * 28); }
 }

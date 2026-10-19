@@ -13,6 +13,12 @@ const KofLibretro = (() => {
     gb: { nome: 'Game Boy', curto: 'GB', ext: ['gb', 'gbc', 'sgb'], nucleo: 'gambatte', largura: 160, altura: 144,
       botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start', 'Select'], musica: false, minimo: 0x4000,
       canais: ['Pulso 1', 'Pulso 2', 'Onda', 'Ruído'], papeis: ['quadrada + sweep', 'quadrada', 'tabela 4 bits', 'LFSR'] },
+    // NES: o núcleo entrega 256x240; aqui corta 8 linhas em cima e embaixo (o que a TV escondia). Som em alta qualidade:
+    // é nesse modo que cada canal passa pela sonda do osciloscópio (nucleo-libretro/fceumm-sonda.patch)
+    nes: { nome: 'NES', curto: 'NES', ext: ['nes'], nucleo: 'fceumm', largura: 256, altura: 224, tv43: true,
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start', 'Select'], musica: false, minimo: 0x2010,
+      canais: ['Pulso 1', 'Pulso 2', 'Triângulo', 'Ruído', 'DPCM'], papeis: ['quadrada', 'quadrada', 'triângulo 4 bits', 'LFSR', 'amostras'],
+      escalas: [1 / 1920, 1 / 1920, 1 / 22.5, 1 / 15, 1 / 63.5], opcoes: { fceumm_sndquality: 'High' } },
   };
   const extensao = (nome) => (/\.([^.]+)$/.exec(nome || '') || [])[1]?.toLowerCase() || '';
   function sistemaDe(nome) {
@@ -39,6 +45,8 @@ const KofLibretro = (() => {
     opcoes[nucleo] = Object.assign(opcoes[nucleo] || {}, valores);
     for (const [n, m] of instancias) if (n === nucleo) passarOpcoes(m, n);
   }
+  // opções padrão de cada núcleo (as do sistema), por baixo das que o app escolher
+  for (const S of Object.values(SISTEMAS)) if (S.opcoes) opcoes[S.nucleo] = Object.assign({}, S.opcoes, opcoes[S.nucleo]);
   const novaInstancia = (nucleo, f) => f({ print: () => {}, printErr: () => {} }).then((m) => { instancias.push([nucleo, m]); passarOpcoes(m, nucleo); m._lr_init(); return m; });
   async function iniciar(nucleo) {
     if (modulos[nucleo]) return modulos[nucleo];
@@ -57,7 +65,14 @@ const KofLibretro = (() => {
   const texto = (rom, ini, n) => { let t = ''; for (let i = 0; i < n && ini + i < rom.length; i++) { const c = rom[ini + i]; t += c >= 32 && c < 127 ? String.fromCharCode(c) : ' '; } return t; };
 
   // título interno da ROM
+  // NES não tem título no cartucho: vira "NES" + o CRC32 da ROM (sem o cabeçalho), que é o que identifica o jogo
+  function crc32(u8, ini) {
+    let c, crc = 0xFFFFFFFF;
+    for (let i = ini; i < u8.length; i++) { c = (crc ^ u8[i]) & 0xFF; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1; crc = (crc >>> 8) ^ c; }
+    return ((crc ^ 0xFFFFFFFF) >>> 0).toString(16).toUpperCase().padStart(8, '0');
+  }
   function titulo(rom, sis) {
+    if (sis === 'nes') return 'NES ' + crc32(rom, rom[0] === 0x4E && rom[1] === 0x45 && rom[2] === 0x53 ? 16 : 0);
     if ((sis || 'snes') === 'gb') return texto(rom, 0x134, rom[0x143] & 0x80 ? 15 : 16);   // GBC usa o último byte como marca
     const extra = rom.length % 1024 === 512 ? 512 : 0;   // ROM de SNES com cabeçalho de copiador tem 512 bytes a mais
     const ok = (o) => o + 0x20 <= rom.length && ((rom[o + 0x1C] | rom[o + 0x1D] << 8) ^ (rom[o + 0x1E] | rom[o + 0x1F] << 8)) === 0xFFFF;
@@ -236,7 +251,7 @@ const KofLibretro = (() => {
       limpar() {},
       mudas(m) { mod._lr_mudas(m); },
       // onda do canal v: anel de 4096 amostras na taxa do áudio; escala: amplitude máxima do canal = 1
-      onda(v) { return { buf: new Int16Array(mod.HEAPU8.buffer, mod._lr_onda(), 4 * tam), base: v * tam, tam, pos: mod._lr_onda_pos(), escala: 1 / 7680 }; },
+      onda(v) { return { buf: new Int16Array(mod.HEAPU8.buffer, mod._lr_onda(), n * tam), base: v * tam, tam, pos: mod._lr_onda_pos(), escala: (S.escalas || [])[v] || 1 / 7680 }; },
       nivel: null,
       fechar() { mod._lr_sonda(0); mod._lr_mudas(0); },
     };

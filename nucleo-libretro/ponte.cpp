@@ -23,6 +23,10 @@ static unsigned audioQuadros = 0;
 static unsigned long totalAudio = 0;
 static int formato = RETRO_PIXEL_FORMAT_0RGB1555;   // padrão do libretro até o núcleo pedir outro
 static struct retro_system_av_info av;
+#ifdef RETRO_ENVIRONMENT_GET_GAME_INFO_EXT
+// a ROM vai pela memória: núcleos novos (ex.: FCEUmm) pedem o jogo por aqui em vez de abrir um arquivo
+static struct retro_game_info_ext jogoExt;
+#endif
 // av_info pro JS: [largura base, altura base, largura máx, altura máx, proporção, fps, taxa de áudio]
 static double infoJs[7];
 
@@ -93,6 +97,10 @@ static bool ambiente(unsigned cmd, void* dado) {
     case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
     case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY: *(const char**)dado = "/"; return true;
     case RETRO_ENVIRONMENT_GET_CAN_DUPE: *(bool*)dado = true; return true;
+#ifdef RETRO_ENVIRONMENT_GET_GAME_INFO_EXT
+    case RETRO_ENVIRONMENT_GET_GAME_INFO_EXT: *(const struct retro_game_info_ext**)dado = &jogoExt; return jogoExt.data != nullptr;
+    case RETRO_ENVIRONMENT_SET_CONTENT_INFO_OVERRIDE: return true;
+#endif
     case RETRO_ENVIRONMENT_GET_VARIABLE: {
         struct retro_variable* v = (struct retro_variable*)dado;
         v->value = v->key ? lerVar(v->key) : nullptr;
@@ -152,6 +160,15 @@ EMSCRIPTEN_KEEPALIVE void lr_init() {
 // `nome` é só pro núcleo ver a extensão (rom.sfc, rom.gb, rom.gbc...); a ROM vai inteira na memória
 EMSCRIPTEN_KEEPALIVE int lr_load(const uint8_t* rom, size_t n, const char* nome) {
     struct retro_game_info info = { nome, rom, n, nullptr };
+#ifdef RETRO_ENVIRONMENT_GET_GAME_INFO_EXT
+    static char base[256], ext[16];
+    const char* ponto = strrchr(nome, '.');
+    snprintf(base, sizeof base, "%.*s", ponto ? (int)(ponto - nome) : (int)strlen(nome), nome);
+    snprintf(ext, sizeof ext, "%s", ponto ? ponto + 1 : "");
+    jogoExt = {};
+    jogoExt.full_path = nome; jogoExt.dir = "/"; jogoExt.name = base; jogoExt.ext = ext;
+    jogoExt.data = rom; jogoExt.size = n; jogoExt.file_in_archive = false; jogoExt.persistent_data = false;   // o JS libera a ROM depois de carregar: o núcleo copia
+#endif
     if (!retro_load_game(&info)) return 0;
     struct retro_system_av_info i;
     retro_get_system_av_info(&i);

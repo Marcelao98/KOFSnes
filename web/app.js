@@ -112,8 +112,9 @@ function desenhar() {
 // proporção: 4:3 é como aparecia na TV (o pixel do SNES não é quadrado); 8:7 é o pixel quadrado (256x224);
 // esticar ocupa o palco inteiro. Em outro sistema, "original" é a proporção que o núcleo informa (Game Boy: 10:9)
 const PROPORCOES = [['43', '4:3 (como na TV)'], ['87', 'Pixel perfeito (8:7)'], ['esticar', 'Esticar']];
-const RAZAO = { 43: () => (snes && snes.lr && snes.sistema !== 'snes' ? snes.proporcao || telaL / telaA : 4 / 3), 87: () => telaL / telaA };
-const nomeProporcao = (k) => (snes && snes.lr && snes.sistema !== 'snes' ? { 43: 'Original (como no aparelho)', 87: 'Pixel perfeito' }[k] : null) || PROPORCOES.find(([c]) => c === k)[1];
+const naTv = () => !snes || !snes.lr || snes.sistema === 'snes' || !!(SIS[snes.sistema] && SIS[snes.sistema].tv43);   // console de TV: 4:3
+const RAZAO = { 43: () => (naTv() ? 4 / 3 : snes.proporcao || telaL / telaA), 87: () => telaL / telaA };
+const nomeProporcao = (k) => (naTv() ? null : { 43: 'Original (como no aparelho)', 87: 'Pixel perfeito' }[k]) || PROPORCOES.find(([c]) => c === k)[1];
 let proporcao = PROPORCOES.some(([k]) => k === ler('proporcao')) ? ler('proporcao') : '43';
 // moldura em volta do jogo; as bordas são frações da altura da tela (cima, direita, baixo, esquerda)
 const MOLDURAS = [['nenhuma', 'Sem moldura'], ['tv80', 'TV de madeira (anos 80)'], ['tv90', 'TV de tubo (anos 90)'], ['fliperama', 'Fliperama']];
@@ -161,6 +162,15 @@ function mudarPaletaGb(v) {
   document.querySelectorAll('[data-paleta-gb]').forEach((b) => b.classList.toggle('ativo', b.dataset.paletaGb === paletaGb));
 }
 mudarPaletaGb(paletaGb);
+// NES: cada TV mostrava as cores de um jeito; padrão = a do FCEUX
+const PALETAS_NES = [['default', 'Padrão'], ['composite-direct-fbx', 'TV de tubo'], ['wavebeam', 'Viva']];
+let paletaNes = PALETAS_NES.some(([k]) => k === ler('paletaNes')) ? ler('paletaNes') : 'default';
+function mudarPaletaNes(v) {
+  paletaNes = PALETAS_NES.some(([k]) => k === v) ? v : 'default'; guardar('paletaNes', paletaNes);
+  if (typeof KofLibretro !== 'undefined') KofLibretro.opcao('fceumm', { fceumm_palette: paletaNes });
+  document.querySelectorAll('[data-paleta-nes]').forEach((b) => b.classList.toggle('ativo', b.dataset.paletaNes === paletaNes));
+}
+mudarPaletaNes(paletaNes);
 function mudarProporcao(v) {
   proporcao = PROPORCOES.some(([k]) => k === v) ? v : '43'; guardar('proporcao', proporcao); ajustarEscala();
 }
@@ -590,7 +600,7 @@ function montarJuke() {
   $('#jk-jogo').textContent = f ? [f.jogo, f.artista].filter(Boolean).join(' · ') : (juke.lista.length ? 'escolha uma música' : (CELULAR ? 'guarde uma música no jogo (☰) ou abra arquivos .spc' : 'guarde uma música no jogo (F7) ou abra arquivos .spc'));
   const capa = f ? (srcCapa({ nome: f.jogo }) || f.capa || '') : '';
   $('#jk-capa').hidden = !capa; $('.jk-capa span').hidden = !!capa; if (capa) $('#jk-capa').src = capa;
-  if (f) capaPorNome(f.jogo).catch(() => {});
+  if (f) { if (f.sistema && !capaSis.has(f.jogo)) capaSis.set(f.jogo, f.sistema); capaPorNome(f.jogo).catch(() => {}); }
   $('[data-acao="jk-tocar"]').textContent = juke.tocando ? '⏸' : '▶';
   $('[data-acao="jk-aleatorio"]').classList.toggle('ativo', juke.aleatorio);
   $('[data-acao="jk-repetir"]').classList.toggle('ativo', juke.repetir);
@@ -1017,6 +1027,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   registrarTempo(); salvarSram(); await salvarAuto();
   const s = await novoNucleo(bytes, sis);
   romNome = nome.replace(/\.[^.]+$/, '');
+  capaSis.set(romNome, sis === 'gb' && /\.gbc$/i.test(nome) ? 'gbc' : sis);
   jogoId = s.cart.title.trim() + '|' + bytes.length;
   chaveSram = 'sram.' + s.cart.title.trim() + '.' + bytes.length;
   const salvo = ler(chaveSram);
@@ -1026,7 +1037,8 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   }
   s.reset();
   tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
-  document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy: só A, B, Start e Select)
+  document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy e NES: só A, B, Start e Select)
+  document.body.classList.toggle('so-ab', !!(SIS[sis] && SIS[sis].botoes && !SIS[sis].botoes.includes('X')));
   QUADRO_MS = 1000 / (s.fps || 60.0988);
   snes = s; romAtual = bytes; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob(); avisarMudo(2200);
   document.body.classList.remove('vazio');
@@ -1299,7 +1311,10 @@ function estadoBib(t) { const e = $('#bib-estado'); e.textContent = t || ''; e.h
 // ---------------- capas oficiais ----------------
 // acervo aberto libretro-thumbnails (o mesmo do RetroArch), pelo nome No-Intro
 // da ROM. Baixa uma vez e guarda no banco: depois funciona sem internet.
-const CAPAS = 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Super_Nintendo_Entertainment_System/master/Named_Boxarts/';
+// um acervo por sistema; o app anota o sistema de cada nome de jogo que mostra (capaSis) pra buscar no acervo certo
+const ACERVO = { snes: 'Nintendo_-_Super_Nintendo_Entertainment_System', nes: 'Nintendo_-_Nintendo_Entertainment_System', gb: 'Nintendo_-_Game_Boy', gbc: 'Nintendo_-_Game_Boy_Color' };
+const capaSis = new Map();
+const urlAcervo = (nome) => `https://raw.githubusercontent.com/libretro-thumbnails/${ACERVO[capaSis.get(nome)] || ACERVO.snes}/master/Named_Boxarts/`;
 let capasNet = ler('capas') !== '0';
 const urlsCapa = new Map();
 // nome da ROM -> nomes possíveis no acervo (padrão No-Intro). Converte o padrão
@@ -1318,6 +1333,7 @@ function nomesCapa(nome) {
   return [...new Set([n, semRev, base, ...idiomas, titulo + ' (USA)', titulo + ' (World)', titulo + ' (Europe)'])];
 }
 async function baixarCapa(nome) {
+  const CAPAS = urlAcervo(nome);
   for (const n of nomesCapa(nome)) {
     let r = await fetch(CAPAS + encodeURIComponent(n) + '.png').catch(() => null);
     if (!r || !r.ok) continue;
@@ -1333,6 +1349,12 @@ async function baixarCapa(nome) {
 }
 // cache de capas pelo nome do jogo (serve pros jogos da pasta e da biblioteca)
 const capasMem = new Map(), buscando = new Set();
+// Game Boy Color tem acervo próprio (.gbc)
+function anotarSisCapa(r) {
+  let sis = sistemaDoItem(r);
+  if (sis === 'gb' && /\.gbc$/i.test((r.jogo && r.jogo.arquivo) || r.nome)) sis = 'gbc';
+  capaSis.set(r.nome, sis);
+}
 async function capaPorNome(nome) {
   if (!capasNet || !nome || buscando.has(nome)) return;
   if (!capasMem.has(nome)) {
@@ -1404,7 +1426,7 @@ let lis = [];
 const olhoCapas = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach((e) => {
   if (!e.isIntersecting) return;
   olhoCapas.unobserve(e.target);
-  const r = visiveis[+e.target.dataset.i]; if (r) capaPorNome(r.nome).catch(() => {});
+  const r = visiveis[+e.target.dataset.i]; if (r) { anotarSisCapa(r); capaPorNome(r.nome).catch(() => {}); }
 }), { root: $('#roms'), rootMargin: '200px' }) : null;
 // a lista vai pra tela em lotes (150 de cada vez): com milhares de jogos, montar
 // tudo de uma vez travava a janela; rolar ou andar com as setas carrega mais
@@ -1444,6 +1466,7 @@ function adicionarLis(ate) {
     const li = document.createElement('li'); li.dataset.i = i;
     if (sofa) {
       const src = srcCapa(r), fig = document.createElement('div'); fig.className = 'mini';
+      anotarSisCapa(r);
       if (olhoCapas) olhoCapas.observe(li); else capaPorNome(r.nome).catch(() => {});
       if (src) { const im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; fig.appendChild(im); } else fig.textContent = '☕';
       li.appendChild(fig);
@@ -1490,7 +1513,7 @@ function mostrarInfo() {
   img.classList.toggle('oficial', oficial);
   const parou = $('#parou-img'), mostrarParou = !!(oficial && r.jogo && r.jogo.autoCapa);
   parou.hidden = !mostrarParou; if (mostrarParou) parou.src = r.jogo.autoCapa;
-  capaPorNome(r.nome).catch(() => {});
+  anotarSisCapa(r); capaPorNome(r.nome).catch(() => {});
 }
 async function jogar(doZero) { await abrirJogo(visiveis[selecionada], doZero); }
 async function abrirJogo(r, doZero) {
@@ -1570,6 +1593,7 @@ const ITENS_RAPIDO = [
   { t: '🎨 Tema', v: () => TODOS_TEMAS.find(([k]) => k === temaSalvo)[1], aj: (d) => tema(ciclar(TODOS_TEMAS, temaSalvo, d)), f: () => { fecharRapido(); acao('temas'); } },
   { t: 'Filtro', v: () => FILTROS.find(([k]) => k === filtro)[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, filtro, d)) },
   { t: 'Cores do Game Boy', so: () => !!(snes && snes.sistema === 'gb'), v: () => PALETAS_GB.find(([k]) => k === paletaGb)[1], aj: (d) => mudarPaletaGb(ciclar(PALETAS_GB, paletaGb, d)) },
+  { t: 'Cores do NES', so: () => !!(snes && snes.sistema === 'nes'), v: () => PALETAS_NES.find(([k]) => k === paletaNes)[1], aj: (d) => mudarPaletaNes(ciclar(PALETAS_NES, paletaNes, d)) },
   { t: 'Proporção', v: () => nomeProporcao(proporcao), aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
   { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS, moldura, d)) },
   { t: 'Volume', v: () => (mudo ? 'mudo' : volume + '%'), aj: (d) => mudarVolume(d * 10) },
@@ -1794,7 +1818,7 @@ const DICAS_CEL = [
   'Segure <b>⏪</b>: o jogo volta até 5 segundos, em preto e branco. Depois a ampulheta ⏳ recarrega enquanto você joga.',
   'Em <b>Controles</b> você troca o modelo do controle, o tamanho, a transparência e liga o modo canhoto.',
   'Gire o celular: na horizontal os botões ficam nos cantos e o jogo ganha a tela.',
-  'Toque em <b>Abrir uma ROM</b> pra escolher um jogo do seu celular (.sfc, .smc, .gb, .gbc ou .zip).',
+  'Toque em <b>Abrir uma ROM</b> pra escolher um jogo do seu celular (.sfc, .smc, .gb, .gbc, .nes ou .zip).',
   'Na Biblioteca, toque num jogo pra abrir; <b>Continuar</b> volta de onde você parou.',
   'Tocou aquela música que você ama? <b>☰ → Guardar esta música</b>: ela vai pra Jukebox e toca sem o jogo.',
   'Achou um bug? <b>☰ → Reportar bug</b> abre o GitHub com tudo pra reproduzir.',
@@ -1858,7 +1882,7 @@ async function montarHome() {
     c.title = 'jogado ' + quando(j.ultimo);
     c.onclick = () => abrirJogo({ nome: j.nome, jogo: j }, false);
     rec.appendChild(c);
-    capaPorNome(j.nome).catch(() => {});
+    anotarSisCapa({ nome: j.nome, jogo: j }); capaPorNome(j.nome).catch(() => {});
   }
 }
 // no início: Enter/A = ação principal; setas andam pelos botões
@@ -2264,6 +2288,7 @@ addEventListener('click', (e) => {
   else if (b.dataset.prop) { mudarProporcao(b.dataset.prop); fecharMenus(); }
   else if (b.dataset.moldura) { mudarMoldura(b.dataset.moldura); fecharMenus(); }
   else if (b.dataset.paletaGb) { mudarPaletaGb(b.dataset.paletaGb); fecharMenus(); }
+  else if (b.dataset.paletaNes) { mudarPaletaNes(b.dataset.paletaNes); fecharMenus(); }
 });
 
 document.body.classList.add('vazio');

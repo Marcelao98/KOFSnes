@@ -15,6 +15,7 @@ WebAssembly com o emscripten e ligados por uma ponte pequena (`ponte.cpp`) que f
 |----------|------------------|------------------------------------------|-------|
 | Snes9x   | Super Nintendo   | própria, só uso NÃO comercial (`LICENCA-SNES9X.txt`) | github.com/libretro/snes9x |
 | Gambatte | Game Boy / Color | GPL-2.0 (código-fonte no link, commit em `construir.sh`) | github.com/libretro/gambatte-libretro |
+| FCEUmm   | NES              | GPL-2.0 (código-fonte no link, commit em `construir.sh`) | github.com/libretro/libretro-fceumm |
 
 O KOFstation é gratuito, sem anúncio e sem doação; manter os avisos de copyright dentro do app.
 O usuário traz a ROM (e a BIOS, se o sistema precisar); o KOFstation nunca distribui nenhuma das duas.

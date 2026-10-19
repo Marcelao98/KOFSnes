@@ -1,0 +1,68 @@
+diff --git a/src/sound.c b/src/sound.c
+index 678b045..69e7d07 100644
+--- a/src/sound.c
++++ b/src/sound.c
+@@ -629,6 +629,45 @@ static INLINE void RDoSQ(int x) {
+ 	ChannelBC[x] = SOUNDTS;
+ }
+ 
++/* KOFnes: sonda do osciloscópio. Cada canal soma a sua parte em WaveHi[ChannelBC[c] .. SOUNDTS) (1 posição por
++ * ciclo da CPU); a sonda guarda o trecho antes, chama o canal, e a diferença é a onda dele. Canal mudo: desfaz a soma.
++ * A onda vai pra kof_onda (5 canais x 4096, 1 amostra a cada 56 ciclos = ~32 kHz) */
++int kof_sonda = 0;
++unsigned kof_mudas = 0;
++int16_t kof_onda[5 * 4096];
++unsigned kof_ondaPos = 0;
++int kof_canais = 5;
++static unsigned kof_pos[5], kof_fase[5];
++static int32_t kof_antes[40000];
++static void kof_canal(int c, void (*real)(void)) {
++	uint32_t a = ChannelBC[c], b = SOUNDTS, i;
++	int mudo = (kof_mudas >> c) & 1;
++	if (b <= a || b - a > 40000 || (!kof_sonda && !mudo)) { real(); return; }
++	memcpy(kof_antes, &WaveHi[a], (b - a) * sizeof(int32_t));
++	real();
++	for (i = 0; i < b - a; i++) {
++		int32_t d = WaveHi[a + i] - kof_antes[i];
++		if (mudo) WaveHi[a + i] = kof_antes[i];
++		if (kof_sonda && ++kof_fase[c] >= 56) {
++			int32_t v = d >> 16;
++			kof_fase[c] = 0;
++			kof_onda[c * 4096 + kof_pos[c]] = (int16_t)(v > 32767 ? 32767 : v < -32768 ? -32768 : v);
++			kof_pos[c] = (kof_pos[c] + 1) & 4095;
++			if (c == 0) kof_ondaPos = kof_pos[0];
++		}
++	}
++}
++static void RDoSQ1(void);
++static void RDoSQ2(void);
++static void RDoTriangle(void);
++static void RDoNoise(void);
++static void RDoPCM(void);
++static void KofSQ1(void) { kof_canal(0, RDoSQ1); }
++static void KofSQ2(void) { kof_canal(1, RDoSQ2); }
++static void KofTriangle(void) { kof_canal(2, RDoTriangle); }
++static void KofNoise(void) { kof_canal(3, RDoNoise); }
++static void KofPCM(void) { kof_canal(4, RDoPCM); }
++
+ static void RDoSQ1(void) {
+ 	RDoSQ(0);
+ }
+@@ -1234,11 +1273,12 @@ void SetSoundVariables(void) {
+ 			if (!FSettings.soundq) wlookup2[x] >>= 4;
+ 		}
+ 		if (FSettings.soundq >= 1) {
+-			DoNoise = RDoNoise;
+-			DoTriangle = RDoTriangle;
+-			DoPCM = RDoPCM;
+-			DoSQ1 = RDoSQ1;
+-			DoSQ2 = RDoSQ2;
++			/* KOFnes: cada canal passa pela sonda (osciloscópio e mudo por canal) */
++			DoNoise = KofNoise;
++			DoTriangle = KofTriangle;
++			DoPCM = KofPCM;
++			DoSQ1 = KofSQ1;
++			DoSQ2 = KofSQ2;
+ 		} else {
+ 			/* All five Do* pointers in LQ mode end up at one of two
+ 			 * worker functions: RDoSQLQ (handles both squares) and
