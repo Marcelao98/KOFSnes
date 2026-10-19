@@ -1,0 +1,97 @@
+diff --git a/core/sound/psg.c b/core/sound/psg.c
+index cf7069e..6081dab 100644
+--- a/core/sound/psg.c
++++ b/core/sound/psg.c
+@@ -95,6 +95,26 @@ static struct
+ 
+ static void psg_update(unsigned int clocks);
+ 
++/* KOFnes: sonda do osciloscópio. Cada canal do PSG muda de nível em instantes marcados; entre uma mudança e outra a
++ * onda é constante, então ela é escrita em kof_onda (canais 6-9) a cada 2016 ciclos do relógio mestre (~26,6 kHz) */
++extern int kof_sonda;
++extern int16 kof_onda[];
++extern unsigned kof_ondaPosC[];
++static unsigned kof_pt[4];
++static int kof_lv[4];
++static void kof_ate(int i, unsigned t)
++{
++  int c = 6 + i;
++  if (!kof_sonda || t < kof_pt[i] || t - kof_pt[i] > 4000000) { kof_pt[i] = t; return; }
++  while (kof_pt[i] + 2016 <= t)
++  {
++    int v = kof_lv[i];
++    kof_pt[i] += 2016;
++    kof_onda[c * 4096 + kof_ondaPosC[c]] = (int16)(v > 32767 ? 32767 : v);
++    kof_ondaPosC[c] = (kof_ondaPosC[c] + 1) & 4095;
++  }
++}
++
+ void psg_init(PSG_TYPE type)
+ {
+   int i;
+@@ -457,6 +477,8 @@ void psg_end_frame(unsigned int clocks)
+   for (i=0; i<4; ++i)
+   {
+     psg.freqCounter[i] -= clocks;
++    kof_ate(i, clocks);
++    kof_pt[i] = (kof_pt[i] > clocks) ? kof_pt[i] - clocks : 0;
+   }
+ }
+ 
+@@ -499,6 +521,7 @@ static void psg_update(unsigned int clocks)
+       {
+         /* invert tone generator polarity */
+         polarity = -polarity;
++        kof_ate(i, timestamp); kof_lv[i] = (polarity > 0) ? psg.chanOut[i][0] : 0;
+ 
+         /* update channel output */
+         if (config.hq_psg)
+@@ -547,6 +570,7 @@ static void psg_update(unsigned int clocks)
+             shiftValue = (shiftValue >> 1) | (shiftOutput << psg.noiseShiftWidth);
+           }
+ 
++          kof_ate(3, timestamp); kof_lv[3] = (shiftValue & 1) ? psg.chanOut[3][0] : 0;
+           /* shift register output variation */
+           shiftOutput = (shiftValue & 0x1) - shiftOutput;
+ 
+diff --git a/core/sound/ym2612.c b/core/sound/ym2612.c
+index 3cba674..1d2d365 100644
+--- a/core/sound/ym2612.c
++++ b/core/sound/ym2612.c
+@@ -632,6 +632,16 @@ static INT32  m2,c1,c2;   /* Phase Modulation input for operators 2,3,4 */
+ static INT32  mem;        /* one sample delay memory */
+ static INT32  out_fm[6];  /* outputs of working channels */
+ 
++/* KOFnes: sonda do osciloscópio (lida pela ponte): canais 0-5 = FM, 6-9 = PSG; posição própria de cada canal */
++int kof_sonda = 0;
++unsigned kof_mudas = 0;
++int16 kof_onda[10 * 4096];
++unsigned kof_ondaPos = 0;
++unsigned kof_ondaPosC[16];
++int kof_temPosCanal = 1;
++int kof_canais = 10;
++static int kof_fase = 0;
++
+ /* chip type */
+ static UINT32 op_mask[8][4];  /* operator output bitmasking (DAC quantization) */
+ static int chip_type = YM2612_DISCRETE;
+@@ -2092,6 +2102,19 @@ void YM2612Update(int *buffer, int length)
+     else if (out_fm[4] < -8192) out_fm[4] = -8192;
+     if (out_fm[5] > 8191) out_fm[5] = 8191;
+     else if (out_fm[5] < -8192) out_fm[5] = -8192;
++
++    /* KOFnes: sonda do osciloscópio, 1 amostra de cada canal FM a cada 2 (~26,6 kHz), antes do volume por canal */
++    if (kof_sonda && ++kof_fase >= 2)
++    {
++      int c;
++      kof_fase = 0;
++      for (c = 0; c < 6; c++)
++      {
++        kof_onda[c * 4096 + kof_ondaPosC[c]] = (int16)out_fm[c];
++        kof_ondaPosC[c] = (kof_ondaPosC[c] + 1) & 4095;
++      }
++      kof_ondaPos = kof_ondaPosC[0];
++    }
+     
+     #ifdef USE_PER_SOUND_CHANNELS_CONFIG
+         /* apply user volume scaling */

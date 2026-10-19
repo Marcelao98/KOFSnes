@@ -100,7 +100,10 @@ function aplicarFiltro(nome) {
   pintar();
 }
 function desenhar() {
-  if (snes.rgba) { px.set(snes.rgba); pintar(); return; }   // núcleo libretro: já vem no formato da textura
+  if (snes.rgba) {   // núcleo libretro: já vem no formato da textura
+    if (snes.largura !== telaL || snes.altura !== telaA) { tamanhoTela(snes.largura, snes.altura); ajustarEscala(); }   // o jogo trocou de resolução (Mega Drive)
+    px.set(snes.rgba); pintar(); return;
+  }
   const f = snes.ppu.frame;
   // o núcleo Kof entrega 0xAARRGGBB; a textura (little-endian) quer 0xAABBGGRR
   for (let i = 0; i < px.length; i++) {
@@ -486,7 +489,7 @@ function tocadorSnes(apu) {
     fechar() {},
   };
 }
-const mudasEfetivas = () => (juke.solo >= 0 ? ~(1 << juke.solo) & 0xFF : juke.mudas);
+const mudasEfetivas = () => (juke.solo >= 0 ? ~(1 << juke.solo) & 0xFFFF : juke.mudas);   // até 16 canais (Mega Drive: 10)
 function aplicarMudas() { if (juke.apu) juke.apu.mudas(mudasEfetivas()); }
 function jukeEncher(precisa) {
   let voltas = 0;
@@ -710,7 +713,7 @@ function desenharOndas() {
     g.clearRect(0, 0, W, H);
     g.globalAlpha = 0.3; g.strokeStyle = corBorda; g.lineWidth = dpr; g.beginPath(); g.moveTo(0, meio); g.lineTo(W, meio); g.stroke(); g.globalAlpha = 1;
     if (!tk || c.v >= tk.canais) continue;
-    const o = tk.onda(c.v), N = Math.round(tk.taxa * 0.018), M = o.tam - 1;   // 18 ms de tela
+    const o = tk.onda(c.v), N = Math.round((o.taxa || tk.taxa) * 0.018), M = o.tam - 1;   // 18 ms de tela
     const at = (k) => o.buf[o.base + ((o.pos - 1 - k) & M)];                  // k amostras atrás da mais nova
     // média (tira o nível contínuo) e gatilho: a subida mais recente que deixe uma tela inteira pra frente
     let media = 0; for (let k = 0; k < N * 2; k++) media += at(k); media /= N * 2;
@@ -1039,6 +1042,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
   document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy e NES: só A, B, Start e Select)
   document.body.classList.toggle('so-ab', !!(SIS[sis] && SIS[sis].botoes && !SIS[sis].botoes.includes('X')));
+  if (typeof rotularControle === 'function') rotularControle(sis);   // celular: nomes dos botões do console (Mega Drive A/B/C...)
   QUADRO_MS = 1000 / (s.fps || 60.0988);
   snes = s; romAtual = bytes; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob(); avisarMudo(2200);
   document.body.classList.remove('vazio');
@@ -1312,7 +1316,8 @@ function estadoBib(t) { const e = $('#bib-estado'); e.textContent = t || ''; e.h
 // acervo aberto libretro-thumbnails (o mesmo do RetroArch), pelo nome No-Intro
 // da ROM. Baixa uma vez e guarda no banco: depois funciona sem internet.
 // um acervo por sistema; o app anota o sistema de cada nome de jogo que mostra (capaSis) pra buscar no acervo certo
-const ACERVO = { snes: 'Nintendo_-_Super_Nintendo_Entertainment_System', nes: 'Nintendo_-_Nintendo_Entertainment_System', gb: 'Nintendo_-_Game_Boy', gbc: 'Nintendo_-_Game_Boy_Color' };
+const ACERVO = { snes: 'Nintendo_-_Super_Nintendo_Entertainment_System', nes: 'Nintendo_-_Nintendo_Entertainment_System', gb: 'Nintendo_-_Game_Boy', gbc: 'Nintendo_-_Game_Boy_Color',
+  md: 'Sega_-_Mega_Drive_-_Genesis', sms: 'Sega_-_Master_System_-_Mark_III', gg: 'Sega_-_Game_Gear' };
 const capaSis = new Map();
 const urlAcervo = (nome) => `https://raw.githubusercontent.com/libretro-thumbnails/${ACERVO[capaSis.get(nome)] || ACERVO.snes}/master/Named_Boxarts/`;
 let capasNet = ler('capas') !== '0';
@@ -1818,7 +1823,7 @@ const DICAS_CEL = [
   'Segure <b>⏪</b>: o jogo volta até 5 segundos, em preto e branco. Depois a ampulheta ⏳ recarrega enquanto você joga.',
   'Em <b>Controles</b> você troca o modelo do controle, o tamanho, a transparência e liga o modo canhoto.',
   'Gire o celular: na horizontal os botões ficam nos cantos e o jogo ganha a tela.',
-  'Toque em <b>Abrir uma ROM</b> pra escolher um jogo do seu celular (.sfc, .smc, .gb, .gbc, .nes ou .zip).',
+  'Toque em <b>Abrir uma ROM</b> pra escolher um jogo do seu celular (.sfc, .smc, .nes, .gb, .gbc, .md, .sms, .gg ou .zip).',
   'Na Biblioteca, toque num jogo pra abrir; <b>Continuar</b> volta de onde você parou.',
   'Tocou aquela música que você ama? <b>☰ → Guardar esta música</b>: ela vai pra Jukebox e toca sem o jogo.',
   'Achou um bug? <b>☰ → Reportar bug</b> abre o GitHub com tudo pra reproduzir.',

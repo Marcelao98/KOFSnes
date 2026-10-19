@@ -208,3 +208,29 @@ html.celular body.canhoto.so-ab #ctl [data-b="B"] { --x: 14%; } html.celular bod
   html.celular body.cel-jogo.canhoto.so-ab #ctl [data-b="B"] { --x: calc(var(--u) * 11); }
   html.celular body.cel-jogo.canhoto.so-ab #ctl [data-b="A"] { --x: calc(var(--u) * 28); }
 }
+
+/* Mega Drive: duas fileiras de 3 como no controle de 6 botões (embaixo A B C, em cima X Y Z); L e R viram botões redondos */
+html.celular body[data-sis="md"] #ctl [data-b="L"], html.celular body[data-sis="md"] #ctl [data-b="R"] {
+  --h: var(--w); border-radius: 50%; transform: translate(-50%, -50%); }
+html.celular body[data-sis="md"] #ctl [data-b="Y"], html.celular body[data-sis="md"] #ctl [data-b="B"], html.celular body[data-sis="md"] #ctl [data-b="A"],
+html.celular body[data-sis="md"] #ctl [data-b="L"], html.celular body[data-sis="md"] #ctl [data-b="X"], html.celular body[data-sis="md"] #ctl [data-b="R"] { --w: calc(var(--u) * 15); }
+html.celular body[data-sis="md"] #ctl [data-b="Y"] { --x: 62%; --y: 70%; } html.celular body[data-sis="md"] #ctl [data-b="B"] { --x: 75%; --y: 70%; } html.celular body[data-sis="md"] #ctl [data-b="A"] { --x: 88%; --y: 70%; }
+html.celular body[data-sis="md"] #ctl [data-b="L"] { --x: 62%; --y: 46%; } html.celular body[data-sis="md"] #ctl [data-b="X"] { --x: 75%; --y: 46%; } html.celular body[data-sis="md"] #ctl [data-b="R"] { --x: 88%; --y: 46%; }
+html.celular body.canhoto[data-sis="md"] #ctl [data-b="Y"], html.celular body.canhoto[data-sis="md"] #ctl [data-b="L"] { --x: 12%; }
+html.celular body.canhoto[data-sis="md"] #ctl [data-b="B"], html.celular body.canhoto[data-sis="md"] #ctl [data-b="X"] { --x: 25%; }
+html.celular body.canhoto[data-sis="md"] #ctl [data-b="A"], html.celular body.canhoto[data-sis="md"] #ctl [data-b="R"] { --x: 38%; }
+@media (orientation: landscape) {
+  html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="Y"], html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="B"], html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="A"],
+  html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="L"], html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="X"], html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="R"] { --w: calc(var(--u) * 11); }
+  html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="Y"] { --x: calc(100% - var(--u) * 32); --y: 62%; }
+  html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="B"] { --x: calc(100% - var(--u) * 20); --y: 62%; }
+  html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="A"] { --x: calc(100% - var(--u) * 8); --y: 62%; }
+  html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="L"] { --x: calc(100% - var(--u) * 32); --y: 44%; }
+  html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="X"] { --x: calc(100% - var(--u) * 20); --y: 44%; }
+  html.celular body.cel-jogo[data-sis="md"] #ctl [data-b="R"] { --x: calc(100% - var(--u) * 8); --y: 44%; }
+  html.celular body.cel-jogo.canhoto[data-sis="md"] #ctl [data-b="Y"], html.celular body.cel-jogo.canhoto[data-sis="md"] #ctl [data-b="L"] { --x: calc(var(--u) * 8); }
+  html.celular body.cel-jogo.canhoto[data-sis="md"] #ctl [data-b="B"], html.celular body.cel-jogo.canhoto[data-sis="md"] #ctl [data-b="X"] { --x: calc(var(--u) * 20); }
+  html.celular body.cel-jogo.canhoto[data-sis="md"] #ctl [data-b="A"], html.celular body.cel-jogo.canhoto[data-sis="md"] #ctl [data-b="R"] { --x: calc(var(--u) * 32); }
+}
+/* Master System e Game Gear não têm Select */
+html.celular body[data-sis="sms"] #ctl [data-b="Select"], html.celular body[data-sis="gg"] #ctl [data-b="Select"] { display: none; }

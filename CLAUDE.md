@@ -24,6 +24,17 @@
 > `nucleo.js`). Capas oficiais por sistema (`ACERVO`/`capaSis` no app.js: SNES, NES, GB, GBC). Áudio do FCEUmm é 48 kHz.
 > Famicom Disk System (.fds, BIOS disksys.rom) ficou pra depois. HTML do PC ~3 MB (o carregamento de núcleo sob demanda é
 > o próximo passo). ROMs de teste livres: christopherpow/nes-test-roms (cpu_timing_test passa) e uma de som gerada.
+> **Mega Drive, Master System e Game Gear (branch `sega`, 19/10):** núcleo **Genesis Plus GX** (`construir.sh genplus`, só uso
+> NÃO comercial; compilado com `HAVE_CHD=0`, sem Sega CD) EMBUTIDO no html (decisão do Marcelo: separar núcleos em arquivos só
+> quando vierem os pesados, Neo Geo/PS1). Sistemas `md` (.md .gen .smd .bin, 320/256x224, resolução **dinâmica**: o
+> `nucleo.js` troca `largura/altura/rgba` e o `desenhar()` chama `tamanhoTela`), `sms` (.sms, 256x192, dinâmico) e `gg`
+> (.gg, 160x144, proporção 10:9). O núcleo escolhe 3 ou 6 botões sozinho; mapa: SNES Y/B/A = MD A/B/C, L/X/R = X/Y/Z,
+> Select = Mode; SMS/GG: B = 1, A = 2. Controle virtual com nomes por console (`rotularControle` no android.js, chamado no
+> `abrirBytes`) e o MD em duas fileiras de 3. Sonda (`nucleo-libretro/genplus-sonda.patch`, cuidado: `ym2612.c` tem quebra
+> de linha CRLF): 10 canais (0-5 FM, 6-9 PSG) a ~26,6 kHz, cada canal com posição própria (`kof_ondaPosC`,
+> `lr_onda_pos_c`); `SISTEMAS[x].indices` diz quais canais o sistema usa. Mudo/solo do genplus = opções de volume por canal
+> do núcleo (`genesis_plus_gx_md_channel_N_volume`/`psg_channel_N_volume`), só na instância da jukebox. HTML do PC ~6,7 MB,
+> do celular ~10,7 MB. ROMs de teste: geradas (68000 e Z80 escritos à mão: cor + FM + PSG); o 240p Test Suite só tem fonte.
 
 Emulador de Super Nintendo escrito em **Kof** (linguagem brasileira, github.com/KofLang/Kof4j,
 criada pela Mel Santos ~2 meses antes do projeto). Dono: Marcelo (Marcelao98). Repositório:

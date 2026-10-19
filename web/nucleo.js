@@ -19,6 +19,21 @@ const KofLibretro = (() => {
       botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start', 'Select'], musica: false, minimo: 0x2010,
       canais: ['Pulso 1', 'Pulso 2', 'Triângulo', 'Ruído', 'DPCM'], papeis: ['quadrada', 'quadrada', 'triângulo 4 bits', 'LFSR', 'amostras'],
       escalas: [1 / 1920, 1 / 1920, 1 / 22.5, 1 / 15, 1 / 63.5], opcoes: { fceumm_sndquality: 'High' } },
+    // Sega (Genesis Plus GX): a resolução muda no meio do jogo (Mega Drive 320 ou 256 de largura; alguns jogos de Master System
+    // usam 224 linhas), então o tamanho é "dinâmico". A sonda (nucleo-libretro/genplus-sonda.patch) tem 10 canais: 0-5 FM,
+    // 6-9 PSG; o Master System e o Game Gear só usam o PSG. Mudo por canal: as opções de volume do próprio núcleo.
+    // O núcleo escolhe sozinho 3 ou 6 botões no Mega Drive (tem a lista dos jogos que só aceitam 3).
+    md: { nome: 'Mega Drive', curto: 'MD', ext: ['md', 'gen', 'smd', 'bin'], nucleo: 'genplus', largura: 320, altura: 224, dinamico: true, tv43: true,
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'X', 'Y', 'L', 'R', 'Start', 'Select'], musica: false, minimo: 0x200,
+      canais: ['FM 1', 'FM 2', 'FM 3', 'FM 4', 'FM 5', 'FM 6', 'PSG 1', 'PSG 2', 'PSG 3', 'Ruído'],
+      papeis: ['FM', 'FM', 'FM', 'FM', 'FM', 'FM / amostras', 'quadrada', 'quadrada', 'quadrada', 'LFSR'],
+      indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], escalas: [1 / 8192, 1 / 8192, 1 / 8192, 1 / 8192, 1 / 8192, 1 / 8192, 1 / 2100, 1 / 2100, 1 / 2100, 1 / 2100] },
+    sms: { nome: 'Master System', curto: 'SMS', ext: ['sms'], nucleo: 'genplus', largura: 256, altura: 192, dinamico: true, tv43: true,
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start'], musica: false, minimo: 0x2000,
+      canais: ['PSG 1', 'PSG 2', 'PSG 3', 'Ruído'], papeis: ['quadrada', 'quadrada', 'quadrada', 'LFSR'], indices: [6, 7, 8, 9], escalas: [1 / 2100, 1 / 2100, 1 / 2100, 1 / 2100] },
+    gg: { nome: 'Game Gear', curto: 'GG', ext: ['gg'], nucleo: 'genplus', largura: 160, altura: 144, dinamico: true, proporcao: 10 / 9,   // a tela do aparelho, quase quadrada
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start'], musica: false, minimo: 0x2000,
+      canais: ['PSG 1', 'PSG 2', 'PSG 3', 'Ruído'], papeis: ['quadrada', 'quadrada', 'quadrada', 'LFSR'], indices: [6, 7, 8, 9], escalas: [1 / 2100, 1 / 2100, 1 / 2100, 1 / 2100] },
   };
   const extensao = (nome) => (/\.([^.]+)$/.exec(nome || '') || [])[1]?.toLowerCase() || '';
   function sistemaDe(nome) {
@@ -73,6 +88,11 @@ const KofLibretro = (() => {
   }
   function titulo(rom, sis) {
     if (sis === 'nes') return 'NES ' + crc32(rom, rom[0] === 0x4E && rom[1] === 0x45 && rom[2] === 0x53 ? 16 : 0);
+    if (sis === 'sms' || sis === 'gg') return SISTEMAS[sis].curto + ' ' + crc32(rom, rom.length % 1024 === 512 ? 512 : 0);
+    if (sis === 'md') {   // nome "internacional" do cabeçalho; sem ele (ou ROM .smd embaralhada), o CRC32
+      const t = texto(rom, 0x150, 48).replace(/\s+/g, ' ').trim();
+      return /[A-Za-z]{2}/.test(t) && texto(rom, 0x100, 4) === 'SEGA' ? t : 'MD ' + crc32(rom, 0);
+    }
     if ((sis || 'snes') === 'gb') return texto(rom, 0x134, rom[0x143] & 0x80 ? 15 : 16);   // GBC usa o último byte como marca
     const extra = rom.length % 1024 === 512 ? 512 : 0;   // ROM de SNES com cabeçalho de copiador tem 512 bytes a mais
     const ok = (o) => o + 0x20 <= rom.length && ((rom[o + 0x1C] | rom[o + 0x1D] << 8) ^ (rom[o + 0x1E] | rom[o + 0x1F] << 8)) === 0xFFFF;
@@ -87,9 +107,11 @@ const KofLibretro = (() => {
       this.mod = mod; this.rom = rom; this.pad = [0, 0];
       this.largura = S.largura; this.altura = S.altura;
       this.rgba = new Uint32Array(S.largura * S.altura);      // já no formato do canvas (0xAABBGGRR)
-      const eu = this, quadro = new Int32Array(S.largura * S.altura);
+      const eu = this;
+      let quadro = new Int32Array(S.largura * S.altura);
       this.ppu = { get frame() {                                  // formato do núcleo Kof (0xAARRGGBB), só quando alguém pede
         const o = eu.rgba;
+        if (quadro.length !== o.length) quadro = new Int32Array(o.length);
         for (let i = 0; i < o.length; i++) { const c = o[i]; quadro[i] = (c & 0xFF00FF00) | ((c & 0xFF) << 16) | ((c >> 16) & 0xFF); }
         return quadro;
       } };
@@ -111,7 +133,7 @@ const KofLibretro = (() => {
       if (!ok) throw new Error(`o ${n} não aceitou essa ROM`);
       mod.kofAtual = this;
       const i = mod._lr_info() >> 3, info = mod.HEAPF64;
-      this.fps = info[i + 5]; this.taxaAudio = info[i + 6]; this.proporcao = info[i + 4];
+      this.fps = info[i + 5]; this.taxaAudio = info[i + 6]; this.proporcao = SISTEMAS[this.sistema].proporcao || info[i + 4];
       this.tamEstado = mod._lr_state_size();
       this.estadoBuf = mod._lr_alloc((this.tamEstado + 3) & ~3);
       // bateria: RAM do cartucho e, no Game Boy, o relógio (RTC) logo depois; o app lê e grava sram[i]
@@ -130,7 +152,11 @@ const KofLibretro = (() => {
       mod._lr_pad(mascara(this.pad[0]));
       mod._lr_run(1, 1);
       this.quadros++;
-      const w = mod._lr_w(), h = mod._lr_h(), L = this.largura, A = this.altura, o = this.rgba;
+      let w = mod._lr_w(), h = mod._lr_h();
+      if (SISTEMAS[this.sistema].dinamico && w > 0 && h > 0 && (w !== this.largura || h !== this.altura)) {   // o jogo trocou de resolução
+        this.largura = w; this.altura = h; this.rgba = new Uint32Array(w * h);
+      }
+      const L = this.largura, A = this.altura, o = this.rgba;
       const fb = new Uint32Array(mod.HEAPU8.buffer, mod._lr_fb(), w * h);
       if (w === L && h === A) o.set(fb);
       else {   // SNES em alta resolução (512 de largura, 448/478 de altura) ou com 239 linhas: reduz/centraliza pra 256x224
@@ -244,16 +270,25 @@ const KofLibretro = (() => {
     c.carregar();
     if (!c.desserializar(deB64(estadoB64))) throw new Error('não consegui restaurar a música');
     mod._lr_pad(0); mod._lr_sonda(1);
-    const n = mod._lr_canais(), tam = 4096;
+    const total = mod._lr_canais(), tam = 4096, idx = S.indices || [...Array(total).keys()], n = total ? Math.min(idx.length, S.canais.length) : 0;
+    const varNucleo = (k, v) => {
+      const t = k + '\0' + v + '\0', p = mod._lr_alloc(t.length);
+      for (let i = 0; i < t.length; i++) mod.HEAPU8[p + i] = t.charCodeAt(i);
+      mod._lr_var(p, p + k.length + 1); mod._free(p);
+    };
+    // Genesis Plus GX: o mudo de cada canal é a opção de volume dele (só nesta instância da jukebox, o jogo não muda)
+    const mudoGenplus = (m) => idx.slice(0, n).forEach((c, l) => varNucleo(c < 6 ? `genesis_plus_gx_md_channel_${c}_volume` : `genesis_plus_gx_psg_channel_${c - 6}_volume`, m & (1 << l) ? '0' : '100'));
+    // taxa da onda: o FCEUmm/Gambatte gravam ~32 kHz; o Genesis Plus GX, ~26,6 kHz (metade do chip FM)
+    const taxaOnda = S.nucleo === 'genplus' ? 26633 : S.nucleo === 'fceumm' ? 1789773 / 56 : 32768;
     return {
       sis, canais: n, nomes: S.canais.slice(0, n), papeis: (S.papeis || []).slice(0, n), taxa: c.taxaAudio,
       encher() { mod._lr_run(1, 0); return { b: new Int16Array(mod.HEAPU8.buffer, mod._lr_audio(), mod._lr_audio_n() * 2), n: mod._lr_audio_n() * 2 }; },
       limpar() {},
-      mudas(m) { mod._lr_mudas(m); },
+      mudas(m) { if (S.nucleo === 'genplus') mudoGenplus(m); else mod._lr_mudas(m); },
       // onda do canal v: anel de 4096 amostras na taxa do áudio; escala: amplitude máxima do canal = 1
-      onda(v) { return { buf: new Int16Array(mod.HEAPU8.buffer, mod._lr_onda(), n * tam), base: v * tam, tam, pos: mod._lr_onda_pos(), escala: (S.escalas || [])[v] || 1 / 7680 }; },
+      onda(v) { const c = idx[v]; return { buf: new Int16Array(mod.HEAPU8.buffer, mod._lr_onda(), total * tam), base: c * tam, tam, pos: mod._lr_onda_pos_c(c), escala: (S.escalas || [])[v] || 1 / 7680, taxa: taxaOnda }; },
       nivel: null,
-      fechar() { mod._lr_sonda(0); mod._lr_mudas(0); },
+      fechar() { mod._lr_sonda(0); this.mudas(0); },
     };
   }
   return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, SISTEMAS, EXTENSOES };
