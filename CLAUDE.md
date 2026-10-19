@@ -35,6 +35,25 @@
 > `lr_onda_pos_c`); `SISTEMAS[x].indices` diz quais canais o sistema usa. Mudo/solo do genplus = opções de volume por canal
 > do núcleo (`genesis_plus_gx_md_channel_N_volume`/`psg_channel_N_volume`), só na instância da jukebox. HTML do PC ~6,7 MB,
 > do celular ~10,7 MB. ROMs de teste: geradas (68000 e Z80 escritos à mão: cor + FM + PSG); o 240p Test Suite só tem fonte.
+> **Decisões de 19/10 (fim do dia):** (1) Sega testado pelo Marcelo (Sonic ok), branch `sega` AINDA NÃO publicada (perguntar).
+> (2) Próximo: branch `nucleos` (criada a partir da `sega`, sem mudanças ainda) = **núcleos em arquivos separados**:
+> `dist/web/nucleos/<núcleo>-<hash8>.js` (nome com hash do conteúdo, o html leva a lista exata; carrega com `<script src>`
+> só ao abrir um jogo daquele console; SINGLE_FILE continua, porque `fetch` de .wasm em file:// é bloqueado), juntar.py
+> para de embutir e embute só a lista; **lançador 7** (Windows): lê linhas `nucleo=<arquivo>:<tamanho>` do versao.txt,
+> baixa pra `nucleos\` o que falta ANTES de trocar o html, confere tamanho, apaga núcleo velho; `fonte.txt` opcional ao lado
+> do exe troca o caminho do GitHub (pra testar uma branch no Wine); `kofnes.sh` (Linux, LANCADOR=2) faz o mesmo; APK leva
+> `assets/nucleos/`; PWA também; publicar.sh copia `publicado/nucleos/`. Lançadores antigos baixam o html novo e o exe 7;
+> na abertura seguinte o 7 baixa os núcleos (o app mostra "faltou baixar o núcleo..." se faltar). Depois: escrever
+> `docs/arquitetura.md` explicando toda a engenharia pro Marcelo (camadas, libretro, WebAssembly, ponte, adaptador,
+> determinismo, áudio, vídeo, sonda, atualizador, Android, testes, glossário).
+> (3) Depois da separação: **GBA** (mGBA, MPL-2.0, BIOS opcional, 6 canais na jukebox; ROMs livres: suíte do jsmolka) e
+> **Neo Geo** (FBNeo só Neo Geo; tela de BIOS nova pro `neogeo.zip`, zip de fliperama inteiro num disco virtual MEMFS,
+> lista de nomes de sets do FBNeo, modo AES por padrão, botões A/B/C/D + Ficha, YM2610 com 14 canais). Eu NÃO consigo
+> testar jogo de Neo Geo (a BIOS não é livre): o Marcelo testa. Neo Geo pesa em memória (ROM até 90 MB).
+> (4) **Kof aos poucos:** primeiro tudo funcionando com núcleos libretro; depois reescrever em Kof um console por vez
+> (Game Boy → NES → SMS/GG...), usando o núcleo libretro como gabarito quadro a quadro. Gasta bem mais token: ir aos poucos.
+> (5) Limites do WebAssembly: até Neo Geo/GBA sobra (Mega Drive ~810 fps no container); PS1 no limite no celular;
+> N64/Saturn pra cima = núcleo nativo (DLL + processo auxiliar no PC, nativo no APK), mesma interface.
 
 Emulador de Super Nintendo escrito em **Kof** (linguagem brasileira, github.com/KofLang/Kof4j,
 criada pela Mel Santos ~2 meses antes do projeto). Dono: Marcelo (Marcelao98). Repositório:
