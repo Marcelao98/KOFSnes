@@ -5,11 +5,11 @@ const raiz = path.join(__dirname, '..', '..');
 const ctx = { console, setTimeout, atob: (s) => Buffer.from(s, 'base64').toString('binary'), btoa: (s) => Buffer.from(s, 'binary').toString('base64'), module: { exports: {} } };
 vm.createContext(ctx);
 const carregar = (f) => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
-carregar(path.join(raiz, 'nucleo-snes9x/saida/snes9x.js'));
+carregar(path.join(raiz, 'nucleo-libretro/saida/snes9x.js'));
 carregar(path.join(raiz, 'web/estado.js')); carregar(path.join(raiz, 'web/spc.js'));
 vm.runInContext('globalThis.KofEstado = KofEstado;', ctx);
 carregar(path.join(raiz, 'web/nucleo_s9x.js'));
-vm.runInContext('globalThis.KofS9x = KofS9x; globalThis.Snes9xModulo = typeof Snes9xModulo !== "undefined" ? Snes9xModulo : undefined;', ctx);
+vm.runInContext('globalThis.KofS9x = KofS9x; globalThis.Nucleo_snes9x = typeof Nucleo_snes9x !== "undefined" ? Nucleo_snes9x : undefined;', ctx);
 (async () => {
   const rom = new Uint8Array(fs.readFileSync(process.argv[2])), r = {};
   const s = await ctx.KofS9x.criar(rom);

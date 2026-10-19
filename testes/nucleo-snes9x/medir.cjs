@@ -7,13 +7,14 @@ const rom = fs.readFileSync(romP);
 (async () => {
   // Snes9x (WASM)
   const M = await require(require('path').resolve(jsP))();
-  M._s9x_init();
-  const p = M._s9x_alloc(rom.length); M.HEAPU8.set(rom, p);
-  const ok = M._s9x_load(p, rom.length);
-  M._s9x_run(120, 1);
-  const medeS = (copia) => { const t0 = performance.now(); M._s9x_run(N, copia); return N * 1000 / (performance.now() - t0); };
+  M._lr_init();
+  const p = M._lr_alloc(rom.length); M.HEAPU8.set(rom, p);
+  const nm = M._lr_alloc(8); M.HEAPU8.set([114, 111, 109, 46, 115, 102, 99, 0], nm);
+  const ok = M._lr_load(p, rom.length, nm);
+  M._lr_run(120, 1);
+  const medeS = (copia) => { const t0 = performance.now(); M._lr_run(N, copia); return N * 1000 / (performance.now() - t0); };
   const s1 = Math.max(medeS(0), medeS(0)), s2 = Math.max(medeS(1), medeS(1));
-  console.log(`Snes9x (WASM): carregou=${ok} ${M._s9x_w()}x${M._s9x_h()}  só emulação ${s1.toFixed(0)} fps (${(s1 / 60.0988).toFixed(2)}×) · com imagem ${s2.toFixed(0)} fps (${(s2 / 60.0988).toFixed(2)}×)`);
+  console.log(`Snes9x (WASM): carregou=${ok} ${M._lr_w()}x${M._lr_h()}  só emulação ${s1.toFixed(0)} fps (${(s1 / 60.0988).toFixed(2)}×) · com imagem ${s2.toFixed(0)} fps (${(s2 / 60.0988).toFixed(2)}×)`);
   // Kof (JS)
   const html = fs.readFileSync(htmlP, 'utf8');
   const ini = html.indexOf('const KofNucleo = '), fim = html.indexOf('</script>', ini);

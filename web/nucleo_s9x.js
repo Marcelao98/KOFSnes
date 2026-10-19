@@ -1,7 +1,7 @@
 // Núcleo Snes9x (WebAssembly) com a mesma cara do núcleo Kof: é o núcleo do KOFnes no celular.
 // O app.js só conversa com "snes.pad / runFrame / ppu.frame / apu.dsp / cart / reset"; aqui o Snes9x
 // responde a tudo isso, e o savestate e o rebobinar usam o serializador do próprio Snes9x.
-// Só entra no KOFnes-android.html. O Snes9x tem licença só pra uso NÃO comercial (nucleo-snes9x/LICENCA-SNES9X.txt).
+// Só entra no KOFnes-android.html. O Snes9x tem licença só pra uso NÃO comercial (nucleo-libretro/LICENCA-SNES9X.txt).
 const KofS9x = (() => {
   'use strict';
   let mod = null, atual = null;
@@ -12,8 +12,8 @@ const KofS9x = (() => {
 
   async function iniciar() {
     if (mod) return mod;
-    mod = await Snes9xModulo();
-    mod._s9x_init();
+    mod = await Nucleo_snes9x();
+    mod._lr_init();
     return mod;
   }
   const b64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
@@ -41,16 +41,17 @@ const KofS9x = (() => {
       this.quadros = 0;
     }
     carregar() {
-      if (atual && atual !== this) mod._s9x_unload();
-      const p = mod._s9x_alloc(this.rom.length);
+      if (atual && atual !== this) mod._lr_unload();
+      const p = mod._lr_alloc(this.rom.length);
       mod.HEAPU8.set(this.rom, p);
-      const ok = mod._s9x_load(p, this.rom.length);
-      mod._free(p);
+      const nome = mod._lr_alloc(8); mod.HEAPU8.set([114, 111, 109, 46, 115, 102, 99, 0], nome);   // "rom.sfc"
+      const ok = mod._lr_load(p, this.rom.length, nome);
+      mod._free(p); mod._free(nome);
       if (!ok) throw new Error('o Snes9x não aceitou essa ROM');
       atual = this;
-      this.tamEstado = mod._s9x_state_size();
-      this.estadoBuf = mod._s9x_alloc((this.tamEstado + 3) & ~3);
-      const n = mod._s9x_sram_size(), ptr = mod._s9x_sram_ptr();
+      this.tamEstado = mod._lr_state_size();
+      this.estadoBuf = mod._lr_alloc((this.tamEstado + 3) & ~3);
+      const n = mod._lr_mem_size(0), ptr = mod._lr_mem_ptr(0);
       this.sramPtr = ptr; this.sramTam = n;
       this.cart.sram = n ? new Proxy({ length: n }, {   // o app lê e grava sram[i]; a memória pode crescer, então relê o buffer
         get: (o, k) => (k === 'length' ? n : mod.HEAPU8[ptr + (+k)]),
@@ -58,12 +59,12 @@ const KofS9x = (() => {
       }) : new Uint8Array(0);
       this.cart.hasSram = () => n > 0;
     }
-    reset() { mod._s9x_reset(); }
+    reset() { mod._lr_reset(); }
     runFrame() {
-      mod._s9x_pad(mascara(this.pad[0]));
-      mod._s9x_run(1, 1);
+      mod._lr_pad(mascara(this.pad[0]));
+      mod._lr_run(1, 1);
       this.quadros++;
-      const w = mod._s9x_w(), h = mod._s9x_h(), fb = new Uint32Array(mod.HEAPU8.buffer, mod._s9x_fb(), w * h), f = this.ppu.frame;
+      const w = mod._lr_w(), h = mod._lr_h(), fb = new Uint32Array(mod.HEAPU8.buffer, mod._lr_fb(), w * h), f = this.ppu.frame;
       const passo = w >= 512 ? 2 : 1, y0 = h > A ? Math.floor((h - A) / 2) : 0;
       for (let y = 0; y < A; y++) {
         const lin = Math.min(h - 1, y * (h >= 448 ? 2 : 1) + (h >= 448 ? 0 : y0)) * w;
@@ -72,9 +73,9 @@ const KofS9x = (() => {
           f[y * L + x] = (c & 0xFF00FF00) | ((c & 0xFF) << 16) | ((c >> 16) & 0xFF);   // -> 0xAARRGGBB, que é o que o app espera
         }
       }
-      const d = this.apu.dsp, n = mod._s9x_audio_n() * 2;
+      const d = this.apu.dsp, n = mod._lr_audio_n() * 2;
       if (d.outCount + n <= d.outBuf.length) {
-        d.outBuf.set(new Int16Array(mod.HEAPU8.buffer, mod._s9x_audio(), n), d.outCount);
+        d.outBuf.set(new Int16Array(mod.HEAPU8.buffer, mod._lr_audio(), n), d.outCount);
         d.outCount += n;
       }
     }
@@ -104,12 +105,12 @@ const KofS9x = (() => {
     // savestate: bytes do Snes9x
     serializar() {
       const n = this.tamEstado;
-      if (!mod._s9x_state_save(this.estadoBuf, n)) throw new Error('não consegui guardar o estado');
+      if (!mod._lr_state_save(this.estadoBuf, n)) throw new Error('não consegui guardar o estado');
       return new Uint8Array(mod.HEAPU8.buffer, this.estadoBuf, n).slice();
     }
     desserializar(u8) {
       mod.HEAPU8.set(u8, this.estadoBuf);
-      return !!mod._s9x_state_load(this.estadoBuf, u8.length);
+      return !!mod._lr_state_load(this.estadoBuf, u8.length);
     }
   }
 
