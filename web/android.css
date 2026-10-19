@@ -162,3 +162,7 @@ body.canhoto #ctl [data-b="L"] { --x: 83%; } body.canhoto #ctl [data-b="R"] { --
 .ctl-ajustes { display: grid; gap: 10px; text-align: left; }
 .ctl-ajustes label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .ctl-ajustes input[type=range] { flex: 1; max-width: 55%; }
+
+/* menu rápido (☰): rola quando a tela é baixa (celular deitado) e tem linhas fáceis de tocar */
+html.celular #rapido { position: fixed !important; top: 6px !important; left: 50% !important; transform: translateX(-50%) !important; max-height: calc(100dvh - 12px); overflow-y: auto; z-index: 40; padding: 12px 14px 8px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+html.celular #rapido-lista li { min-height: 42px; }

@@ -139,6 +139,17 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   `testes/android/celular.cjs` (Playwright com toque; aceita html, rom, pasta de prints). Pendente: testar no aparelho real
   (latência, desempenho do Snes9x), APK (Capacitor/GitHub Actions), seletor de pasta de ROMs (só no APK), guardar música e caçador
   de bugs não existem no celular, posições do arcade/portátil na horizontal usam o layout padrão.
+- **APK (branch `android`):** `android/construir-apk.sh` (depois de `web/compilar.sh`) gera `dist/KOFnes.apk` SEM Gradle e sem
+  SDK completo: WebView nativa em Java (`android/src`, uma Activity) com o `KOFnes-android.html` dentro (assets/index.html),
+  servido em `https://appassets.androidplatform.net/` (endereço seguro: IndexedDB, crypto, WebAssembly). Ferramentas do Ubuntu:
+  `apt install aapt apksigner zipalign libandroid-23-java dalvik-exchange android-sdk-platform-23` + JDK; compila com
+  `javac --release 8` contra o android.jar API 23, sem lambdas (o dx não desaçucara). minSdk 24, targetSdk 34, assinado v2/v3 com
+  a chave de TESTE `android/kofnes-teste.keystore` (senha `kofnes-teste`; é pública de propósito: serve pra instalar e atualizar
+  por cima; **Play Store precisa de chave de verdade fora do repositório e de AAB**). A ponte `window.KOFnesApk` (MainActivity.Ponte)
+  salva arquivos (pacote de bug, .spc exportado) pelo "salvar como" do Android; o seletor de arquivo (ROM, .spc) e o window.open
+  (issue do GitHub, abre no navegador) são tratados na Activity. Teste sem celular: `testes/android/apk-simulado.cjs` (serve o
+  html no endereço do app e troca a ponte por um stub). Ainda NÃO testado num aparelho de verdade. Faltam: escolher a pasta de
+  ROMs inteira (SAF, ACTION_OPEN_DOCUMENT_TREE) e AAB/assinatura de produção pra Play.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;

@@ -1,0 +1,209 @@
+package dev.kofnes.android;
+
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Message;
+import android.util.Base64;
+import android.view.View;
+import android.view.WindowManager;
+import android.webkit.ConsoleMessage;
+import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Toast;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+/**
+ * KOFnes no Android: uma WebView em tela cheia que abre o KOFnes-android.html guardado dentro do app
+ * (assets/index.html), servido em https://appassets.androidplatform.net/ pra a página ter um endereço seguro
+ * (IndexedDB, crypto, WebAssembly). Faz só o que a página não consegue sozinha: escolher arquivo (ROM, .spc),
+ * salvar arquivo (pacote de bug, .spc exportado) e abrir links no navegador.
+ */
+public class MainActivity extends Activity {
+    private static final String HOST = "appassets.androidplatform.net";
+    private static final int PEDIDO_ARQUIVO = 1, PEDIDO_SALVAR = 2;
+
+    private WebView web;
+    private ValueCallback<Uri[]> escolha;
+    private byte[] paraSalvar;
+
+    @Override
+    protected void onCreate(Bundle b) {
+        super.onCreate(b);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        web = new WebView(this);
+        setContentView(web);
+        web.setBackgroundColor(0xFF000000);
+        WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setDatabaseEnabled(true);
+        s.setAllowFileAccess(false);
+        s.setMediaPlaybackRequiresUserGesture(false);
+        s.setSupportMultipleWindows(true);
+        s.setJavaScriptCanOpenWindowsAutomatically(true);
+        s.setBuiltInZoomControls(false);
+        s.setSupportZoom(false);
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        try { WebView.setWebContentsDebuggingEnabled(true); } catch (Throwable t) { /* sem depuração */ }
+        web.addJavascriptInterface(new Ponte(), "KOFnesApk");
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
+                Uri u = r.getUrl();
+                if (HOST.equals(u.getHost())) return servir(u.getPath());
+                return null;                       // o resto (capas na internet...) segue normal
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                if (url.startsWith("https://" + HOST)) return false;
+                abrirFora(url);
+                return true;
+            }
+        });
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams p) {
+                if (escolha != null) escolha.onReceiveValue(null);
+                escolha = cb;
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("*/*");                  // o seletor do Android não conhece .sfc/.smc: deixa escolher qualquer arquivo
+                i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, p.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE);
+                try {
+                    startActivityForResult(Intent.createChooser(i, "Escolha o arquivo"), PEDIDO_ARQUIVO);
+                } catch (ActivityNotFoundException e) {
+                    escolha = null;
+                    cb.onReceiveValue(null);
+                    return false;
+                }
+                return true;
+            }
+
+            // window.open(): a janela nova só serve pra abrir um link (a issue do GitHub), que vai pro navegador
+            @Override
+            public boolean onCreateWindow(WebView v, boolean dialog, boolean gesto, Message msg) {
+                WebView aba = new WebView(MainActivity.this);
+                aba.getSettings().setJavaScriptEnabled(true);
+                aba.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView w, String url) {
+                        abrirFora(url);
+                        return true;
+                    }
+                });
+                WebView.WebViewTransport t = (WebView.WebViewTransport) msg.obj;
+                t.setWebView(aba);
+                msg.sendToTarget();
+                return true;
+            }
+
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage m) {
+                android.util.Log.d("KOFnes", m.message() + " (" + m.sourceId() + ":" + m.lineNumber() + ")");
+                return true;
+            }
+        });
+        if (b == null) web.loadUrl("https://" + HOST + "/index.html");
+        else web.restoreState(b);
+    }
+
+    private WebResourceResponse servir(String caminho) {
+        String nome = (caminho == null || caminho.equals("/") || caminho.isEmpty()) ? "index.html" : caminho.substring(1);
+        try {
+            InputStream in = getAssets().open(nome);
+            String mime = nome.endsWith(".html") ? "text/html" : nome.endsWith(".js") ? "application/javascript"
+                    : nome.endsWith(".png") ? "image/png" : nome.endsWith(".webmanifest") ? "application/manifest+json" : "application/octet-stream";
+            return new WebResourceResponse(mime, "utf-8", in);
+        } catch (IOException e) {
+            return new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream(new byte[0]));
+        }
+    }
+
+    private void abrirFora(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            Toast.makeText(this, "não consegui abrir o link", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /** O que a página enxerga como window.KOFnesApk. */
+    public class Ponte {
+        @JavascriptInterface
+        public void salvar(String nome, String mime, String base64) {
+            paraSalvar = Base64.decode(base64, Base64.DEFAULT);
+            final Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            i.addCategory(Intent.CATEGORY_OPENABLE);
+            i.setType(mime == null || mime.isEmpty() ? "application/octet-stream" : mime);
+            i.putExtra(Intent.EXTRA_TITLE, nome);
+            runOnUiThread(new Runnable() {
+                public void run() { startActivityForResult(i, PEDIDO_SALVAR); }
+            });
+        }
+
+        @JavascriptInterface
+        public String versao() { return "@VERSAO_NOME@"; }
+    }
+
+    @Override
+    protected void onActivityResult(int pedido, int resultado, Intent dados) {
+        super.onActivityResult(pedido, resultado, dados);
+        if (pedido == PEDIDO_ARQUIVO && escolha != null) {
+            Uri[] r = WebChromeClient.FileChooserParams.parseResult(resultado, dados);
+            escolha.onReceiveValue(r);
+            escolha = null;
+        } else if (pedido == PEDIDO_SALVAR) {
+            if (resultado == RESULT_OK && dados != null && dados.getData() != null && paraSalvar != null) {
+                try {
+                    OutputStream o = getContentResolver().openOutputStream(dados.getData());
+                    o.write(paraSalvar);
+                    o.close();
+                    Toast.makeText(this, "arquivo salvo", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(this, "não consegui salvar o arquivo", Toast.LENGTH_LONG).show();
+                }
+            }
+            paraSalvar = null;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (web.canGoBack()) web.goBack(); else super.onBackPressed();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle b) {
+        super.onSaveInstanceState(b);
+        web.saveState(b);
+    }
+
+    @Override
+    protected void onPause() { super.onPause(); web.onPause(); }
+
+    @Override
+    protected void onResume() { super.onResume(); web.onResume(); imersivo(); }
+
+    @Override
+    public void onWindowFocusChanged(boolean foco) { super.onWindowFocusChanged(foco); if (foco) imersivo(); }
+
+    private void imersivo() {
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
+}

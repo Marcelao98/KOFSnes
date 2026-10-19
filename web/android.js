@@ -191,7 +191,19 @@
     for (const [k, [, corpo]] of Object.entries(paginas)) { const d = document.createElement('div'); d.dataset.pagina = k; d.hidden = k !== 'comecar'; d.innerHTML = corpo; pai.appendChild(d); }
     nav.firstElementChild.classList.add('ativo');
   }
-  // instalável (PWA): só quando servido por http(s)
-  if (/^https?:/.test(location.protocol) && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  // dentro do app (APK) o arquivo já está no aparelho; no navegador, instalável (PWA) só quando servido por http(s)
+  if (!window.KOFnesApk && /^https?:/.test(location.protocol) && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  // APK: a WebView não baixa arquivo de link "blob:"; a ponte nativa abre o "salvar como" do Android
+  if (window.KOFnesApk) {
+    document.addEventListener('click', async (e) => {
+      const a = e.target.closest && e.target.closest('a[download]');
+      if (!a || !a.href.startsWith('blob:')) return;
+      e.preventDefault(); e.stopPropagation();
+      try {
+        const blob = await (await fetch(a.href)).blob(), u8 = new Uint8Array(await blob.arrayBuffer());
+        KOFnesApk.salvar(a.download || 'kofnes.bin', blob.type || 'application/octet-stream', b64(u8));
+      } catch (x) { avisar('não consegui salvar o arquivo: ' + x.message, 4000); }
+    }, true);
+  }
   document.querySelectorAll('.n-temas').forEach((e) => { e.textContent = TODOS_TEMAS.length; });
 })();
