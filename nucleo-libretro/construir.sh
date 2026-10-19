@@ -20,7 +20,9 @@ construir() {
   esac
   if [ ! -d "$dir" ]; then git clone -q "$repo" "$dir"; fi
   git -C "$dir" fetch -q --depth 1 origin "$commit" 2>/dev/null || true
-  git -C "$dir" checkout -q "$commit"
+  git -C "$dir" checkout -q -- . && git -C "$dir" checkout -q "$commit"
+  # remendo do KOFnes (sonda do osciloscópio e mudo por canal), se existir pro núcleo
+  if [ -f "$AQUI/$nome-sonda.patch" ]; then git -C "$dir" apply "$AQUI/$nome-sonda.patch"; fi
   case "$nome" in
     snes9x)   (cd "$dir/libretro" && emmake make -j"$(nproc)" platform=emscripten) ;;
     gambatte) (cd "$dir" && emmake make -f Makefile.libretro -j"$(nproc)" platform=emscripten) ;;
@@ -37,7 +39,7 @@ construir() {
     i=$((i+1)); emcc -O3 -DNDEBUG $INC -c "$lc/$f.c" -o "$O/c$i.o"
   done
   local F=_lr_alloc,_lr_init,_lr_load,_lr_info,_lr_unload,_lr_run,_lr_pad,_lr_fb,_lr_w,_lr_h,_lr_audio,_lr_audio_n,_lr_audio_total
-  F=$F,_lr_reset,_lr_state_size,_lr_state_save,_lr_state_load,_lr_mem_ptr,_lr_mem_size,_malloc,_free
+  F=$F,_lr_canais,_lr_sonda,_lr_mudas,_lr_onda,_lr_onda_pos,_lr_reset,_lr_state_size,_lr_state_save,_lr_state_load,_lr_mem_ptr,_lr_mem_size,_malloc,_free
   em++ -O3 "$O"/*.o "$bc" -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=67108864 \
     -s MODULARIZE=1 -s EXPORT_NAME="Nucleo_$nome" -s ENVIRONMENT=web,node -s SINGLE_FILE=1 \
     -s EXPORTED_RUNTIME_METHODS=ccall,HEAPU8,HEAPF64,stringToUTF8,lengthBytesUTF8 -s EXPORTED_FUNCTIONS=$F \

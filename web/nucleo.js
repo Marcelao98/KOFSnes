@@ -8,9 +8,11 @@ const KofLibretro = (() => {
   // sistemas que o app conhece: extensões, núcleo, tamanho da imagem que o app recebe e o que muda na interface
   const SISTEMAS = {
     snes: { nome: 'Super Nintendo', curto: 'SNES', ext: ['sfc', 'smc', 'fig', 'swc'], nucleo: 'snes9x', largura: 256, altura: 224,
-      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'X', 'Y', 'L', 'R', 'Start', 'Select'], musica: true, minimo: 0x8000 },
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'X', 'Y', 'L', 'R', 'Start', 'Select'], musica: true, minimo: 0x8000,
+      canais: ['Voz 1', 'Voz 2', 'Voz 3', 'Voz 4', 'Voz 5', 'Voz 6', 'Voz 7', 'Voz 8'] },
     gb: { nome: 'Game Boy', curto: 'GB', ext: ['gb', 'gbc', 'sgb'], nucleo: 'gambatte', largura: 160, altura: 144,
-      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start', 'Select'], musica: false, minimo: 0x4000 },
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start', 'Select'], musica: false, minimo: 0x4000,
+      canais: ['Pulso 1', 'Pulso 2', 'Onda', 'Ruído'], papeis: ['quadrada + sweep', 'quadrada', 'tabela 4 bits', 'LFSR'] },
   };
   const extensao = (nome) => (/\.([^.]+)$/.exec(nome || '') || [])[1]?.toLowerCase() || '';
   function sistemaDe(nome) {
@@ -22,7 +24,7 @@ const KofLibretro = (() => {
   const fabrica = (n) => (typeof globalThis['Nucleo_' + n] === 'function' ? globalThis['Nucleo_' + n] : null);
   const disponivel = (sis) => !!(SISTEMAS[sis] && fabrica(SISTEMAS[sis].nucleo));
 
-  const modulos = {}, atuais = {};
+  const modulos = {};
   async function iniciar(nucleo) {
     if (modulos[nucleo]) return modulos[nucleo];
     const f = fabrica(nucleo);
@@ -68,7 +70,7 @@ const KofLibretro = (() => {
     }
     carregar() {
       const mod = this.mod, n = this.nucleo;
-      if (atuais[n] && atuais[n] !== this) mod._lr_unload();
+      if (mod.kofAtual && mod.kofAtual !== this) mod._lr_unload();   // cada instância do módulo roda um jogo por vez
       const p = mod._lr_alloc(this.rom.length);
       mod.HEAPU8.set(this.rom, p);
       const nome = 'rom.' + (this.sistema === 'gb' && (this.rom[0x143] & 0x80) ? 'gbc' : SISTEMAS[this.sistema].ext[0]) + '\0';
@@ -77,7 +79,7 @@ const KofLibretro = (() => {
       const ok = mod._lr_load(p, this.rom.length, pn);
       mod._free(p); mod._free(pn);
       if (!ok) throw new Error(`o ${n} não aceitou essa ROM`);
-      atuais[n] = this;
+      mod.kofAtual = this;
       const i = mod._lr_info() >> 3, info = mod.HEAPF64;
       this.fps = info[i + 5]; this.taxaAudio = info[i + 6]; this.proporcao = info[i + 4];
       this.tamEstado = mod._lr_state_size();
@@ -201,6 +203,29 @@ const KofLibretro = (() => {
     c.carregar();
     return c;
   }
-  return { criar, iniciar, titulo, sistemaDe, disponivel, SISTEMAS, EXTENSOES };
+  // jukebox: toca a música de um estado guardado, numa instância SEPARADA do núcleo (o jogo aberto não é tocado),
+  // sem imagem e sem botão apertado; a sonda do núcleo entrega a onda de cada canal e o mudo por canal
+  async function tocador(sis, rom, estadoB64) {
+    const S = SISTEMAS[sis], f = fabrica(S.nucleo), chave = S.nucleo + ':jukebox';
+    if (!f) throw new Error('esse KOFnes não tem o núcleo ' + S.nucleo);
+    if (!modulos[chave]) modulos[chave] = f({ print: () => {}, printErr: () => {} }).then((m) => { m._lr_init(); return m; });
+    const mod = await modulos[chave];
+    const c = new Consolinho(Uint8Array.from(rom), sis, mod);
+    c.carregar();
+    if (!c.desserializar(deB64(estadoB64))) throw new Error('não consegui restaurar a música');
+    mod._lr_pad(0); mod._lr_sonda(1);
+    const n = mod._lr_canais(), tam = 4096;
+    return {
+      sis, canais: n, nomes: S.canais.slice(0, n), papeis: (S.papeis || []).slice(0, n), taxa: c.taxaAudio,
+      encher() { mod._lr_run(1, 0); return { b: new Int16Array(mod.HEAPU8.buffer, mod._lr_audio(), mod._lr_audio_n() * 2), n: mod._lr_audio_n() * 2 }; },
+      limpar() {},
+      mudas(m) { mod._lr_mudas(m); },
+      // onda do canal v: anel de 4096 amostras na taxa do áudio; escala: amplitude máxima do canal = 1
+      onda(v) { return { buf: new Int16Array(mod.HEAPU8.buffer, mod._lr_onda(), 4 * tam), base: v * tam, tam, pos: mod._lr_onda_pos(), escala: 1 / 7680 }; },
+      nivel: null,
+      fechar() { mod._lr_sonda(0); mod._lr_mudas(0); },
+    };
+  }
+  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, SISTEMAS, EXTENSOES };
 })();
 if (typeof module !== 'undefined') module.exports = KofLibretro;

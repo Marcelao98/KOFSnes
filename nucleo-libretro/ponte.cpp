@@ -99,6 +99,19 @@ static bool ambiente(unsigned cmd, void* dado) {
     }
 }
 
+// sonda do osciloscópio/mudo por canal (jukebox): o núcleo remendado (ex.: gambatte-sonda.patch) define esses
+// símbolos de verdade; nos outros valem estes vazios (kof_canais = 0: o núcleo não tem sonda)
+__attribute__((weak)) int kof_sonda = 0;
+__attribute__((weak)) unsigned kof_mudas = 0;
+__attribute__((weak)) int16_t kof_onda[1] = { 0 };
+__attribute__((weak)) unsigned kof_ondaPos = 0;
+__attribute__((weak)) int kof_canais = 0;
+EMSCRIPTEN_KEEPALIVE int lr_canais() { return kof_canais; }          // quantos canais a sonda enxerga (Game Boy: 4)
+EMSCRIPTEN_KEEPALIVE void lr_sonda(int liga) { kof_sonda = liga; }
+EMSCRIPTEN_KEEPALIVE void lr_mudas(unsigned m) { kof_mudas = m; }    // bit por canal: 1 = mudo
+EMSCRIPTEN_KEEPALIVE int16_t* lr_onda() { return kof_onda; }         // canal c, amostra i: kof_onda[c * 4096 + i] (32 kHz, anel)
+EMSCRIPTEN_KEEPALIVE unsigned lr_onda_pos() { return kof_ondaPos; }
+
 EMSCRIPTEN_KEEPALIVE void* lr_alloc(size_t n) { return malloc(n); }
 
 EMSCRIPTEN_KEEPALIVE void lr_init() {

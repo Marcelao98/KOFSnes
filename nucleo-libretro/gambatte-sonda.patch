@@ -1,0 +1,77 @@
+diff --git a/libgambatte/src/sound.cpp b/libgambatte/src/sound.cpp
+index ecd6832..95cdbf2 100644
+--- a/libgambatte/src/sound.cpp
++++ b/libgambatte/src/sound.cpp
+@@ -21,6 +21,15 @@
+ #include <cstring>
+ #include <algorithm>
+ 
++/* KOFnes: sonda do osciloscópio (a ponte do KOFnes lê e liga) */
++extern "C" {
++   int kof_sonda = 0;
++   unsigned kof_mudas = 0;
++   int16_t kof_onda[4 * 4096];
++   unsigned kof_ondaPos = 0;
++   int kof_canais = 4;
++}
++
+ /*
+ 	Frame Sequencer
+ 
+@@ -98,10 +107,52 @@ namespace gambatte
+    {
+       uint_least32_t *const buf = buffer_ + bufferPos_;
+       std::memset(buf, 0, cycles * sizeof(uint_least32_t));
+-      ch1_.update(buf, soVol_, cycles);
+-      ch2_.update(buf, soVol_, cycles);
+-      ch3_.update(buf, soVol_, cycles);
+-      ch4_.update(buf, soVol_, cycles);
++      if (!kof_sonda && !kof_mudas) {
++         ch1_.update(buf, soVol_, cycles);
++         ch2_.update(buf, soVol_, cycles);
++         ch3_.update(buf, soVol_, cycles);
++         ch4_.update(buf, soVol_, cycles);
++         return;
++      }
++      /* KOFnes: cada canal num buffer próprio (osciloscópio e mudo por canal da jukebox).
++       * O buffer é de "degraus" (deltas) a 2 MHz: soma no buffer de saída se o canal não estiver mudo
++       * e, com a sonda ligada, integra e guarda 1 a cada 64 ciclos (32 kHz) em kof_onda */
++      static uint_least32_t tmp[4096];
++      static uint_least32_t soma[4] = { 0x8000, 0x8000, 0x8000, 0x8000 };
++      static unsigned fase = 0;
++      unsigned long feito = 0;
++      while (feito < cycles) {
++         unsigned long n = std::min(cycles - feito, 4096ul);
++         unsigned f0 = fase;
++         for (int c = 0; c < 4; c++) {
++            std::memset(tmp, 0, n * sizeof(uint_least32_t));
++            switch (c) {
++               case 0: ch1_.update(tmp, soVol_, n); break;
++               case 1: ch2_.update(tmp, soVol_, n); break;
++               case 2: ch3_.update(tmp, soVol_, n); break;
++               default: ch4_.update(tmp, soVol_, n); break;
++            }
++            if (!(kof_mudas >> c & 1))
++               for (unsigned long i = 0; i < n; i++) buf[feito + i] += tmp[i];
++            /* o nível absoluto depende de onde o estado começou (o JS tira a média): só a forma importa */
++            uint_least32_t s = soma[c];
++            unsigned ff = f0, pos = kof_ondaPos;
++            for (unsigned long i = 0; i < n; i++) {
++               s += tmp[i];
++               if (++ff == 64) {
++                  ff = 0;
++                  if (kof_sonda) {
++                     int esq = (int16_t)((s ^ 0x8000) & 0xFFFF), dir = (int16_t)(s >> 16);
++                     kof_onda[c * 4096 + pos] = (int16_t)((esq + dir) / 2);
++                     pos = (pos + 1) & 4095;
++                  }
++               }
++            }
++            soma[c] = s;
++            if (c == 3) { fase = ff; kof_ondaPos = pos; }
++         }
++         feito += n;
++      }
+    }
+ 
+    void PSG::generateSamples(unsigned long const cycleCounter, bool const doubleSpeed)

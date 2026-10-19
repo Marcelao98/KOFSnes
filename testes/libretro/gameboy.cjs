@@ -1,6 +1,6 @@
 // Game Boy no app (Gambatte em WebAssembly): abre uma ROM .gb/.gbc no KOFnes.html (PC) e no KOFnes-android.html
 // (celular com toque), confere tamanho da tela (160x144), imagem, áudio na taxa do núcleo, botões, controle virtual só
-// com A/B/Start/Select, menu rápido sem "Guardar esta música", rótulo na biblioteca e que o SNES continua abrindo.
+// com A/B/Start/Select, menu rápido com "Guardar esta música", rótulo na biblioteca e que o SNES continua abrindo.
 //   node testes/libretro/gameboy.cjs dist/web rom.gb rom.sfc saida/
 // Use só ROM de teste LIVRE (ex.: dmg-acid2 / cgb-acid2).
 const { chromium } = require('playwright');
@@ -46,7 +46,7 @@ const [,, pasta, romGb, romSnes, saida = '/tmp'] = process.argv;
       await p.keyboard.press('F2');
     }
     await p.waitForTimeout(300);
-    r.menuSemMusica = await p.evaluate(() => ![...document.querySelectorAll('#rapido-lista li')].some((l) => !l.hidden && /Guardar esta música/.test(l.textContent)));
+    r.menuComMusica = await p.evaluate(() => [...document.querySelectorAll("#rapido-lista li")].some((l) => !l.hidden && /Guardar esta música/.test(l.textContent)));
     // savestate e carregar
     r.estado = await p.evaluate(async () => { const E = KofEstado, s = KOFnes.nucleo(), o = E.capturar(s); E.restaurar(s, o); return o.lr; });
     await p.keyboard.press('Escape');

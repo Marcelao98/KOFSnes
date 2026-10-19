@@ -9,7 +9,7 @@
 const KofEstado = (() => {
   'use strict';
   // rom: não muda; frame e outBuf: o próximo quadro refaz
-  const PULAR = new Set(['rom', 'frame', 'outBuf']);
+  const PULAR = new Set(['rom', 'frame', 'outBuf', 'onda']);   // onda: osciloscópio da jukebox
   const TIPOS = { Int32Array, Uint8Array, Int16Array, Uint16Array, Int8Array, Uint32Array, Float32Array, Float64Array };
   function b64(u8) {
     let s = '';

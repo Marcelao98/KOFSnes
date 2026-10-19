@@ -564,6 +564,29 @@ body[data-moldura="fliperama"] .mold-extra::after {    /* painel: alavanca + 6 b
 .jk-voz.muda { opacity: .35; }
 .jk-voz.muda span::after { content: " ✕"; }
 .jk-lado { display: flex; flex-direction: column; min-height: 0; }
+/* jukebox: modo Ondas (osciloscópio). A coluna da música cresce e a capa e as barras somem */
+.jk-vista { display: flex; gap: 6px; align-items: center; margin: 4px 0; flex-wrap: wrap; justify-content: center; }
+.jk-vista button { font: inherit; font-size: 13px; padding: 4px 10px; background: var(--painel2); color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); cursor: pointer; }
+.jk-vista button.ativo { background: var(--destaque); color: var(--painel); border-color: var(--destaque); }
+.jk-vista select { font: inherit; font-size: 12px; background: var(--painel2); color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); padding: 3px; }
+.jk:not(.ondas) #jk-estilo { display: none; }
+.jk.ondas { grid-template-columns: minmax(0, 1fr) 280px; }
+.jk.ondas .jk-capa, .jk.ondas #jk-vozes, .jk.ondas #jk-vozes-dica { display: none; }
+.jk.ondas .jk-tocando { align-items: stretch; }
+.jk.ondas .jk-tocando h2, .jk.ondas .jk-tocando > .dica, .jk.ondas .jk-controles { align-self: center; }
+#jk-ondas { flex: 1; width: 100%; min-height: 260px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: minmax(56px, 1fr); gap: 8px; margin-top: 6px; }
+.jk-canal { position: relative; background: var(--painel2); border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; transition: opacity .2s; }
+.jk-canal canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.jk-canal-rot { position: absolute; left: 8px; top: 5px; display: flex; gap: 8px; align-items: baseline; pointer-events: none; text-align: left; }
+.jk-canal-rot b { font-size: 12px; }
+.jk-canal-rot span { font-size: 11px; color: var(--texto); opacity: .7; white-space: nowrap; }
+@container (max-width: 260px) { .jk-canal-rot span { display: none; } }
+.jk-canal { container-type: inline-size; }
+.jk-canal-acoes { position: absolute; right: 6px; top: 4px; display: flex; gap: 4px; }
+.jk-canal-acoes button { font: 11px var(--fonte); background: transparent; color: var(--texto); border: 1px solid var(--borda); border-radius: 4px; padding: 1px 7px; cursor: pointer; }
+.jk-canal-acoes button.ativo { background: var(--destaque); color: var(--painel); border-color: var(--destaque); }
+.jk-canal.apagado { opacity: .35; }
+.jk-canal.solo { outline: 2px solid var(--destaque); }
 #jk-lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
 .jk-grupo { padding: 10px 8px 4px; font-size: 12px; font-weight: 700; color: var(--fraco); text-transform: uppercase; letter-spacing: 1px; }
 .jk-faixa { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: var(--raio); cursor: pointer; }
@@ -576,7 +599,7 @@ body[data-moldura="fliperama"] .mold-extra::after {    /* painel: alavanca + 6 b
 .jk-acoes .x { font-size: 14px; }
 #st-juke { display: flex; align-items: center; gap: 4px; }
 #st-juke .x { font-size: 13px; color: inherit; }
-@media (max-width: 760px) { .jk { grid-template-columns: 1fr; } .jk-capa { width: 140px; height: 140px; } }
+@media (max-width: 760px) { .jk, .jk.ondas { grid-template-columns: 1fr; grid-auto-rows: auto; align-content: start; overflow-y: auto; } .jk-tocando, .jk-lado { overflow: visible; min-height: auto; } .jk-capa { width: 140px; height: 140px; } #jk-ondas { flex: none; min-height: 0; grid-template-columns: 1fr; grid-auto-rows: 72px; } }
 #bib-estado { margin: 6px 2px 0; font-size: 12px; }
 /* sofá: cada linha da grade tem a altura do cartão. Sem isto, com muitos jogos a
    grade (altura fixa) espremia os cartões até sumirem (item com overflow:hidden

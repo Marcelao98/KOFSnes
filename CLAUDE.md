@@ -167,6 +167,19 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   núcleos que não são do SNES (Gambatte, ~870 KB); SNES no PC continua no núcleo Kof (`novoNucleo`); `CELULAR` agora é só a
   classe do html. Gancho de teste `KOFnes.nucleo()`. Teste: `node testes/libretro/gameboy.cjs dist/web rom.gb rom.sfc prints/`.
   APK da branch: `android/apk/KOFnes.apk` (link raw na branch `multi-sistema`). Falta: o Marcelo testar no celular e no PC.
+- **Jukebox pra todos os sistemas + osciloscópio (branch `multi-sistema`):** a vista padrão continua a de antes (capa +
+  barras), agora com 8 barras no SNES e 4 no Game Boy (Pulso 1, Pulso 2, Onda, Ruído). Modo extra **〰 Ondas** (botão na
+  jukebox, lembrado em `kofnes.jkVista`): uma faixa por canal com a forma da onda (gatilho na subida, 18 ms), cores do
+  `--destaque` do tema, estilo pelo tema (`ESTILO_TEMA` no app.js: fio/neon/preenchido/pixel; tema sem entrada: claro =
+  preenchido, escuro = fio; `kofnes.jkEstilo` troca), **Mudo** e **Solo** por faixa (`juke.mudas`, `juke.solo`,
+  `mudasEfetivas()`). `juke.apu` virou um "tocador" (`tocadorSnes(apu)` ou `KofLibretro.tocador(sis, rom, estado)`):
+  `encher/limpar/mudas/onda(v)/nivel/taxa/canais/nomes`. Música do Game Boy = **música por estado** (`reg.sistema`,
+  `reg.lr` = savestate do Gambatte em base64; toca numa instância SEPARADA do núcleo, sem imagem e sem botão; a ROM vem da
+  loja `roms` pelo `jogoId`; sem ROM na biblioteca = aviso). Sonda: SNES em `snes/Dsp.kf` (`onda` 8x2048, `ondaPos`,
+  `sonda`; fora do savestate pelo `PULAR` do estado.js); Game Boy pelo remendo `nucleo-libretro/gambatte-sonda.patch`
+  (cada canal num buffer próprio, `kof_onda` 4x4096 a 32 kHz, `kof_mudas`), lido pela ponte (`lr_canais/lr_sonda/lr_mudas/
+  lr_onda/lr_onda_pos`, símbolos fracos nos núcleos sem remendo). Teste: `node testes/libretro/jukebox.cjs dist/web rom.gb
+  rom.sfc prints/` (ROM de GB com som: dá pra gerar uma de teste escrevendo nos registradores NR10–NR52).
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;
