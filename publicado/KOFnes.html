@@ -714,6 +714,7 @@ body.rebobinando #tela { animation: rebob-cinza .22s steps(2, jump-none) infinit
 
 /* showcase dos temas: troca suave de cor e a barrinha com o nome do tema */
 html.showcase *, html.showcase *::before, html.showcase *::after { transition: background-color .7s, color .7s, border-color .7s, box-shadow .7s; }
+html.showcase-rapido *, html.showcase-rapido *::before, html.showcase-rapido *::after { transition-duration: .22s; }
 #showcase { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 10px;
   padding: 8px 14px; max-width: 94vw; flex-wrap: wrap; justify-content: center; background: var(--painel); color: var(--texto);
   border: 1px solid var(--borda); border-radius: var(--raio); box-shadow: var(--brilho, 0 4px 18px #0008); }
@@ -915,20 +916,18 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
 }
 [data-tema="globinho"] .janela, [data-tema="globinho"] .sub, [data-tema="globinho"] #rapido { border: 3px solid #ffd400; }
 [data-tema="lanhouse"] {
-  --fundo: #050a06; --painel: #0b140d; --painel2: #121f15; --texto: #c9f7c9; --fraco: #7fb589;
-  --destaque: #39ff6a; --borda: #1f4a2a; --sel: #174a26; --tela-borda: #39ff6a;
-  --fonte: "Consolas", "Lucida Console", "DejaVu Sans Mono", monospace; --caixa: uppercase; --raio: 0px; --brilho: 0 0 22px #39ff6a1c, 0 10px 30px #000c;
-  --fundo-img: repeating-linear-gradient(0deg, #39ff6a0b 0 1px, transparent 1px 3px), radial-gradient(ellipse 80% 70% at 50% 40%, #39ff6a10, transparent 75%);
+  --fundo: #141a10; --painel: #2b3326; --painel2: #2f3829; --texto: #ffc247; --fraco: #cfc38a;
+  --destaque: #ffd770; --borda: #6e7a62; --sel: #46533b; --tela-borda: #ffb000;
+  --fonte: Tahoma, Verdana, "Segoe UI", sans-serif; --caixa: none; --raio: 0px; --brilho: 0 8px 24px #000c;
+  --fundo-img: repeating-linear-gradient(0deg, #00000026 0 1px, transparent 1px 3px), radial-gradient(ellipse 80% 70% at 50% 40%, #ffb0000f, transparent 75%);
 }
-[data-tema="lanhouse"] .titulo-j { border-bottom: 1px solid #39ff6a; letter-spacing: .08em; }
 [data-tema="orkutmsn"] {
-  --fundo: #1c1240; --painel: #2a1a66; --painel2: #36237f; --texto: #f3eeff; --fraco: #bfb0f0;
-  --destaque: #5cc8ff; --borda: #5a46b8; --sel: #4a35a0; --tela-borda: #5cc8ff;
-  --botao-fundo: #ff5fb0; --botao-texto: #1c1240;
-  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 10px; --brilho: 0 8px 28px #0009;
-  --fundo-img: radial-gradient(circle at 15% 10%, #5b34c966 0, transparent 45%), radial-gradient(circle at 85% 90%, #2f7be055 0, transparent 45%), linear-gradient(#1c1240, #170e36);
+  --fundo: #cfe3f7; --painel: #ffffff; --painel2: #eaf3fc; --texto: #10305a; --fraco: #46658f;
+  --destaque: #b81c70; --borda: #8fb4de; --sel: #cfe3fb; --tela-borda: #3cb44b;
+  --botao-fundo: #1f6ad0; --botao-texto: #ffffff;
+  --fonte: Tahoma, "Segoe UI", Verdana, sans-serif; --caixa: none; --raio: 8px; --brilho: 0 6px 18px #1f6ad033;
+  --fundo-img: radial-gradient(ellipse 70% 40% at 50% -10%, #ffffffcc, transparent 70%), linear-gradient(#d6e8f9, #bcd7f1);
 }
-[data-tema="orkutmsn"] .titulo-j { background: linear-gradient(90deg, #5b34c9, #2f7be0); color: #fff; border-bottom-color: #5cc8ff; }
 [data-tema="dvdcamelo"] {
   --fundo: #0a0a0c; --painel: #151518; --painel2: #1f1f24; --texto: #f1f1f5; --fraco: #a8a8b4;
   --destaque: #ff4a4a; --borda: #5a5a66; --sel: #2c2c34; --tela-borda: #c8c8d2;
@@ -1058,13 +1057,14 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
   --fundo-img: radial-gradient(ellipse 50% 40% at 85% 0%, #b36bff30, transparent 70%), radial-gradient(ellipse 50% 40% at 10% 100%, #3ec6ff22, transparent 70%);
 }
 [data-tema="folhas"] {
-  --fundo: #e9d9b8; --painel: #f6ecd4; --painel2: #fdf6e4; --texto: #1a1a1a; --fraco: #5a4f38;
-  --destaque: #b04a05; --borda: #b9a47a; --sel: #f2d49a; --tela-borda: #2f7d32;
-  --botao-fundo: #1a1a1a; --botao-texto: #f6ecd4;
-  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 3px; --brilho: 0 8px 22px #3a2a1a30;
-  --fundo-img: repeating-radial-gradient(circle at 100% 0, #00000009 0 2px, transparent 2px 22px);
+  --fundo: #ff9a2e; --painel: #ffe2b8; --painel2: #fff3dc; --texto: #101828; --fraco: #2a2f55;
+  --destaque: #1d3fa8; --borda: #101828; --sel: #ffc266; --tela-borda: #1d3fa8;
+  --botao-fundo: #1d3fa8; --botao-texto: #ffffff;
+  --fonte: "Trebuchet MS", "Segoe UI", sans-serif; --caixa: none; --raio: 6px; --brilho: 4px 4px 0 #101828;
+  --fundo-img: repeating-radial-gradient(circle at 92% 8%, #10182822 0 3px, transparent 3px 14px), linear-gradient(#ffa63e, #ff8a1a);
 }
-[data-tema="folhas"] .titulo-j { background: #1a1a1a; color: #ffb15c; border-bottom-color: #2f7d32; }
+[data-tema="folhas"] .janela, [data-tema="folhas"] .sub, [data-tema="folhas"] #rapido { border: 2px solid #101828; }
+[data-tema="folhas"] .titulo-j { background: #1d3fa8; color: #ffffff; border-bottom: 4px solid #c8ccd4; }
 [data-tema="mar"] {
   --fundo: #062a4a; --painel: #0b3d66; --painel2: #11507f; --texto: #fdf3d6; --fraco: #b4d3ee;
   --destaque: #ffcf4a; --borda: #2a7ab5; --sel: #1a5f94; --tela-borda: #e0352b;
@@ -1082,12 +1082,14 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
 }
 [data-tema="alquimia"] .titulo-j { border-bottom: 2px solid #c9ced6; }
 [data-tema="cadernomorte"] {
-  --fundo: #ececec; --painel: #ffffff; --painel2: #f6f6f6; --texto: #0d0d0d; --fraco: #4d4d4d;
-  --destaque: #b3121f; --borda: #bcbcbc; --sel: #dcdcdc; --tela-borda: #0d0d0d;
-  --fonte: "Times New Roman", Georgia, serif; --caixa: uppercase; --raio: 0px; --brilho: 0 6px 18px #0000001c;
-  --fundo-img: linear-gradient(#ececec, #e2e2e2);
+  --fundo: #080808; --painel: #141414; --painel2: #1d1d1d; --texto: #f4f4f4; --fraco: #a9a9a9;
+  --destaque: #ff5258; --borda: #5a5a5a; --sel: #2a2a2a; --tela-borda: #f4f4f4;
+  --botao-fundo: #c4121a; --botao-texto: #ffffff;
+  --fonte: "Old English Text MT", "UnifrakturMaguntia", "Times New Roman", Georgia, serif; --caixa: none; --raio: 0px; --brilho: 0 10px 30px #000d;
+  --fundo-img: linear-gradient(90deg, transparent 34px, #ffffff1c 34px 35px, transparent 35px), radial-gradient(ellipse 60% 40% at 80% 0%, #ef2b3322, transparent 70%), repeating-linear-gradient(45deg, #ffffff05 0 1px, transparent 1px 5px);
 }
-[data-tema="cadernomorte"] .titulo-j { background: #0d0d0d; color: #ffffff; border-bottom: 2px solid #b3121f; letter-spacing: .12em; }
+[data-tema="cadernomorte"] .janela, [data-tema="cadernomorte"] .sub, [data-tema="cadernomorte"] #rapido { border: 1px solid #5a5a5a; }
+[data-tema="cadernomorte"] .titulo-j { background: #f4f4f4; color: #080808; border-bottom: 3px solid #ef2b33; letter-spacing: .08em; text-transform: uppercase; }
 [data-tema="lamina"] {
   --fundo: #f7f7f5; --painel: #ffffff; --painel2: #f0f0ee; --texto: #101010; --fraco: #505050;
   --destaque: #b84400; --borda: #101010; --sel: #ffd9b8; --tela-borda: #ff7a1a;
@@ -1454,6 +1456,19 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
   --fonte: Georgia, "Times New Roman", serif; --caixa: none; --raio: 8px; --brilho: 0 8px 28px #000a;
   --fundo-img: radial-gradient(ellipse 60% 35% at 50% -8%, #e6b84a2e, transparent 70%), repeating-linear-gradient(90deg, #3fb88a08 0 2px, transparent 2px 60px);
 }
+[data-tema="orkutmsn"] .janela, [data-tema="orkutmsn"] .sub, [data-tema="orkutmsn"] #rapido { border: 1px solid #6f9ad0; box-shadow: inset 0 1px 0 #fff, var(--brilho); }
+[data-tema="orkutmsn"] .titulo-j { background: linear-gradient(#7db6f2 0, #3a82db 48%, #2468c4 50%, #3c8be6 100%); color: #ffffff; border-bottom: 1px solid #1d57a6; text-shadow: 0 1px 1px #0a2f6a99; }
+[data-tema="orkutmsn"] .titulo-j::before { content: "● "; color: #6ee26e; }
+[data-tema="lanhouse"] .janela, [data-tema="lanhouse"] .sub, [data-tema="lanhouse"] #rapido { border: 1px solid #6e7a62; box-shadow: inset 1px 1px 0 #8a9680, inset -1px -1px 0 #11150d, var(--brilho); }
+[data-tema="lanhouse"] .titulo-j { background: #11150d; color: #ffc247; border-bottom: 1px solid #6e7a62; letter-spacing: .04em; }
+[data-tema="lanhouse"] .previa .pv-tela { border-style: solid; }
+[data-tema="clube"] {
+  --fundo: #2b1710; --painel: #3d2418; --painel2: #4d2f20; --texto: #f3e3c8; --fraco: #cdb391;
+  --destaque: #e8b04a; --borda: #7a4a30; --sel: #5a3422; --tela-borda: #e8b04a;
+  --fonte: Georgia, "Times New Roman", serif; --caixa: none; --raio: 6px; --brilho: 0 8px 28px #000a;
+  --fundo-img: linear-gradient(transparent 78%, #9a4a2a40 78% 84%, #6a3a2440 84%), radial-gradient(ellipse 60% 35% at 50% 0%, #e8b04a24, transparent 70%), repeating-linear-gradient(0deg, #f3e3c807 0 1px, transparent 1px 4px);
+}
+[data-tema="clube"] .titulo-j { border-bottom: 2px solid #e8b04a; font-style: italic; }
 
 </style>
 </head>
@@ -1762,7 +1777,8 @@ html.showcase *, html.showcase *::before, html.showcase *::after { transition: b
       <div id="temas-cats"></div>
     </div>
     <div id="grade-temas"></div>
-    <button class="grande sec" data-acao="showcase">▶ Showcase: passar todos os temas sozinho</button>
+    <button class="grande sec" data-acao="showcase">▶ Showcase lento: um tema a cada 3,5 s</button>
+    <button class="grande sec" data-acao="showcase-rapido">⚡ Showcase rápido: meio segundo por tema</button>
     <p class="dica">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p>
   </section>
 
@@ -11202,7 +11218,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610182330 · a4b6c69', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610190001 · ae410ac', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   const b = semCombo(estado());
@@ -12094,8 +12110,8 @@ const FRASES = {
   classico98: 'Bem-vindo ao KOFnes 98. Clique em Iniciar… digo, em Jogar.', luna: 'Seu emulador está pronto. Sem clipe de papel.',
   mensageiro: '🟢 KOFnes ficou online.', rosa2004: 'Você tem 1 recado novo: "bora jogar?"', terminal: '> kofnes --jogar_',
   vapor: 'ｋｏｆｎｅｓ　ａｅｓｔｈｅｔｉｃ', web1: '🚧 Bem-vindo à minha homepage!!! Você é o visitante nº 000427 🚧',
-  esferas: 'Junte as 7 esferas… ou só jogue mesmo.', unidade01: 'Entre no robô… digo, no jogo.', lua: 'Em nome da lua, vamos jogar!',
-  dourado: 'Eleve seu cosmo e aperte Start.', pokebola: 'Um jogo selvagem apareceu!', floresta: 'Um bom lugar pra se perder num jogo.',
+  esferas: "Seu poder de jogo passa de 9 mil!", unidade01: 'Entre no robô… digo, no jogo.', lua: 'Em nome da lua, vamos jogar!',
+  dourado: "Queime o seu cosmo!", pokebola: 'Um jogo selvagem apareceu!', floresta: 'Um bom lugar pra se perder num jogo.',
   espresso: 'Curto, forte e sem açúcar.', cappuccino: 'Com espuma e tudo.', latte: 'Leve, cremoso e sem pressa.', mocha: 'Café com chocolate: fase boa.',
   caramelo: 'Doce o bastante pra mais uma fase.', coldbrew: 'Devagar, gelado e no ponto.', canela: 'Um cheirinho de canela e bora.',
   sessao: "Hoje tem filme e pipoca.",
@@ -12118,23 +12134,24 @@ const FRASES = {
   mp3: "Faixa 01 · Repetir tudo",
   gibi: "Edição especial · 52 páginas",
   interior: "Praça vazia, poste aceso.",
+  clube: "Travessia: pé na estrada e o jogo na mão.",
   detetive: "Não vim parar no outro mundo por querer… foi o jogo.",
-  folhas: "Acredite! (e salve o jogo).",
-  mar: "Rumo ao tesouro!",
+  folhas: "Esse é o meu jeito ninja!",
+  mar: "Eu vou ser o Rei dos Piratas… do ranking!",
   alquimia: "Troca equivalente: um save por uma fase.",
-  cadernomorte: "Ele escreve. Você joga.",
-  lamina: "Corte limpo, contraste total.",
-  digital: "Evolua! Salvou? Então evolua.",
-  cartas: "Libere o poder do jogo!",
-  cacadores: "Quem sabe o que tem lá no fim?",
-  respiracao: "Concentre a respiração. Só mais uma fase.",
-  maldicao: "Expansão de domínio.",
+  cadernomorte: "Este mundo está podre… e cabe a nós curá-lo. Agora, vai jogar!",
+  lamina: "Bankai! Hora de jogar a sério.",
+  digital: "Digievolua! Hora do jogo.",
+  cartas: "Chave mágica, mostre o seu poder!",
+  cacadores: "Eu vou ser um Hunter… dos jogos!",
+  respiracao: "Respiração da Chama: aperte Start!",
+  maldicao: "Em todo o céu e terra, só eu sou o melhor jogador.",
   motosserra: "Puxa a cordinha.",
-  alem: "Sem pressa. Ainda há muito a jogar.",
-  familia: "Operação: noite de jogos.",
+  alem: "Já vivi mil anos. Dá tempo de zerar esse jogo.",
+  familia: "Waku waku! Noite de jogos em família.",
   caos: "Alienígena ou fantasma? Os dois.",
-  trem: "Próxima parada: o outro lado.",
-  mononoke: "Respeite a floresta. Salve o jogo.",
+  trem: "Não esqueça o seu nome. E salve o jogo.",
+  mononoke: "Vivam! E não esqueçam de salvar.",
   tropicalia: "É proibido proibir… de jogar.",
   bossa: "Calma, o jogo espera.",
   samba: "Roda formada, bora jogar.",
@@ -12155,23 +12172,23 @@ const FRASES = {
   baiana: "Axé, fita e tabuleiro.",
   junina: "Olha a fogueira!",
   carnaval: "Bloco na rua, jogo na mão.",
-  smw: "Yoshi, bora?",
-  alttp: "É perigoso ir sozinho!",
+  smw: "It’s-a me! Vamos jogar?",
+  alttp: "É perigoso ir sozinho! Leve este jogo.",
   metroid: "O planeta está em silêncio.",
-  dkc: "Banana pra todo mundo.",
-  mmx: "Reploid detectado.",
+  dkc: "Ele é o rei da selva, e agora o jogo é seu.",
+  mmx: "Maverick Hunter na área. Hora de jogar.",
   chrono: "O tempo está ao seu favor.",
   ff6: "A ópera começa em instantes.",
-  earthbound: "Hoje o dia está esquisito.",
+  earthbound: "Ok! O Ness pegou o controle.",
   kirby: "Poyo!",
-  fzero: "Largada em 3, 2, 1…",
-  starfox: "Faça uma rolagem!",
+  fzero: "Show me your moves!",
+  starfox: "Faça uma rolagem! (Do a barrel roll!)",
   cv4: "A noite pertence a eles.",
-  contra: "Prepare-se para o pior.",
-  sf2: "Round 1: lutar!",
-  mk: "Termine-o!",
+  contra: "↑↑↓↓←→←→ B A: 30 vidas!",
+  sf2: "Hadouken! Round 1: lutar!",
+  mk: "Termine-o! Fatality!",
   mana: "Uma árvore, uma espada, uma aventura.",
-  mariokart: "Pé no fundo!",
+  mariokart: "Cuidado com a casca de banana!",
   yoshi: "Tudo desenhado a lápis de cor.",
   ghouls: "Cavaleiro de cueca, de novo.",
   terranigma: "A Terra recomeça com você.",
@@ -12190,7 +12207,7 @@ const FRASES = {
   panda: "Bambu, calma e um joguinho.",
   flamingo: "Numa perna só e jogando.",
 };
-const LOGOS = { smw: '🍄', alttp: '🗡️', metroid: '🛸', dkc: '🍌', mmx: '🤖', chrono: '⏳', ff6: '⚙️', earthbound: '🎈', kirby: '⭐', fzero: '🏎️', starfox: '🦊', cv4: '🦇', contra: '💥', sf2: '👊', mk: '🐉', mana: '🌱', mariokart: '🏁', yoshi: '🥚', ghouls: '🪦', terranigma: '🌍', tropicalia: '🌺', bossa: '🎸', samba: '🪘', choro: '🪕', frevo: '☂️', maracatu: '👑', cordel: '📜', azulejo: '🔷', modernismo: '🟨', brasilia: '🏛️', mataatlantica: '🌿', amazonica: '🌴', sertao: '🌵', pantanal: '🐊', cerrado: '🌾', litoral: '🌊', ouropreto: '⛪', baiana: '🥥', junina: '🔥', carnaval: '🎊', detetive: '👁️', folhas: '🍃', mar: '🏴‍☠️', alquimia: '⚗️', cadernomorte: '📓', lamina: '⚔️', digital: '🧬', cartas: '🌸', cacadores: '🎣', respiracao: '🔥', maldicao: '🌀', motosserra: '🪚', alem: '✨', familia: '🥂', caos: '👽', trem: '🚂', mononoke: '🌲', sessao: '📺', globinho: '🖍️', lanhouse: '🖥️', orkutmsn: '💬', dvdcamelo: '📀', locadora: '📼', caderno: '📓', recreio: '🍬', boteco: '🍺', chuva: '🌧️', almoco: '🍲', feira: '🍅', brasil98: '🛰️', hexa2002: '⚽', ferias: '🏖️', juninaescola: '🎏', casavo: '🧶', mp3: '🎧', gibi: '🦸', interior: '🏘️', encanador: '🍄', heroi: '🗡️', cacadora: '🚀', corredor: '💨', blocos: '🧱', arena: '🥊', onca: '🐆', arara: '🦜', capivara: '🦫', gato: '🐈‍⬛', raposa: '🦊', panda: '🐼', flamingo: '🦩', cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
+const LOGOS = { clube: '🎶', smw: '🍄', alttp: '🗡️', metroid: '🛸', dkc: '🍌', mmx: '🤖', chrono: '⏳', ff6: '⚙️', earthbound: '🎈', kirby: '⭐', fzero: '🏎️', starfox: '🦊', cv4: '🦇', contra: '💥', sf2: '👊', mk: '🐉', mana: '🌱', mariokart: '🏁', yoshi: '🥚', ghouls: '🪦', terranigma: '🌍', tropicalia: '🌺', bossa: '🎸', samba: '🪘', choro: '🪕', frevo: '☂️', maracatu: '👑', cordel: '📜', azulejo: '🔷', modernismo: '🟨', brasilia: '🏛️', mataatlantica: '🌿', amazonica: '🌴', sertao: '🌵', pantanal: '🐊', cerrado: '🌾', litoral: '🌊', ouropreto: '⛪', baiana: '🥥', junina: '🔥', carnaval: '🎊', detetive: '👁️', folhas: '🍥', mar: '🏴‍☠️', alquimia: '⚗️', cadernomorte: '🍎', lamina: '⚔️', digital: '🧬', cartas: '🌸', cacadores: '🎣', respiracao: '🔥', maldicao: '🌀', motosserra: '🪚', alem: '✨', familia: '🥂', caos: '👽', trem: '🚂', mononoke: '🌲', sessao: '📺', globinho: '🖍️', lanhouse: '🎯', orkutmsn: '🦋', dvdcamelo: '📀', locadora: '📼', caderno: '📓', recreio: '🍬', boteco: '🍺', chuva: '🌧️', almoco: '🍲', feira: '🍅', brasil98: '🛰️', hexa2002: '⚽', ferias: '🏖️', juninaescola: '🎏', casavo: '🧶', mp3: '🎧', gibi: '🦸', interior: '🏘️', encanador: '🍄', heroi: '🗡️', cacadora: '🚀', corredor: '💨', blocos: '🧱', arena: '🥊', onca: '🐆', arara: '🦜', capivara: '🦫', gato: '🐈‍⬛', raposa: '🦊', panda: '🐼', flamingo: '🦩', cafe: '☕', espresso: '🖤', cappuccino: '🤎', latte: '🥛', mocha: '🍫', caramelo: '🍯', coldbrew: '🧊', canela: '🍂', escuro: '🌙', claro: '☀️', zsnes: '🕹️', super16: '🎮', portatil: '🔋', atomico: '💜', blast16: '⚡', cinza32: '💿',
   branco: '🤍', laminas: '🟢', neon: '🕹️', classico98: '🪟', luna: '🌄', mensageiro: '💬', rosa2004: '💌', terminal: '⌨️', vapor: '🌴',
   web1: '🚧', esferas: '⭐', unidade01: '🤖', lua: '🌙', dourado: '✨', pokebola: '🔴', floresta: '🌿', desenho: '📺', camelo: '🎁', brasil: '🇧🇷' };
 const DICAS = [
@@ -12360,11 +12377,11 @@ const TEMAS = [
     ['esferas', 'Esferas do Dragão', 'Laranja, azul e dourado de aventura e artes marciais.'],
     ['detetive', 'Detetive Espiritual', 'Verde profundo, azul elétrico e roxo do outro mundo.'],
     ['dourado', 'Cosmos Dourado', 'Azul cósmico, dourado e constelações discretas.'],
-    ['folhas', 'Folhas da Vila', 'Areia, preto e laranja de vila ninja, com um verde de folha.'],
+    ['folhas', 'Folhas da Vila', 'Laranja de macacão, azul de bandana e preto de ninja.'],
     ['mar', 'Mar de Aventuras', 'Azul oceânico, vermelho de bandana e ouro de tesouro.'],
     ['pokebola', 'Mundo Pokémon', 'Amarelo, vermelho e azul, alegre e cheio de energia.'],
     ['alquimia', 'Círculo da Alquimia', 'Vinho, aço e vermelho de círculo de transmutação.'],
-    ['cadernomorte', 'Caderno da Morte', 'Preto, branco e cinza, com um fio de vermelho.'],
+    ['cadernomorte', 'Caderno da Morte', 'Capa preta, etiqueta branca e a maçã vermelha.'],
     ['lamina', 'Lâmina Espiritual', 'Preto e branco de tinta, com laranja de lâmina.'],
     ['digital', 'Mundo Digital', 'Azul e verde digitais num painel claro de grade.'],
     ['cartas', 'Cartas Mágicas', 'Rosa, creme, lilás e um dourado delicado.'],
@@ -12380,14 +12397,12 @@ const TEMAS = [
     ['unidade01', 'Unidade 01', 'Roxo e verde de robô gigante, com alerta laranja.'],
     ['lua', 'Guerreira da lua', 'Rosa, azul e dourado de uma noite de lua cheia.'],
     ['floresta', 'Floresta encantada', 'Verdes fundos e luz de vaga-lume.']]],
-  ['Jogos', [['encanador', 'Mundo dos encanadores'], ['heroi', 'Herói de verde'], ['cacadora', 'Caçadora espacial'], ['corredor', 'Corredor azul'], ['blocos', 'Blocos que caem'], ['arena', 'Arena de luta']]],
   ['Animais', [['onca', 'Onça-pintada'], ['arara', 'Arara-azul'], ['capivara', 'Capivara zen'], ['gato', 'Gato preto'], ['raposa', 'Raposa'], ['panda', 'Panda'], ['flamingo', 'Flamingo']]],
-  ['Bem brasileiro', [['desenho', 'Manhã de desenho'], ['camelo', 'Console de camelô'], ['brasil', 'Brasil']]],
-  ['Nostalgia BR', [
+  ['Bem brasileiro', [['desenho', 'Manhã de desenho'], ['camelo', 'Console de camelô'], ['brasil', 'Brasil'],
     ['sessao', 'Sessão da Tarde', 'Azul de televisão, sol de tarde e laranja de VHS.'],
     ['globinho', 'TV Globinho', 'Azul elétrico, amarelo vibrante e vermelho de desenho animado.'],
-    ['lanhouse', 'Lan House 2007', 'Preto, verde de terminal e a luz de um monitor de tubo.'],
-    ['orkutmsn', 'Orkut & MSN', 'Roxo e azul com gradiente, de quando todo mundo tinha scrapbook.'],
+    ['lanhouse', 'Lan House 2007', 'Âmbar sobre verde-oliva de menu de FPS clássico e linhas de monitor de tubo.'],
+    ['orkutmsn', 'Orkut & MSN', 'Janela azul de mensageiro, rosa de rede social e bolinha verde: online.'],
     ['dvdcamelo', 'DVD de Camelô', 'Preto, prata e vermelho de capa de DVD e menu antigo.'],
     ['locadora', 'A Locadora', 'Azul-marinho, vinho e creme de capa de VHS.'],
     ['caderno', 'Caderno de Escola', 'Papel pautado, azul de caneta e margem vermelha.'],
@@ -12403,8 +12418,7 @@ const TEMAS = [
     ['casavo', 'Casa da Vó', 'Creme, madeira, verde antigo e a luz do abajur.'],
     ['mp3', 'MP3 & Fone de Ouvido', 'Prata metálico, preto e azul neon de tocador de MP3.'],
     ['gibi', 'Gibi da Banca', 'Vermelho, amarelo, azul e papel envelhecido de gibi.'],
-    ['interior', 'Cidade do Interior', 'Azul de anoitecer, laranja de poste e concreto de rua tranquila.']]],
-  ['Brasilidades', [
+    ['interior', 'Cidade do Interior', 'Azul de anoitecer, laranja de poste e concreto de rua tranquila.'],
     ['tropicalia', 'Tropicália', 'Verde, amarelo, rosa e cores psicodélicas de 1968.'],
     ['bossa', 'Bossa Nova', 'Creme, azul-petróleo e areia: minimalista e tranquilo.'],
     ['samba', 'Samba de Raiz', 'Vinho, dourado e madeira quente de roda de samba.'],
@@ -12424,7 +12438,8 @@ const TEMAS = [
     ['ouropreto', 'Ouro Preto', 'Pedra, terracota, creme e dourado envelhecido.'],
     ['baiana', 'Baiana', 'Branco, azul, vermelho e dourado da cultura baiana.'],
     ['junina', 'Festa Junina', 'Azul noturno, vermelho, amarelo e laranja de fogueira.'],
-    ['carnaval', 'Carnaval de Rua', 'Magenta, amarelo, verde e azul, vibrante e cheio de confete.']]],
+    ['carnaval', 'Carnaval de Rua', 'Magenta, amarelo, verde e azul, vibrante e cheio de confete.'],
+    ['clube', 'Clube da Esquina', 'MPB mineira: terra vermelha, sépia de foto antiga e a esquina de BH.']]],
   ['Clássicos do SNES', [
     ['smw', 'Super Mario World', 'Azul celeste, verde vivo e cores alegres de plataforma.'],
     ['alttp', 'The Legend of Zelda: A Link to the Past', 'Verde floresta, dourado e pergaminho de fantasia.'],
@@ -12445,7 +12460,8 @@ const TEMAS = [
     ['mariokart', 'Super Mario Kart', 'Vermelho, azul, amarelo e verde de pista e itens.'],
     ['yoshi', 'Yoshi\'s Island', 'Verde, rosa e amarelo de desenho feito à mão.'],
     ['ghouls', 'Super Ghouls \'n Ghosts', 'Roxo, cinza e azul noturno de fantasia sombria.'],
-    ['terranigma', 'Terranigma', 'Azul profundo, verde e dourado, épico e contemplativo.']]],
+    ['terranigma', 'Terranigma', 'Azul profundo, verde e dourado, épico e contemplativo.'],
+    ['encanador', 'Mundo dos encanadores', 'Céu azul, tijolo e cano de um mundo de plataforma.'], ['heroi', 'Herói de verde', 'Verde de floresta e dourado de relíquia, em clima de aventura.'], ['cacadora', 'Caçadora espacial', 'Escuro de nave com âmbar de visor de capacete.'], ['corredor', 'Corredor azul', 'Azul veloz e anéis dourados de um corredor sem freio.'], ['blocos', 'Blocos que caem', 'Cores primárias de peças que encaixam e descem.'], ['arena', 'Arena de luta', 'Preto, vermelho e dourado de arena de luta.']]],
 ];
 const TODOS_TEMAS = TEMAS.flatMap(([, l]) => l);
 document.querySelectorAll('.n-temas').forEach((e) => { e.textContent = TODOS_TEMAS.length; });
@@ -12509,28 +12525,29 @@ $('#grade-temas').addEventListener('mouseleave', () => {
 });
 $('#veu').addEventListener('click', () => acao('fechar-temas'));
 // ---------------- showcase dos temas ----------------
-// Botão na galeria: passa por todos os temas sozinho (3,5 s cada), pra mostrar o visual do KOFnes.
+// Dois botões na galeria: lento (3,5 s por tema, pra olhar) e rápido (0,5 s por tema, pra apresentar o KOFnes pros outros).
 // Esc ou "Parar" volta pro tema de antes; "Ficar com este" escolhe o que estiver na tela.
-let showTimer = 0, showI = 0, showLista = [];
+let showTimer = 0, showFim = 0, showI = 0, showLista = [];
 function passarTema() {
   const [id, nome] = showLista[showI % showLista.length]; showI++;
   experimentar(id);
   $('#showcase-nome').textContent = nome; $('#showcase-n').textContent = ((showI - 1) % showLista.length + 1) + '/' + showLista.length;
 }
-function iniciarShowcase() {
+function iniciarShowcase(ms = 3500) {
   if (showTimer) return;
+  clearTimeout(showFim);   // um Parar recente ainda ia tirar a classe do showcase novo
   if (!snes && telaAtual() === 'jogo') abrirHome();
   showLista = temasFiltrados().flatMap(([, l]) => l); if (!showLista.length) showLista = TODOS_TEMAS;   // respeita a categoria e a busca da galeria
   showI = Math.max(0, showLista.findIndex(([k]) => k === temaSalvo));
-  document.documentElement.classList.add('showcase'); $('#showcase').hidden = false;
-  passarTema(); showTimer = setInterval(passarTema, 3500);
+  document.documentElement.classList.add('showcase'); document.documentElement.classList.toggle('showcase-rapido', ms < 1000); $('#showcase').hidden = false;
+  passarTema(); showTimer = setInterval(passarTema, ms);
 }
 function pararShowcase(ficar) {
   if (!showTimer) return;
   clearInterval(showTimer); showTimer = 0; $('#showcase').hidden = true;
   const atual = document.documentElement.dataset.tema;
   if (ficar) { tema(atual); avisar('🎨 tema: ' + TODOS_TEMAS.find(([k]) => k === atual)[1]); } else experimentar(temaSalvo);
-  setTimeout(() => document.documentElement.classList.remove('showcase'), 700);
+  showFim = setTimeout(() => document.documentElement.classList.remove('showcase', 'showcase-rapido'), 700);
 }
 let temasVoltar = null;   // a janela que estava aberta (biblioteca...) volta quando a galeria fecha
 function abrirTemas() {
@@ -12625,7 +12642,8 @@ async function acao(a) {
       avisar(pausaAuto ? 'pausa ao sair da janela ligada' : 'pausa ao sair da janela desligada'); break;
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
     case 'temas': if ($('#temas').hidden) abrirTemas(); else fecharTemas(); break;
-    case 'showcase': fecharTemas(); iniciarShowcase(); break;
+    case 'showcase': fecharTemas(); iniciarShowcase(3500); break;
+    case 'showcase-rapido': fecharTemas(); iniciarShowcase(500); break;
     case 'showcase-parar': pararShowcase(false); break;
     case 'showcase-ficar': pararShowcase(true); break;
     case 'fechar-temas': fecharTemas(); if (!snes && telaAtual() === 'jogo') abrirHome(); break;
