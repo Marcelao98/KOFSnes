@@ -88,7 +88,7 @@
     if (c && c !== f.el && c.dataset.b !== 'dpad' && c.dataset.b !== 'menu') { soltar(e.pointerId); apertar(e.pointerId, c, e.clientX, e.clientY); }
   });
   for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) ctl.addEventListener(t, (e) => soltar(e.pointerId));
-  ctl.addEventListener('contextmenu', (e) => e.preventDefault());
+  ctl.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); });
   // saiu do app / abriu uma tela: solta tudo (senão o botão fica "preso")
   const soltarTudo = () => { for (const id of [...dedos.keys()]) soltar(id); toque = 0; };
   addEventListener('blur', soltarTudo); document.addEventListener('visibilitychange', () => { if (document.hidden) soltarTudo(); });

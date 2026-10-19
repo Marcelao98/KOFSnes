@@ -34,6 +34,11 @@ const MODELOS = ['classico', 'moderno', 'minimo', 'arcade', 'portatil', 'tema'];
   await toques([]);
   // deslizar de A pra B troca o botão
   await toques([[ax, ay]]); await move([[bx, by]]); r.deslizaAparaB = (await bits()) === 0x8000; await toques([]);
+  // toque longo: o app recebe "contextmenu"; só em cima da imagem do jogo abre o menu rápido, nunca nos botões
+  const longo = (sel) => p.evaluate((q) => { document.querySelector(q).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })); return new Promise((ok) => setTimeout(() => ok(!document.getElementById('rapido').hidden), 250)); }, sel);
+  r.toqueLongoNoBotaoNaoAbre = !(await longo('#ctl [data-b="A"]')) && !(await longo('#ctl [data-b="dpad"]'));
+  r.toqueLongoNoJogoAbre = await longo('#tela');
+  await p.evaluate(() => document.querySelector('#tela').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))); await p.waitForTimeout(300);   // fecha
   // texto de computador não pode aparecer nas telas (só o que está visível)
   const PC = /\bF\d{1,2}\b|Ctrl\+|Alt\+|Backspace|botão direito|arraste|mouse|teclado|duplo clique|setas navegam|Shift\+|Enter\b|\bEsc\b|modo sofá|Select\+/i;
   r.textoPC = {};

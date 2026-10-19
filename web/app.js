@@ -1423,6 +1423,8 @@ function fecharRapido() {
 addEventListener('contextmenu', (e) => {
   if (e.target.closest('input, textarea')) return;
   e.preventDefault();
+  // celular: o toque longo vira "botão direito"; só vale em cima da imagem do jogo (segurar um botão do controle, ou numa tela, não faz nada)
+  if (CELULAR && !e.target.closest('#tela, #moldura')) return;
   if (rapidoAberto) fecharRapido();
   else if (!$('#temas').hidden || !$('#bug').hidden) return;
   else if (telaAtual() !== 'jogo') voltar();

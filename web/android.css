@@ -44,19 +44,25 @@ html.celular #ctl * { touch-action: none; -webkit-user-select: none; user-select
 #ctl .cb {
   position: absolute; left: var(--x); top: var(--y); width: calc(var(--w) * var(--esc, 1)); height: calc(var(--h, var(--w)) * var(--esc, 1));
   transform: translate(-50%, -50%); display: grid; place-items: center; box-sizing: border-box;
-  background: var(--bg); color: var(--fg); border: var(--borda-cb, 2px solid transparent); border-radius: var(--rd, 50%);
-  font: 700 calc(var(--fs, 8) * calc(var(--u) * 1)) var(--fonte); letter-spacing: .03em; opacity: var(--opa, 1); text-transform: none;
-  box-shadow: var(--sombra, none); transition: transform .04s, filter .04s;
+  background: var(--bg); color: var(--fg); border: var(--borda-cb, 0); border-radius: var(--rd, 50%);
+  font: 800 calc(var(--fs, 8) * var(--u)) var(--fonte); letter-spacing: .04em; opacity: var(--opa, 1); text-transform: none;
+  box-shadow: var(--sombra, none); transition: transform .05s, box-shadow .05s, filter .05s;
 }
-#ctl .cb.on { filter: brightness(1.45) saturate(1.2); transform: translate(-50%, -50%) scale(.93); }
-#ctl .cb.on { background: var(--bg-on, var(--bg)); }
-#ctl .dpad { --rd: 50%; }
-#ctl .dpad i { position: absolute; background: var(--dp, var(--bg)); border: var(--dpb, 0); }
-#ctl .dpad .h { left: 4%; right: 4%; top: 34%; bottom: 34%; border-radius: var(--dpr, 12%); }
-#ctl .dpad .v { top: 4%; bottom: 4%; left: 34%; right: 34%; border-radius: var(--dpr, 12%); }
+#ctl .cb.on { transform: translate(-50%, -50%) scale(.94); filter: brightness(1.15) saturate(1.1); box-shadow: inset 0 4px 8px #000a, 0 1px 1px #0006 !important; }
+/* direcional: cruz com relevo, covinha no centro e setas nas pontas; o lado apertado acende */
+#ctl .dpad { --rd: 50%; filter: drop-shadow(0 3px 3px #0007); }
+#ctl .dpad i { position: absolute; border: var(--dpb, 0); box-sizing: border-box; }
+#ctl .dpad .h { left: 3%; right: 3%; top: 34%; bottom: 34%; border-radius: var(--dpr, 14%); background: var(--dph, var(--dp, #333)); }
+#ctl .dpad .v { top: 3%; bottom: 3%; left: 34%; right: 34%; border-radius: var(--dpr, 14%); background: var(--dpv, var(--dp, #333)); }
+#ctl .dpad::after { content: ""; position: absolute; left: 39%; top: 39%; width: 22%; height: 22%; border-radius: 50%; background: var(--covinha, radial-gradient(circle at 50% 38%, #0005, #0000 70%)); box-shadow: var(--covinha-sombra, inset 0 2px 3px #0008, 0 1px 0 #fff3); }
 #ctl .dpad .u, #ctl .dpad .d, #ctl .dpad .l, #ctl .dpad .r { background: transparent; border: 0; }
-#ctl .dpad .u { top: 4%; left: 34%; right: 34%; height: 30%; } #ctl .dpad .d { bottom: 4%; left: 34%; right: 34%; height: 30%; }
-#ctl .dpad .l { left: 4%; top: 34%; bottom: 34%; width: 30%; } #ctl .dpad .r { right: 4%; top: 34%; bottom: 34%; width: 30%; }
+#ctl .dpad .u { top: 3%; left: 34%; right: 34%; height: 31%; border-radius: var(--dpr, 14%) var(--dpr, 14%) 0 0; } #ctl .dpad .d { bottom: 3%; left: 34%; right: 34%; height: 31%; border-radius: 0 0 var(--dpr, 14%) var(--dpr, 14%); }
+#ctl .dpad .l { left: 3%; top: 34%; bottom: 34%; width: 31%; border-radius: var(--dpr, 14%) 0 0 var(--dpr, 14%); } #ctl .dpad .r { right: 3%; top: 34%; bottom: 34%; width: 31%; border-radius: 0 var(--dpr, 14%) var(--dpr, 14%) 0; }
+#ctl .dpad .u::before, #ctl .dpad .d::before, #ctl .dpad .l::before, #ctl .dpad .r::before { content: ""; position: absolute; background: var(--seta, #fff7); }
+#ctl .dpad .u::before { left: 22%; right: 22%; top: 24%; height: 40%; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+#ctl .dpad .d::before { left: 22%; right: 22%; bottom: 24%; height: 40%; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+#ctl .dpad .l::before { top: 22%; bottom: 22%; left: 24%; width: 40%; clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+#ctl .dpad .r::before { top: 22%; bottom: 22%; right: 24%; width: 40%; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 #ctl .dpad[data-dir~="u"] .u, #ctl .dpad[data-dir~="d"] .d, #ctl .dpad[data-dir~="l"] .l, #ctl .dpad[data-dir~="r"] .r { background: var(--on, #fff8); }
 #ctl .dpad .k { display: none; }
 /* menu, voltar no tempo, turbo */
@@ -70,8 +76,8 @@ html.celular #ctl * { touch-action: none; -webkit-user-select: none; user-select
 #ctl .ctl-mini, #ctl [data-b="dpad"] { --x: 27%; --y: 57%; --w: calc(var(--u) * 52); }
 #ctl [data-b="L"] { --x: 17%; --y: 10%; } #ctl [data-b="R"] { --x: 83%; --y: 10%; }
 #ctl [data-b="Select"] { --x: 40%; --y: 92%; } #ctl [data-b="Start"] { --x: 60%; --y: 92%; }
-#ctl [data-b="X"] { --x: 77%; --y: 38%; } #ctl [data-b="B"] { --x: 77%; --y: 76%; }
-#ctl [data-b="Y"] { --x: 64%; --y: 57%; } #ctl [data-b="A"] { --x: 90%; --y: 57%; }
+#ctl [data-b="X"] { --x: 75%; --y: 38%; } #ctl [data-b="B"] { --x: 75%; --y: 76%; }
+#ctl [data-b="Y"] { --x: 62%; --y: 57%; } #ctl [data-b="A"] { --x: 88%; --y: 57%; }
 #ctl .face { --w: calc(var(--u) * 20); }
 #ctl .menu, #ctl .rew, #ctl .turbo { --w: calc(var(--u) * 14); --y: 10%; }
 #ctl .rew { --x: 37%; } #ctl .menu { --x: 50%; } #ctl .turbo { --x: 63%; }
@@ -87,10 +93,10 @@ body.canhoto #ctl [data-b="L"] { --x: 83%; } body.canhoto #ctl [data-b="R"] { --
   html.celular body.cel-jogo #ctl .cb { pointer-events: auto; }
   html.celular body.cel-jogo #palco { padding: 14% 24% 6%; box-sizing: border-box; }   /* o jogo fica no meio, os botões nos lados */
   html.celular body.cel-jogo #ctl [data-b="dpad"] { --x: 11%; --y: 62%; }
-  html.celular body.cel-jogo #ctl [data-b="X"] { --x: 90%; --y: 40%; }
-  html.celular body.cel-jogo #ctl [data-b="B"] { --x: 90%; --y: 82%; }
-  html.celular body.cel-jogo #ctl [data-b="Y"] { --x: 80%; --y: 61%; }
-  html.celular body.cel-jogo #ctl [data-b="A"] { --x: 97%; --y: 61%; }
+  html.celular body.cel-jogo #ctl [data-b="X"] { --x: 85%; --y: 40%; }
+  html.celular body.cel-jogo #ctl [data-b="B"] { --x: 85%; --y: 82%; }
+  html.celular body.cel-jogo #ctl [data-b="Y"] { --x: 75%; --y: 61%; }
+  html.celular body.cel-jogo #ctl [data-b="A"] { --x: 94%; --y: 61%; }
   html.celular body.cel-jogo #ctl [data-b="L"] { --x: 8%; --y: 12%; }
   html.celular body.cel-jogo #ctl [data-b="R"] { --x: 92%; --y: 12%; }
   html.celular body.cel-jogo #ctl [data-b="Select"] { --x: 24%; --y: 92%; }
@@ -106,52 +112,69 @@ body.canhoto #ctl [data-b="L"] { --x: 83%; } body.canhoto #ctl [data-b="R"] { --
 }
 
 /* ---------- modelos ---------- */
-/* 1. Clássico SNES: cruz cinza, 4 botões coloridos em losango */
-#ctl.skin-classico { --ctl-fundo: #c9c9d1; --bgx: #8b8b95; --fgx: #fff; }
-#ctl.skin-classico .dpad { --bg: transparent; --dp: #3b3b45; --on: #ff5252aa; }
-#ctl.skin-classico .face { --fg: #fff; --sombra: inset 0 -3px 0 #0004, 0 2px 3px #0006; }
-#ctl.skin-classico [data-b="A"] { --bg: #d33a3a; } #ctl.skin-classico [data-b="B"] { --bg: #e0b020; }
-#ctl.skin-classico [data-b="X"] { --bg: #3a6fd3; } #ctl.skin-classico [data-b="Y"] { --bg: #3aa05a; }
-#ctl.skin-classico .shoulder, #ctl.skin-classico .pill { --bg: #6d6d78; --fg: #fff; --sombra: inset 0 -2px 0 #0004; }
-#ctl.skin-classico .pill { transform: translate(-50%, -50%) rotate(-18deg); }
-#ctl.skin-classico .pill.on { transform: translate(-50%, -50%) rotate(-18deg) scale(.93); }
-/* 2. Moderno: analógico flutuante + A B X Y de controle de console */
-#ctl.skin-moderno { --ctl-fundo: #14161c; --bgx: #2a2d38; --fgx: #e9ecf5; }
-#ctl.skin-moderno .dpad { --bg: #ffffff14; --borda-cb: 2px solid #ffffff55; }
-#ctl.skin-moderno .dpad i { display: none; } #ctl.skin-moderno .dpad .k { display: block; position: absolute; width: 46%; height: 46%; border-radius: 50%; background: #ffffffcc; left: calc(27% + var(--kx, 0) * 22%); top: calc(27% + var(--ky, 0) * 22%); }
-#ctl.skin-moderno .face { --bg: #232634; --fg: var(--c); --borda-cb: 2px solid var(--c); --bg-on: var(--c); }
-#ctl.skin-moderno .face.on { color: #111; }
-#ctl.skin-moderno [data-b="B"] { --c: #4cd16b; } #ctl.skin-moderno [data-b="A"] { --c: #ff5a5a; }
-#ctl.skin-moderno [data-b="Y"] { --c: #4aa8ff; } #ctl.skin-moderno [data-b="X"] { --c: #ffd24a; }
-#ctl.skin-moderno .shoulder, #ctl.skin-moderno .pill { --bg: #2a2d38; --fg: #e9ecf5; --borda-cb: 1px solid #ffffff33; }
-/* 3. Minimalista: só contorno e quase transparente, pra não cobrir o jogo */
-#ctl.skin-minimo { --ctl-fundo: transparent; --bgx: transparent; --fgx: var(--texto); --opa: .6; }
-#ctl.skin-minimo .cb { --bg: transparent; --fg: var(--texto); --borda-cb: 2px solid var(--texto); --bg-on: #ffffff44; }
-#ctl.skin-minimo .dpad { --borda-cb: 2px solid transparent; --dp: transparent; --dpb: 2px solid var(--texto); --on: #ffffff44; }
-#ctl.skin-minimo .face { --w: calc(var(--u) * 18); --fs: 7; }
-/* 4. Arcade: botões grandes e côncavos em duas fileiras; joystick com bolona vermelha */
-#ctl.skin-arcade { --ctl-fundo: #1a1020; --bgx: #3a2a48; --fgx: #fff; }
-#ctl.skin-arcade .dpad { --bg: #2c2236; --borda-cb: 3px solid #4a3a5c; }
-#ctl.skin-arcade .dpad i { display: none; } #ctl.skin-arcade .dpad .k { display: block; position: absolute; width: 52%; height: 52%; border-radius: 50%; left: calc(24% + var(--kx, 0) * 22%); top: calc(24% + var(--ky, 0) * 22%); background: radial-gradient(circle at 35% 30%, #ff8d8d, #d01c1c 60%, #7a0c0c); box-shadow: 0 6px 8px #0008; }
-#ctl.skin-arcade .face { --w: calc(var(--u) * 24); --fs: 8; --fg: #fff; --sombra: inset 0 -5px 0 #0006, 0 4px 6px #0008; }
-#ctl.skin-arcade [data-b="Y"] { --x: 64%; --y: 44%; --bg: #e8d23a; --fg: #222; } #ctl.skin-arcade [data-b="X"] { --x: 80%; --y: 38%; --bg: #3a8be0; }
-#ctl.skin-arcade [data-b="B"] { --x: 69%; --y: 78%; --bg: #e0383a; } #ctl.skin-arcade [data-b="A"] { --x: 87%; --y: 70%; --bg: #38c060; }
-#ctl.skin-arcade .shoulder, #ctl.skin-arcade .pill { --bg: #3a2a48; --fg: #fff; }
-/* 5. Portátil: cruz preta, dois botões grandes na diagonal (A e B) e dois pequenos (X e Y) */
-#ctl.skin-portatil { --ctl-fundo: #b9bda6; --bgx: #6a6e5c; --fgx: #e8ecd6; }
-#ctl.skin-portatil .dpad { --bg: transparent; --dp: #2a2c26; --dpr: 18%; --on: #8a8f6faa; }
-#ctl.skin-portatil .face { --bg: #8d1f4a; --fg: #f6dde8; --sombra: 0 3px 0 #0005; --w: calc(var(--u) * 24); }
-#ctl.skin-portatil [data-b="B"] { --x: 74%; --y: 74%; } #ctl.skin-portatil [data-b="A"] { --x: 90%; --y: 52%; }
-#ctl.skin-portatil [data-b="Y"] { --x: 62%; --y: 50%; --w: calc(var(--u) * 16); --bg: #4a4e3e; } #ctl.skin-portatil [data-b="X"] { --x: 76%; --y: 28%; --w: calc(var(--u) * 16); --bg: #4a4e3e; }
-#ctl.skin-portatil .shoulder, #ctl.skin-portatil .pill { --bg: #4a4e3e; --fg: #e8ecd6; }
-#ctl.skin-portatil .pill { transform: translate(-50%, -50%) rotate(-20deg); }
-#ctl.skin-portatil .pill.on { transform: translate(-50%, -50%) rotate(-20deg) scale(.93); }
-/* 6. Segue o tema: usa as cores do tema escolhido no KOFnes (os 126) */
-#ctl.skin-tema { --ctl-fundo: var(--painel); --bgx: var(--painel2); --fgx: var(--texto); }
-#ctl.skin-tema .cb { --bg: var(--painel2); --fg: var(--texto); --borda-cb: 2px solid var(--borda); --bg-on: var(--destaque); }
-#ctl.skin-tema .dpad { --bg: transparent; --borda-cb: 0; --dp: var(--painel2); --dpb: 2px solid var(--borda); --on: var(--destaque); --rd: calc(var(--raio) * 2); }
-#ctl.skin-tema .face { --bg: var(--painel2); --rd: calc(var(--raio) * 3); } #ctl.skin-tema .face[data-b="A"], #ctl.skin-tema .face[data-b="B"] { --bg: var(--destaque); --fg: var(--painel); }
-#ctl.skin-tema .shoulder, #ctl.skin-tema .pill { --rd: calc(var(--raio) * 2); }
+/* receita dos botões redondos: brilho no alto à esquerda, cor com degradê, aro mais escuro e sombra por baixo */
+#ctl .face { --fs: 9; }
+#ctl .face, #ctl .shoulder, #ctl .pill, #ctl .menu, #ctl .rew, #ctl .turbo { text-shadow: var(--txs, 0 1px 2px #0008); }
+
+/* 1. Clássico SNES: corpo cinza, cruz grafite com setas e quatro botões coloridos */
+#ctl.skin-classico { --ctl-fundo: linear-gradient(#dedee5, #c6c6cf 55%, #b4b4bf); --fonte: "Trebuchet MS", "Segoe UI", sans-serif; }
+#ctl.skin-classico .dpad { --dph: linear-gradient(#63636f, #3a3a44 52%, #26262d); --dpv: linear-gradient(90deg, #63636f, #3a3a44 52%, #26262d); --seta: #a4a4b2; --on: #ff6b6baa; --dpb: 1px solid #1c1c22; }
+#ctl.skin-classico .face { color: #fff; background: radial-gradient(circle at 34% 26%, #fffa 0, #fff0 40%), radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--c) 80%, #fff), var(--c) 56%, color-mix(in srgb, var(--c) 62%, #000)); box-shadow: inset 0 -4px 6px #0004, inset 0 2px 3px #fff8, 0 4px 7px #0007, 0 0 0 3px color-mix(in srgb, var(--c) 40%, #2a2a30); }
+#ctl.skin-classico [data-b="A"] { --c: #d93b3d; } #ctl.skin-classico [data-b="B"] { --c: #eab824; } #ctl.skin-classico [data-b="X"] { --c: #2e6fd8; } #ctl.skin-classico [data-b="Y"] { --c: #2fa55d; }
+#ctl.skin-classico .shoulder { color: #fff; background: linear-gradient(#ffffff55, #fff0 40%, #0003), linear-gradient(#a6a6b2, #7a7a87); box-shadow: 0 3px 0 #54545f, 0 6px 7px #0005; border-radius: 40% 40% 14% 14% / 70% 70% 20% 20%; }
+#ctl.skin-classico .pill { color: #f2f2f6; background: linear-gradient(#92929f, #64646f); box-shadow: inset 0 2px 2px #fff6, 0 3px 4px #0006; transform: translate(-50%, -50%) rotate(-18deg); }
+#ctl.skin-classico .pill.on { transform: translate(-50%, -50%) rotate(-18deg) scale(.94); }
+#ctl.skin-classico .menu, #ctl.skin-classico .rew, #ctl.skin-classico .turbo { color: #fff; background: radial-gradient(circle at 36% 28%, #fff7, #fff0 45%), linear-gradient(#9a9aa7, #6a6a77); box-shadow: inset 0 -2px 3px #0004, 0 3px 5px #0006; }
+
+/* 2. Moderno: vidro escuro com aro colorido e analógico com bolinha 3D */
+#ctl.skin-moderno { --ctl-fundo: linear-gradient(#1d202c, #0f1118); }
+#ctl.skin-moderno .dpad { background: radial-gradient(circle at 50% 38%, #303445, #14161f 75%); border: 2px solid #ffffff2e; box-shadow: inset 0 0 16px #000b, 0 5px 12px #000a; filter: none; }
+#ctl.skin-moderno .dpad i, #ctl.skin-moderno .dpad::after { display: none; }
+#ctl.skin-moderno .dpad .k { display: block; position: absolute; width: 46%; height: 46%; border-radius: 50%; left: calc(27% + var(--kx, 0) * 22%); top: calc(27% + var(--ky, 0) * 22%); background: radial-gradient(circle at 36% 28%, #fff, #cfd2dc 42%, #8b90a2); box-shadow: 0 6px 9px #000b, inset 0 -3px 5px #0004; }
+#ctl.skin-moderno .face { color: var(--c); background: radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--c) 30%, #353a4c), #171a25 78%); border: 2px solid var(--c); box-shadow: inset 0 0 12px color-mix(in srgb, var(--c) 45%, transparent), 0 0 14px color-mix(in srgb, var(--c) 40%, transparent), 0 5px 8px #000a; text-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); }
+#ctl.skin-moderno .face.on { background: var(--c); color: #11131b; text-shadow: none; }
+#ctl.skin-moderno [data-b="B"] { --c: #4cd16b; } #ctl.skin-moderno [data-b="A"] { --c: #ff5a5a; } #ctl.skin-moderno [data-b="Y"] { --c: #4aa8ff; } #ctl.skin-moderno [data-b="X"] { --c: #ffd24a; }
+#ctl.skin-moderno .shoulder, #ctl.skin-moderno .pill, #ctl.skin-moderno .menu, #ctl.skin-moderno .rew, #ctl.skin-moderno .turbo { color: #e8ebf5; background: linear-gradient(#3a3f52, #232736); border: 1px solid #ffffff33; box-shadow: inset 0 1px 0 #ffffff33, 0 4px 7px #000a; }
+#ctl.skin-moderno .shoulder { border-radius: 40% 40% 14% 14% / 70% 70% 20% 20%; }
+
+/* 3. Minimalista: só contorno e brilho fraco, pra cobrir pouco o jogo */
+#ctl.skin-minimo { --ctl-fundo: transparent; --opa: .62; }
+#ctl.skin-minimo .cb { color: #fff; background: #ffffff12; border: 2px solid #ffffffb8; box-shadow: inset 0 0 10px #ffffff22, 0 0 8px #0006; text-shadow: 0 1px 3px #000c; }
+#ctl.skin-minimo .dpad { background: none; border: 0; box-shadow: none; --dph: #ffffff14; --dpv: #ffffff14; --dpb: 2px solid #ffffffb8; --seta: #ffffffcc; --on: #ffffff55; --covinha: none; --covinha-sombra: none; }
+#ctl.skin-minimo .shoulder { border-radius: 40% 40% 14% 14% / 70% 70% 20% 20%; }
+#ctl.skin-minimo .face { --fs: 8; }
+
+/* 4. Arcade: botões convexos e brilhantes, joystick com bola vermelha */
+#ctl.skin-arcade { --ctl-fundo: repeating-linear-gradient(45deg, #ffffff08 0 2px, #0000 2px 12px), linear-gradient(#2d1738, #170c20); }
+#ctl.skin-arcade .dpad { background: radial-gradient(circle at 50% 36%, #46345a, #1e1229 75%); border: 3px solid #5b447a; box-shadow: inset 0 0 14px #000c, 0 6px 10px #000a; filter: none; }
+#ctl.skin-arcade .dpad i, #ctl.skin-arcade .dpad::after { display: none; }
+#ctl.skin-arcade .dpad .k { display: block; position: absolute; width: 54%; height: 54%; border-radius: 50%; left: calc(23% + var(--kx, 0) * 22%); top: calc(23% + var(--ky, 0) * 22%); background: radial-gradient(circle at 34% 28%, #ffd0d0, #e02424 48%, #7a0b0b); box-shadow: 0 8px 9px #000b, inset 0 -4px 6px #0005; }
+#ctl.skin-arcade .face { --fs: 8.5; color: #fff; border: 3px solid color-mix(in srgb, var(--c) 45%, #000); background: radial-gradient(circle at 34% 26%, #fffb 0, #fff0 38%), radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--c) 75%, #fff), var(--c) 60%, color-mix(in srgb, var(--c) 70%, #000)); box-shadow: 0 5px 0 color-mix(in srgb, var(--c) 45%, #000), 0 9px 10px #000a; }
+#ctl.skin-arcade .face.on { box-shadow: 0 1px 0 color-mix(in srgb, var(--c) 45%, #000), 0 2px 3px #000a !important; transform: translate(-50%, -34%) scale(.97); }
+#ctl.skin-arcade [data-b="Y"] { --x: 61%; --y: 48%; --c: #e8d23a; color: #3b3300; text-shadow: none; } #ctl.skin-arcade [data-b="X"] { --x: 80%; --y: 30%; --c: #3a8be0; }
+#ctl.skin-arcade [data-b="B"] { --x: 67%; --y: 74%; --c: #e0383a; } #ctl.skin-arcade [data-b="A"] { --x: 85%; --y: 62%; --c: #38c060; }
+#ctl.skin-arcade .shoulder, #ctl.skin-arcade .pill, #ctl.skin-arcade .menu, #ctl.skin-arcade .rew, #ctl.skin-arcade .turbo { color: #fff; background: linear-gradient(#5b447a, #34264a); border: 2px solid #7a5ea0; box-shadow: inset 0 1px 0 #ffffff44, 0 4px 6px #000a; }
+#ctl.skin-arcade .shoulder { border-radius: 40% 40% 14% 14% / 70% 70% 20% 20%; }
+
+/* 5. Portátil: corpo oliva, cruz preta, A e B magenta na diagonal, X e Y pequenos  */
+#ctl.skin-portatil { --ctl-fundo: linear-gradient(#c9ccb7, #adb198); }
+#ctl.skin-portatil .dpad { --dph: linear-gradient(#45473d, #22241d 60%, #171912); --dpv: linear-gradient(90deg, #45473d, #22241d 60%, #171912); --dpr: 18%; --seta: #8e917c; --on: #d9e0a8aa; }
+#ctl.skin-portatil .face { color: #f8e3ee; background: radial-gradient(circle at 34% 26%, #fff7 0, #fff0 40%), radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--c) 82%, #fff), var(--c) 58%, color-mix(in srgb, var(--c) 65%, #000)); box-shadow: inset 0 -3px 5px #0004, 0 4px 0 color-mix(in srgb, var(--c) 45%, #000), 0 7px 8px #0006; }
+#ctl.skin-portatil [data-b="B"] { --x: 73%; --y: 74%; --w: calc(var(--u) * 24); --c: #a3245a; } #ctl.skin-portatil [data-b="A"] { --x: 87%; --y: 52%; --w: calc(var(--u) * 24); --c: #a3245a; }
+#ctl.skin-portatil [data-b="Y"] { --x: 62%; --y: 48%; --w: calc(var(--u) * 16); --c: #565a47; --fs: 6.5; } #ctl.skin-portatil [data-b="X"] { --x: 76%; --y: 26%; --w: calc(var(--u) * 16); --c: #565a47; --fs: 6.5; }
+#ctl.skin-portatil .shoulder { color: #e8ecd6; background: linear-gradient(#ffffff2a, #0000 40%), linear-gradient(#5f6350, #444838); box-shadow: 0 3px 0 #2f3226, 0 5px 6px #0005; border-radius: 40% 40% 14% 14% / 70% 70% 20% 20%; }
+#ctl.skin-portatil .pill { color: #e8ecd6; background: linear-gradient(#6a6e58, #484c3b); box-shadow: inset 0 1px 1px #ffffff44, 0 3px 4px #0006; transform: translate(-50%, -50%) rotate(-20deg); }
+#ctl.skin-portatil .pill.on { transform: translate(-50%, -50%) rotate(-20deg) scale(.94); }
+#ctl.skin-portatil .menu, #ctl.skin-portatil .rew, #ctl.skin-portatil .turbo { color: #e8ecd6; background: linear-gradient(#6a6e58, #484c3b); box-shadow: inset 0 1px 1px #ffffff44, 0 3px 4px #0006; }
+
+/* 6. Segue o tema: as mesmas formas, pintadas com as cores do tema escolhido no KOFnes */
+#ctl.skin-tema { --ctl-fundo: linear-gradient(color-mix(in srgb, var(--painel) 90%, #fff), var(--painel)); --txs: none; }
+#ctl.skin-tema .dpad { --dph: linear-gradient(color-mix(in srgb, var(--painel2) 80%, #fff), var(--painel2) 55%, color-mix(in srgb, var(--painel2) 75%, #000)); --dpv: var(--dph); --dpb: 1.5px solid var(--borda); --seta: var(--fraco); --on: color-mix(in srgb, var(--destaque) 70%, transparent); --dpr: calc(var(--raio) * 1.6); }
+#ctl.skin-tema .face { --c: color-mix(in srgb, var(--painel2) 70%, var(--texto)); color: var(--painel); background: radial-gradient(circle at 34% 26%, #fff7 0, #fff0 40%), radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--c) 80%, #fff), var(--c) 56%, color-mix(in srgb, var(--c) 70%, #000)); border: 1.5px solid var(--borda); box-shadow: inset 0 -3px 5px #0003, 0 4px 7px #0005; --rd: calc(var(--raio) * 4); }
+#ctl.skin-tema [data-b="A"], #ctl.skin-tema [data-b="B"] { --c: var(--destaque); }
+#ctl.skin-tema .shoulder, #ctl.skin-tema .pill, #ctl.skin-tema .menu, #ctl.skin-tema .rew, #ctl.skin-tema .turbo { color: var(--texto); background: linear-gradient(color-mix(in srgb, var(--painel2) 80%, #fff), var(--painel2)); border: 1.5px solid var(--borda); box-shadow: inset 0 1px 0 #fff6, 0 3px 5px #0004; }
+#ctl.skin-tema .shoulder { border-radius: 40% 40% 14% 14% / 70% 70% 20% 20%; }
+#ctl.skin-tema .pill { --rd: calc(var(--raio) * 2); }
 
 /* tela Controles: modelos e ajustes */
 .ctl-card svg { display: block; width: 100%; height: auto; border-radius: calc(var(--raio) / 2); }

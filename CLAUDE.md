@@ -148,7 +148,7 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   por cima; **Play Store precisa de chave de verdade fora do repositório e de AAB**). A ponte `window.KOFnesApk` (MainActivity.Ponte)
   salva arquivos (pacote de bug, .spc exportado) pelo "salvar como" do Android; o seletor de arquivo (ROM, .spc) e o window.open
   (issue do GitHub, abre no navegador) são tratados na Activity. Teste sem celular: `testes/android/apk-simulado.cjs` (serve o
-  html no endereço do app e troca a ponte por um stub). Ainda NÃO testado num aparelho de verdade. Faltam: escolher a pasta de
+  html no endereço do app e troca a ponte por um stub). O APK de teste fica em `android/apk/KOFnes.apk` (link direto pelo raw.githubusercontent.com na branch `android`; o celular dele não abre zip). Menu rápido no celular: ☰, ou toque longo SÓ em cima da imagem do jogo (`contextmenu` fora de `#tela`/`#moldura` é ignorado). O controle (6 modelos) é desenhado em CSS (`web/android.css`: relevo com radial-gradient/color-mix, setas do direcional com clip-path); no retrato as medidas usam a largura (`--u: 0.87cqw`), na horizontal a altura. Ainda NÃO testado num aparelho de verdade. Faltam: escolher a pasta de
   ROMs inteira (SAF, ACTION_OPEN_DOCUMENT_TREE) e AAB/assinatura de produção pra Play.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
