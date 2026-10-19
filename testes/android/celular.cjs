@@ -7,6 +7,7 @@ const MODELOS = ['classico', 'moderno', 'minimo', 'arcade', 'portatil', 'tema'];
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  await ctx.route(/github\.com/, (rt) => rt.fulfill({ status: 200, contentType: 'text/html', body: 'ok' }));
   const p = await ctx.newPage(), erros = [], r = {};
   p.on('pageerror', (e) => erros.push(e.message)); p.on('console', (m) => { if (m.type() === 'error') erros.push(m.text()); });
   p.on("console", (m) => console.log("C:", m.text().slice(0, 200))); await p.goto("file://" + html); await p.waitForTimeout(800);
@@ -49,6 +50,25 @@ const MODELOS = ['classico', 'moderno', 'minimo', 'arcade', 'portatil', 'tema'];
   }
   await p.tap('#temas [data-acao="fechar-temas"]'); await p.waitForTimeout(300); await p.tap('#lateral [data-acao="voltar-jogo"]'); await p.waitForTimeout(600);
   r.voltouAoJogo = await p.isVisible('#ctl');
+  // Jukebox: guarda a música do jogo (☰ → Guardar esta música) e toca
+  const menuItem = async (re) => { await p.tap('#ctl [data-b="menu"]'); await p.waitForTimeout(300); const its = await p.$$('#rapido-lista li'); const nm = await Promise.all(its.map((i) => i.innerText())); const k = nm.findIndex((n) => re.test(n)); if (k < 0) return false; await its[k].tap(); await p.waitForTimeout(700); return true; };
+  r.itemGuardarMusica = await menuItem(/Guardar esta música/);
+  await menuItem(/Início/); await p.tap('#lateral [data-acao="jukebox"]'); await p.waitForTimeout(700);
+  r.musicasNaJukebox = (await p.$$('#jk-lista li')).length;
+  const spcTam = await p.evaluate(async () => { const db = await new Promise((ok, no) => { const q = indexedDB.open('kofnes'); q.onsuccess = () => ok(q.result); q.onerror = no; }); const tx = db.transaction('musicas'); const todos = await new Promise((ok) => { const q = tx.objectStore('musicas').getAll(); q.onsuccess = () => ok(q.result); }); return todos.map((m) => m.spc ? m.spc.length : -1); });
+  r.spcBytes = spcTam;
+  await (await p.$('#jk-lista li.jk-faixa')).tap(); await p.waitForTimeout(2200);
+  const j = await p.evaluate(() => KOFnes.juke()); r.jukeTocando = j.tocando && j.amostras > 20000;
+  await p.tap('#lateral [data-acao="voltar-jogo"]'); await p.waitForTimeout(600);
+  // caçador de bugs: abre o relatório, baixa o pacote e abre a issue do GitHub
+  r.itemReportarBug = await menuItem(/Reportar bug/);
+  await p.fill('#bug-desc', 'teste automático do celular');
+  const [dl, pop] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }).catch(() => null), p.waitForEvent('popup', { timeout: 8000 }).catch(() => null), p.tap('#bug [data-acao="bug-enviar"]')]);
+  r.bugPacoteBaixou = !!dl && /kofbug-.*\.json\.gz$/.test(dl.suggestedFilename());
+  if (dl) { const arq = saida + '/' + dl.suggestedFilename(); await dl.saveAs(arq); r.bugPacote = arq; }
+  if (pop) await pop.waitForURL(/github\.com/, { timeout: 5000 }).catch(() => {});
+  r.bugIssueAbriu = !!pop && /github\.com\/Marcelao98\/KOFSnes\/issues\/new/.test(pop.url());
+  await p.waitForTimeout(500);
   r.erros = erros.filter((e) => !/404/.test(e));
   for (const m of MODELOS) {
     await p.evaluate((x) => { document.querySelector('#ctl').className = 'skin-' + x; }, m);

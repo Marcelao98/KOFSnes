@@ -486,7 +486,10 @@ async function guardarMusica() {
   if (!snes) { avisar('abra um jogo pra guardar a música dele'); return; }
   try {
     const n = juke.lista.filter((f) => f.jogoId === jogoId).length + 1;
-    await bdGuardar('musicas', { origem: 'jogo', titulo: `Faixa ${n}`, jogo: romNome, jogoId, quando: Date.now(), capa: foto(256), estado: JSON.stringify(KofEstado.capturar(snes.apu)) });
+    const reg = { origem: 'jogo', titulo: `Faixa ${n}`, jogo: romNome, jogoId, quando: Date.now(), capa: foto(256) };
+    // núcleo Kof: o estado do chip de som inteiro; núcleo Snes9x (celular): um .spc tirado do estado dele
+    if (snes.s9x) reg.spc = snes.gravarSpc({ titulo: reg.titulo, jogo: romNome, segundos: PADRAO_SEG, fadeMs: PADRAO_FADE }); else reg.estado = JSON.stringify(KofEstado.capturar(snes.apu));
+    await bdGuardar('musicas', reg);
     await jukeCarregar(); montarJuke();
     avisar(`🎵 música guardada na jukebox: ${romNome} · Faixa ${n} (Som → Jukebox)`, 3500);
   } catch (e) { avisar('não consegui guardar a música: ' + e.message, 4000); }
@@ -525,7 +528,7 @@ function montarJuke() {
   $('#st-juke-tocar').textContent = juke.tocando ? '⏸' : '▶';
   if ($('#jukebox').hidden) return;
   $('#jk-titulo').textContent = f ? f.titulo : 'Nada tocando';
-  $('#jk-jogo').textContent = f ? [f.jogo, f.artista].filter(Boolean).join(' · ') : (juke.lista.length ? 'escolha uma música' : (CELULAR ? 'abra arquivos .spc pra ouvir aqui' : 'guarde uma música no jogo (F7) ou abra arquivos .spc'));
+  $('#jk-jogo').textContent = f ? [f.jogo, f.artista].filter(Boolean).join(' · ') : (juke.lista.length ? 'escolha uma música' : (CELULAR ? 'guarde uma música no jogo (☰) ou abra arquivos .spc' : 'guarde uma música no jogo (F7) ou abra arquivos .spc'));
   const capa = f ? (srcCapa({ nome: f.jogo }) || f.capa || '') : '';
   $('#jk-capa').hidden = !capa; $('.jk-capa span').hidden = !!capa; if (capa) $('#jk-capa').src = capa;
   if (f) capaPorNome(f.jogo).catch(() => {});
@@ -585,7 +588,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
 const VERSAO = '{{VERSAO}}', REPO = 'Marcelao98/KOFSnes';
-let cacador = !CELULAR && ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
+let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   const b = semCombo(estado());
   snes.pad[0] = b; snes.runFrame();
@@ -618,6 +621,7 @@ async function sha1(bytes) {
 }
 function b64(u8) { let t = ''; for (let i = 0; i < u8.length; i += 0x8000) t += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(t); }
 async function enviarBug() {
+  const aba = window.open('about:blank', '_blank');   // abre já, no toque: depois de um await o navegador (principalmente no celular) bloquearia a janela
   const desc = $('#bug-desc').value.trim() || '(sem descrição)', comPacote = $('#bug-pacote').checked && snes;
   const agora = new Date(), data = agora.toISOString().slice(0, 16).replace(/[-:T]/g, '');
   const jogo = snes ? { nome: romNome, titulo: snes.cart.title.trim(), tamanho: romAtual ? romAtual.length : 0, sha1: romAtual ? await sha1(romAtual) : '?', mapeamento: ['LoROM', 'HiROM', 'ExHiROM'][snes.cart.mapper] || '?', superfx: !!snes.cart.superfx } : null;
@@ -628,7 +632,7 @@ async function enviarBug() {
     const base = marcoBugAnt || marcoBug;
     const entradas = base ? (marcoBugAnt ? marcoBugAnt.entradas.concat(marcoBug ? marcoBug.entradas : []) : base.entradas) : [];
     const pacote = {
-      formato: 'kofbug', versao: 1, kofnes: VERSAO, quando: agora.toISOString(), descricao: desc, jogo, erro,
+      formato: 'kofbug', versao: 1, nucleo: snes && snes.s9x ? 's9x' : 'kof', kofnes: VERSAO, quando: agora.toISOString(), descricao: desc, jogo, erro,
       ambiente: { navegador: navigator.userAgent, opcoes },
       replay: base ? { estado: base.estado, entradas: b64(new Uint8Array(Uint16Array.from(entradas).buffer)), quadros: entradas.length } : null,
       agora: { estado: KofEstado.capturar(snes), assinatura: assinatura() },
@@ -644,13 +648,13 @@ async function enviarBug() {
   if (jogo) L.push('### Jogo', '', `- **ROM:** ${jogo.nome}`, `- **Título interno:** ${jogo.titulo || '?'} · ${jogo.mapeamento}${jogo.superfx ? ' · Super FX' : ''} · ${Math.round(jogo.tamanho / 1024)} KB`, `- **SHA-1:** \`${jogo.sha1}\``, '');
   L.push('### Ambiente', '', `- **KOFnes:** ${VERSAO}`, `- **Navegador:** ${navigator.userAgent}`, `- **Opções:** ${opcoes}`, '');
   if (erro) L.push('### Erro do emulador', '', '```', erro.mensagem, erro.pilha.slice(0, 1200), '```', '');
-  if (arquivo) L.push('### Pacote pra reproduzir', '', `📎 **Arraste aqui o arquivo \`${arquivo}\`**, que o KOFnes acabou de baixar (pasta Downloads).`, 'Ele tem o savestate de alguns segundos antes e os botões apertados, pra reproduzir o bug quadro a quadro. A ROM **não** vai junto.', '');
+  if (arquivo) L.push('### Pacote pra reproduzir', '', `📎 **${CELULAR ? 'Anexe' : 'Arraste aqui'} o arquivo \`${arquivo}\`**, que o KOFnes acabou de baixar (pasta Downloads).`, 'Ele tem o savestate de alguns segundos antes e os botões apertados, pra reproduzir o bug quadro a quadro. A ROM **não** vai junto.', '');
   L.push('---', '_Reportado pelo modo caçador de bugs do KOFnes_');
   const titulo = `[bug] ${jogo ? jogo.nome + ': ' : ''}${desc.split('\n')[0].slice(0, 70)}`;
   const url = `https://github.com/${REPO}/issues/new?labels=bug&title=${encodeURIComponent(titulo)}&body=${encodeURIComponent(L.join('\n')).slice(0, 7000)}`;
-  window.open(url, '_blank');
+  if (aba) aba.location.href = url; else window.open(url, '_blank');
   fecharBug();
-  avisar(arquivo ? '🐞 issue aberta no GitHub: arraste o pacote baixado pra dentro dela' : '🐞 issue aberta no GitHub', 6000);
+  avisar(arquivo ? (CELULAR ? '🐞 issue aberta no GitHub: anexe o pacote baixado' : '🐞 issue aberta no GitHub: arraste o pacote baixado pra dentro dela') : '🐞 issue aberta no GitHub', 6000);
 }
 function assinatura() { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; }
 // erro na interface (fora do núcleo): oferece reportar, no máximo uma vez por minuto
@@ -1602,6 +1606,8 @@ const DICAS_CEL = [
   'Gire o celular: na horizontal os botões ficam nos cantos e o jogo ganha a tela.',
   'Toque em <b>Abrir uma ROM</b> pra escolher um jogo do seu celular (.sfc, .smc ou .zip).',
   'Na Biblioteca, toque num jogo pra abrir; <b>Continuar</b> volta de onde você parou.',
+  'Tocou aquela música que você ama? <b>☰ → Guardar esta música</b>: ela vai pra Jukebox e toca sem o jogo.',
+  'Achou um bug? <b>☰ → Reportar bug</b> abre o GitHub com tudo pra reproduzir.',
   'O modelo de controle <b>Segue o tema</b> usa as cores do tema que você escolheu.',
   'Dá pra apertar vários botões ao mesmo tempo, e deslizar o dedo entre A, B, X e Y.',
 ];

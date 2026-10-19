@@ -78,6 +78,29 @@ const KofS9x = (() => {
         d.outCount += n;
       }
     }
+    // música do jogo: o estado do Snes9x tem o bloco "SND" (RAM do SPC700 + registradores + DSP); dele sai um arquivo .spc
+    // (o mesmo formato que a Jukebox já toca e exporta), com os campos de controle ($F0-$FF) tirados dos timers do SPC700
+    gravarSpc(tag) {
+      const st = this.serializar(), txt = (a, n) => String.fromCharCode.apply(null, st.subarray(a, a + n));
+      let p = txt(0, 14).startsWith('#!s9xsnp') ? 14 : -1, snd = -1;
+      while (p > 0 && p + 11 < st.length) {
+        const nome = txt(p, 3), len = parseInt(txt(p + 4, 6), 10);
+        if (!(len >= 0)) break;
+        if (nome === 'SND') { snd = p + 11; break; }
+        p += 11 + len;
+      }
+      if (snd < 0) throw new Error('não achei o estado do chip de som');
+      const dv = new DataView(st.buffer, st.byteOffset + snd, 66560), I = (k) => dv.getInt32(65536 + 4 * k, true);
+      const ram = st.subarray(snd, snd + 65536), regs = st.subarray(snd + 65700, snd + 65700 + 128);
+      const apu = {
+        ram, dsp: { regs }, iplEnabled: I(16) !== 0, dspAddr: I(17),
+        tOn: [I(20) !== 0, I(25) !== 0, I(30) !== 0], tTarget: [I(21), I(26), I(31)], tOut: [I(24), I(29), I(34)],
+        inPorts: [ram[0xF4], ram[0xF5], ram[0xF6], ram[0xF7]],
+        spc: { pc: I(3) & 0xFFFF, a: I(5) & 0xFF, x: I(6) & 0xFF, y: I(7) & 0xFF, sp: I(4) & 0xFF,
+          getPsw: () => (I(8) << 7) | (I(9) << 6) | (I(10) << 5) | (I(11) << 4) | (I(12) << 3) | (I(13) << 2) | (I(14) << 1) | I(15) },
+      };
+      return KofSpc.gravar(apu, tag);
+    }
     // savestate: bytes do Snes9x
     serializar() {
       const n = this.tamEstado;

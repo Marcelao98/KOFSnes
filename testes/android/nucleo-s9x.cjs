@@ -6,7 +6,7 @@ const ctx = { console, setTimeout, atob: (s) => Buffer.from(s, 'base64').toStrin
 vm.createContext(ctx);
 const carregar = (f) => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 carregar(path.join(raiz, 'nucleo-snes9x/saida/snes9x.js'));
-carregar(path.join(raiz, 'web/estado.js'));
+carregar(path.join(raiz, 'web/estado.js')); carregar(path.join(raiz, 'web/spc.js'));
 vm.runInContext('globalThis.KofEstado = KofEstado;', ctx);
 carregar(path.join(raiz, 'web/nucleo_s9x.js'));
 vm.runInContext('globalThis.KofS9x = KofS9x; globalThis.Snes9xModulo = typeof Snes9xModulo !== "undefined" ? Snes9xModulo : undefined;', ctx);
@@ -32,8 +32,18 @@ vm.runInContext('globalThis.KofS9x = KofS9x; globalThis.Snes9xModulo = typeof Sn
   for (let i = 0; i < 30; i++) rb.voltar();
   const agora = s.serializar();
   r.rebobinou = rb.fotos === 29 && agora.length === guardado.length && agora.every((v, i) => v === guardado[i]);   // voltou exatamente ao estado do quadro 30
+  // música: o estado do chip de som vira um .spc válido (a Jukebox toca esse formato)
+  const KS = vm.runInContext('KofSpc', ctx), spc = s.gravarSpc({ titulo: 'teste', jogo: 'jogo' });
+  r.spcValido = KS.eSpc(spc) && spc.length === 0x10200; r.spcPC = spc[0x25] | (spc[0x26] << 8); r.spcDspVolEsq = spc[0x10100 + 0x0C];
+  // reprodução de bug: estado guardado + mesmas entradas, numa instância NOVA (como o bugs/reproduzir.cjs), dá a mesma imagem
+  const marco = E.capturar(s), entradas = Array.from({ length: 90 }, (_, i) => (i % 5 ? 0x0100 : 0x0080));
+  for (const b of entradas) { s.pad[0] = b; s.runFrame(); s.apu.dsp.outCount = 0; }
+  const h1 = hash(s.ppu.frame);
+  const s2 = await ctx.KofS9x.criar(rom); E.restaurar(s2, marco);
+  for (const b of entradas) { s2.pad[0] = b; s2.runFrame(); s2.apu.dsp.outCount = 0; }
+  r.replayEmInstanciaNova = hash(s2.ppu.frame) === h1;
   // SRAM
   r.sramBytes = s.cart.hasSram() ? s.cart.sram.length : 0;
-  const t0 = Date.now(); for (let i = 0; i < 300; i++) { s.runFrame(); s.apu.dsp.outCount = 0; } r.fps = Math.round(300000 / (Date.now() - t0));
+  const t0 = Date.now(); for (let i = 0; i < 300; i++) { s2.runFrame(); s2.apu.dsp.outCount = 0; } r.fps = Math.round(300000 / (Date.now() - t0));
   console.log(JSON.stringify(r));
 })().catch((e) => { console.log('ERRO', e); process.exit(1); });

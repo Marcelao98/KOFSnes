@@ -31,7 +31,6 @@ html.celular .hm-marca h1 { font-size: 28px; }
 html.celular .hm-corpo { display: flex; flex-direction: column; gap: 12px; }
 html.celular .hm-atalhos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 html.celular .hm-atalhos button { min-height: 76px; }
-html.celular .hm-rodape [data-acao="bug"], html.celular .hm-rodape button + button { display: none; }
 html.celular .janela { max-width: 100vw; max-height: 100%; }
 html.celular button, html.celular input, html.celular select { min-height: 40px; }
 html.celular .previa { min-height: 150px; }

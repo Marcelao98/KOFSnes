@@ -107,8 +107,6 @@
   addEventListener('orientationchange', () => setTimeout(() => ajustarEscala(), 250));
 
   // ----- menu rápido: o que faz sentido no celular -----
-  const tira = ['🎵 Guardar esta música', '🐞 Reportar bug'];
-  for (let i = ITENS_RAPIDO.length - 1; i >= 0; i--) if (tira.includes(ITENS_RAPIDO[i].t)) ITENS_RAPIDO.splice(i, 1);
   ITENS_RAPIDO.splice(1, 0, { t: '🏠 Início', f: () => { fecharRapido(); acao('home'); } }, { t: '🎮 Controle virtual', f: () => { fecharRapido(); acao('teclas'); } });
 
   // ----- tela Controles (reaproveita a janela de teclas, que não serve no celular) -----
@@ -182,9 +180,10 @@
       comecar: ['👋 Começando', '<h3>👋 Começando</h3><p>O <b>KOFnes</b> é um emulador de Super Nintendo. Toque em <b>Abrir uma ROM</b>, escolha o arquivo do seu jogo e jogue com o controle na tela.</p><p>Este guia tem o resto: biblioteca, controle, voltar no tempo, imagem e som, jukebox e temas.</p>'],
       biblioteca: ['📚 Biblioteca', '<h3>📚 Biblioteca</h3><p>Toque em <b>Abrir uma ROM</b> e escolha o arquivo do jogo (.sfc, .smc ou .zip). Ele fica guardado na <b>Biblioteca</b>: da próxima vez é só tocar nele.</p><p>No <b>Início</b>, <b>Continuar</b> volta exatamente de onde você parou.</p>'],
       jogando: ['🎮 Jogando', '<h3>🎮 Jogando</h3><p>O controle fica na tela. Dá pra apertar vários botões ao mesmo tempo e deslizar o dedo entre A, B, X e Y.</p><p>Toque em <b>☰</b> pra salvar, carregar, mudar o tema e o filtro. Em <b>Controles</b> (barra de baixo) você troca o modelo do controle, o tamanho e a transparência, e liga o modo canhoto.</p><p>Gire o celular: na horizontal, os botões ficam nos cantos e o jogo ganha a tela.</p>'],
+      bugs: ['🐞 Bugs', '<h3>🐞 Bugs</h3><p>O KOFnes é jovem, e cada bug encontrado ajuda o emulador. Toque em <b>☰</b> e em <b>Reportar bug</b>: a página do GitHub abre já preenchida e um pacote é baixado pra reproduzir o bug quadro a quadro. É só anexar o arquivo na página.</p><p>Se o emulador quebrar, ele mesmo oferece reportar.</p>'],
       tempo: ['⏪ Voltar no tempo', '<h3>⏪ Voltar no tempo</h3><p>Segure o <b>⏪</b> e o jogo volta até 5 segundos, em preto e branco. Soltou, continua dali. Depois a ampulheta ⏳ recarrega enquanto você joga.</p><p><b>⏩</b> acelera o jogo enquanto você segura.</p>'],
       imagem: ['🖼 Imagem e som', '<h3>🖼 Imagem e som</h3><p>No <b>☰</b>: filtro (tela de tubo, LCD, Game Boy…), proporção, moldura e volume. O som precisa estar ligado no aparelho.</p>'],
-      jukebox: ['🎵 Jukebox', '<h3>🎵 Jukebox</h3><p>Abra arquivos <b>.spc</b> e ouça as trilhas, com as 8 vozes do chip de som: toque numa voz pra silenciar e ouvir só o baixo ou a percussão.</p>'],
+      jukebox: ['🎵 Jukebox', '<h3>🎵 Jukebox</h3><p>No meio do jogo, toque em <b>☰</b> e em <b>Guardar esta música</b>: a trilha que está tocando vai pra Jukebox, e você ouve depois, sem o jogo. Também dá pra abrir arquivos <b>.spc</b>.</p><p>As 8 vozes do chip de som aparecem ao vivo: toque numa pra silenciar e ouvir só o baixo ou a percussão.</p>'],
       temas: ['🎨 Temas', '<h3>🎨 Temas</h3><p>São <span class="n-temas">126</span> temas, com busca e categorias. Toque em <b>Tema</b> na barra de baixo. O modelo de controle <b>Segue o tema</b> usa as cores do tema escolhido.</p>'],
     };
     nav.innerHTML = Object.entries(paginas).map(([k, [rot]]) => `<button data-guia="${k}">${rot}</button>`).join('');
