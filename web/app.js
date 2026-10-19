@@ -4,7 +4,7 @@
 (() => {
 'use strict';
 const $ = (s) => document.querySelector(s);
-const QUADRO_MS = 1000 / 60.0988;
+let QUADRO_MS = 1000 / 60.0988;   // muda com o sistema (Game Boy: 59,73 quadros por segundo)
 const guardar = (k, v) => { try { localStorage.setItem('kofnes.' + k, v); } catch (e) { /* sem armazenamento */ } };
 const ler = (k) => { try { return localStorage.getItem('kofnes.' + k); } catch (e) { return null; } };
 
@@ -12,14 +12,21 @@ let snes = null, romNome = '', pausado = false, mudo = ler('mudo') === '1';
 let escala = +(ler('escala') || 0), chaveSram = '', sramAntes = '';
 
 // ---------------- tela ----------------
-// O quadro do núcleo vai pra uma textura 256x224 e a placa de vídeo (WebGL)
+// O quadro do núcleo vai pra uma textura do tamanho da tela do sistema (SNES 256x224, Game Boy 160x144) e a placa de vídeo (WebGL)
 // desenha com o filtro escolhido. Sem WebGL, volta pro canvas 2D (só nítido).
 const FILTROS = [
   ['nitido', 'Nítido'], ['suave', 'Suave'], ['crt', 'TV de tubo (CRT)'], ['fliperama', 'Fliperama'],
   ['gameboy', 'Game Boy'], ['cafe', 'Café (sépia)'], ['lcd', 'Tela LCD'],
 ];
 const tela = $('#tela');
-const img = new ImageData(256, 224), px = new Uint32Array(img.data.buffer);
+// sistemas que esta versão roda (nucleo.js diz quais núcleos vieram no html); sem ele, só SNES
+const SIS = typeof KofLibretro !== 'undefined' ? KofLibretro.SISTEMAS : { snes: { nome: 'Super Nintendo', curto: 'SNES', ext: ['sfc', 'smc', 'fig', 'swc'], minimo: 0x8000 } };
+const SIS_ATIVOS = Object.keys(SIS).filter((k) => k === 'snes' || (typeof KofLibretro !== 'undefined' && KofLibretro.disponivel(k)));
+const EXT_ROM = new RegExp('\\.(' + [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).join('|') + ')$', 'i');
+const sistemaDoNome = (n) => SIS_ATIVOS.find((k) => SIS[k].ext.some((e) => (n || '').toLowerCase().endsWith('.' + e))) || null;
+const sistemaDoItem = (r) => (r.jogo && (r.jogo.sistema || sistemaDoNome(r.jogo.arquivo))) || sistemaDoNome(r.nome) || 'snes';
+$('#arquivo').accept = [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).map((e) => '.' + e).join(',') + ',.zip';
+let telaL = 256, telaA = 224, img = new ImageData(telaL, telaA), px = new Uint32Array(img.data.buffer), bytesTela = new Uint8Array(img.data.buffer);
 let filtro = ler('filtro') || 'nitido';
 const gl = tela.getContext('webgl', { alpha: false, antialias: false });
 const ctx = gl ? null : tela.getContext('2d', { alpha: false });
@@ -65,14 +72,20 @@ if (gl) {
   const ap = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
   glTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 224, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, telaL, telaA, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   glModo = gl.getUniformLocation(prog, 'modo'); glTam = gl.getUniformLocation(prog, 'tam'); glSaida = gl.getUniformLocation(prog, 'saida');
-  gl.uniform2f(glTam, 256, 224);
+  gl.uniform2f(glTam, telaL, telaA);
 }
-const bytesTela = new Uint8Array(img.data.buffer);
+// jogo de outro sistema: imagem, textura e canvas mudam de tamanho
+function tamanhoTela(l, a) {
+  if (l === telaL && a === telaA) return;
+  telaL = l; telaA = a;
+  img = new ImageData(l, a); px = new Uint32Array(img.data.buffer); bytesTela = new Uint8Array(img.data.buffer);
+  if (gl) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, l, a, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); gl.uniform2f(glTam, l, a); }
+}
 function pintar() {
   if (!gl) { ctx.putImageData(img, 0, 0); return; }
-  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 256, 224, gl.RGBA, gl.UNSIGNED_BYTE, bytesTela);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, telaL, telaA, gl.RGBA, gl.UNSIGNED_BYTE, bytesTela);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 function aplicarFiltro(nome) {
@@ -87,18 +100,20 @@ function aplicarFiltro(nome) {
   pintar();
 }
 function desenhar() {
+  if (snes.rgba) { px.set(snes.rgba); pintar(); return; }   // núcleo libretro: já vem no formato da textura
   const f = snes.ppu.frame;
-  // o núcleo entrega 0xAARRGGBB; a textura (little-endian) quer 0xAABBGGRR
-  for (let i = 0; i < 57344; i++) {
+  // o núcleo Kof entrega 0xAARRGGBB; a textura (little-endian) quer 0xAABBGGRR
+  for (let i = 0; i < px.length; i++) {
     const c = f[i];
     px[i] = 0xFF000000 | ((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF);
   }
   pintar();
 }
-// proporção: 4:3 é como aparecia na TV (o pixel do SNES não é quadrado);
-// 8:7 é o pixel quadrado (256x224); esticar ocupa o palco inteiro
+// proporção: 4:3 é como aparecia na TV (o pixel do SNES não é quadrado); 8:7 é o pixel quadrado (256x224);
+// esticar ocupa o palco inteiro. Em outro sistema, "original" é a proporção que o núcleo informa (Game Boy: 10:9)
 const PROPORCOES = [['43', '4:3 (como na TV)'], ['87', 'Pixel perfeito (8:7)'], ['esticar', 'Esticar']];
-const RAZAO = { 43: 4 / 3, 87: 8 / 7 };
+const RAZAO = { 43: () => (snes && snes.lr && snes.sistema !== 'snes' ? snes.proporcao || telaL / telaA : 4 / 3), 87: () => telaL / telaA };
+const nomeProporcao = (k) => (snes && snes.lr && snes.sistema !== 'snes' ? { 43: 'Original (como no aparelho)', 87: 'Pixel perfeito' }[k] : null) || PROPORCOES.find(([c]) => c === k)[1];
 let proporcao = PROPORCOES.some(([k]) => k === ler('proporcao')) ? ler('proporcao') : '43';
 // moldura em volta do jogo; as bordas são frações da altura da tela (cima, direita, baixo, esquerda)
 const MOLDURAS = [['nenhuma', 'Sem moldura'], ['tv80', 'TV de madeira (anos 80)'], ['tv90', 'TV de tubo (anos 90)'], ['fliperama', 'Fliperama']];
@@ -108,15 +123,15 @@ function mudarMoldura(v) { moldura = BORDAS[v] ? v : 'nenhuma'; guardar('moldura
 function ajustarEscala() {
   const p = $('#palco'), cheia = document.body.classList.contains('cheia') || document.documentElement.classList.contains('celular'), folga = cheia ? 0 : 16;   // celular: sempre o maior que couber (sem múltiplo inteiro)
   const pc = getComputedStyle(p), miolo = (l, r) => (parseFloat(pc[l]) || 0) + (parseFloat(pc[r]) || 0);   // celular na horizontal: o palco tem folga dos lados pros botões
-  const W = Math.max(256, p.clientWidth - folga - miolo('paddingLeft', 'paddingRight')), H = Math.max(224, p.clientHeight - folga - miolo('paddingTop', 'paddingBottom'));
+  const W = Math.max(telaL, p.clientWidth - folga - miolo('paddingLeft', 'paddingRight')), H = Math.max(telaA, p.clientHeight - folga - miolo('paddingTop', 'paddingBottom'));
   const [bc, bd, bb, be] = BORDAS[moldura], comMoldura = moldura !== 'nenhuma';
   let w, h;
   if (proporcao === 'esticar') { h = H / (1 + bc + bb); w = W - (bd + be) * h; } else {
-    const r = RAZAO[proporcao], hMax = Math.min(H / (1 + bc + bb), W / (r + bd + be));
+    const r = RAZAO[proporcao](), hMax = Math.min(H / (1 + bc + bb), W / (r + bd + be));
     if (cheia || comMoldura) h = hMax;                         // tela cheia ou moldura: o maior que couber
     else {
-      const maxE = Math.max(1, Math.floor(hMax / 224));
-      h = 224 * (escala ? Math.min(escala, maxE) : maxE);       // na janela: múltiplo inteiro
+      const maxE = Math.max(1, Math.floor(hMax / telaA));
+      h = telaA * (escala ? Math.min(escala, maxE) : maxE);       // na janela: múltiplo inteiro
     }
     w = h * r;
   }
@@ -130,7 +145,7 @@ function ajustarEscala() {
     const dpr = window.devicePixelRatio || 1;
     tela.width = Math.round(w * dpr); tela.height = Math.round(h * dpr);
     gl.viewport(0, 0, tela.width, tela.height); gl.uniform2f(glSaida, tela.width, tela.height); pintar();
-  } else { tela.width = 256; tela.height = 224; }
+  } else { tela.width = telaL; tela.height = telaA; }
   document.querySelectorAll('[data-escala]').forEach((b) => b.classList.toggle('ativo', +b.dataset.escala === escala));
   document.querySelectorAll('[data-prop]').forEach((b) => b.classList.toggle('ativo', b.dataset.prop === proporcao));
   document.querySelectorAll('[data-moldura]').forEach((b) => { if (b.tagName === 'BUTTON') b.classList.toggle('ativo', b.dataset.moldura === moldura); });
@@ -166,12 +181,13 @@ function ligarSom() {
   if (audio) { if (audio.state === 'suspended') audio.resume(); return; }
   try {
     try { audio = new AudioContext({ sampleRate: 32000 }); } catch (e) { audio = new AudioContext(); }
-    taxa = 32000 / audio.sampleRate;
+    taxa = 32000 / audio.sampleRate;   // recalculado a cada bloco: o núcleo (ou a jukebox) diz a taxa dele
     no = audio.createScriptProcessor(2048, 0, 2);
     let pos = 0;
     no.onaudioprocess = (ev) => {
       const l = ev.outputBuffer.getChannelData(0), r = ev.outputBuffer.getChannelData(1);
       const jk = juke.tocando;
+      taxa = (jk || !snes || !snes.taxaAudio ? 32000 : snes.taxaAudio) / audio.sampleRate;
       if (jk) jukeEncher(Math.ceil(l.length * taxa) + 64);
       for (let i = 0; i < l.length; i++) {
         if (ini === fim || mudo || (pausado && !jk)) { l[i] = r[i] = 0; continue; }
@@ -206,7 +222,7 @@ function marcarSom() {
 }
 function empurrarSom() {
   const d = snes.apu.dsp, n = d.outCount, b = d.outBuf;
-  const cheio = ((fim - ini) & (FILA - 1)) > 32000 * 0.15; // > 150 ms: descarta
+  const cheio = ((fim - ini) & (FILA - 1)) > (snes.taxaAudio || 32000) * 0.15; // > 150 ms: descarta
   if (audio && !cheio) {
     for (let i = 0; i + 1 < n; i += 2) {
       fila[fim * 2] = b[i] / 32768; fila[fim * 2 + 1] = b[i + 1] / 32768;
@@ -217,7 +233,7 @@ function empurrarSom() {
 }
 
 // celular: o KOFnes-android.html liga esta classe (controle virtual na tela, núcleos libretro, sem textos de teclado)
-const CELULAR = document.documentElement.classList.contains('celular') || typeof KofLibretro !== 'undefined';
+const CELULAR = document.documentElement.classList.contains('celular');
 
 // ---------------- controles ----------------
 // botões do SNES: nome, bit no registrador do controle e tecla padrão
@@ -484,6 +500,7 @@ function jukeProxima(d) {
 function jukeFechar() { juke.tocando = false; juke.apu = null; juke.atual = -1; ini = fim = 0; montarJuke(); }
 async function guardarMusica() {
   if (!snes) { avisar('abra um jogo pra guardar a música dele'); return; }
+  if (snes.lr && !snes.s9x) { avisar('guardar música é só nos jogos de Super Nintendo'); return; }
   try {
     const n = juke.lista.filter((f) => f.jogoId === jogoId).length + 1;
     const reg = { origem: 'jogo', titulo: `Faixa ${n}`, jogo: romNome, jogoId, quando: Date.now(), capa: foto(256) };
@@ -624,7 +641,7 @@ async function enviarBug() {
   const aba = window.open('about:blank', '_blank');   // abre já, no toque: depois de um await o navegador (principalmente no celular) bloquearia a janela
   const desc = $('#bug-desc').value.trim() || '(sem descrição)', comPacote = $('#bug-pacote').checked && snes;
   const agora = new Date(), data = agora.toISOString().slice(0, 16).replace(/[-:T]/g, '');
-  const jogo = snes ? { nome: romNome, titulo: snes.cart.title.trim(), tamanho: romAtual ? romAtual.length : 0, sha1: romAtual ? await sha1(romAtual) : '?', mapeamento: ['LoROM', 'HiROM', 'ExHiROM'][snes.cart.mapper] || '?', superfx: !!snes.cart.superfx } : null;
+  const jogo = snes ? { nome: romNome, titulo: snes.cart.title.trim(), tamanho: romAtual ? romAtual.length : 0, sha1: romAtual ? await sha1(romAtual) : '?', mapeamento: snes.lr ? SIS[snes.sistema].nome + ' (' + snes.nucleo + ')' : ['LoROM', 'HiROM', 'ExHiROM'][snes.cart.mapper] || '?', superfx: !!snes.cart.superfx } : null;
   const opcoes = `tema ${temaSalvo} · filtro ${filtro} · proporção ${proporcao} · moldura ${moldura} · rebobinar ${rebobLimite} s`;
   const erro = erroBug ? { mensagem: String(erroBug.message || erroBug), pilha: String(erroBug.stack || '').slice(0, 1500) } : null;
   let arquivo = '';
@@ -656,7 +673,7 @@ async function enviarBug() {
   fecharBug();
   avisar(arquivo ? (CELULAR ? '🐞 issue aberta no GitHub: anexe o pacote baixado' : '🐞 issue aberta no GitHub: arraste o pacote baixado pra dentro dela') : '🐞 issue aberta no GitHub', 6000);
 }
-function assinatura() { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; }
+function assinatura() { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < f.length; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; }
 // erro na interface (fora do núcleo): oferece reportar, no máximo uma vez por minuto
 let ultimoErroUi = 0;
 addEventListener('error', (e) => {
@@ -735,7 +752,7 @@ async function lerZip(buf) {
     const loc = v.getUint32(p + 42, true);
     const nome = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl));
     p += 46 + nl + xl + cl;
-    if (!/\.(sfc|smc|fig|swc)$/i.test(nome)) continue;
+    if (!EXT_ROM.test(nome)) continue;
     const dados = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true);
     const bruto = u8.subarray(dados, dados + tam);
     if (metodo === 0) return { nome, bytes: bruto };
@@ -743,7 +760,7 @@ async function lerZip(buf) {
     const s = new Blob([bruto]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
     return { nome, bytes: new Uint8Array(await new Response(s).arrayBuffer()) };
   }
-  throw new Error('o zip não tem .sfc/.smc dentro');
+  throw new Error('o zip não tem nenhuma ROM dentro');
 }
 // ---------------- banco interno (IndexedDB) ----------------
 // c: configurações (a pasta de ROMs) · jogos: nome, prints, quando jogou ·
@@ -812,9 +829,9 @@ async function descomprimir(blob) {
   return new Response(blob.stream().pipeThrough(new DecompressionStream('gzip'))).text();
 }
 function foto(largura) {   // print do quadro (sem filtro); webp quando dá: bem menor
-  const cru = document.createElement('canvas'); cru.width = 256; cru.height = 224;
+  const cru = document.createElement('canvas'); cru.width = telaL; cru.height = telaA;
   cru.getContext('2d').putImageData(img, 0, 0);
-  const c = document.createElement('canvas'); c.width = largura; c.height = Math.round(largura * 224 / 256);
+  const c = document.createElement('canvas'); c.width = largura; c.height = Math.round(largura * telaA / telaL);
   const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(cru, 0, 0, c.width, c.height);
   const w = c.toDataURL('image/webp', 0.85);
   return w.startsWith('data:image/webp') ? w : c.toDataURL('image/png');
@@ -830,14 +847,18 @@ async function abrirArquivo(arq) {
     await abrirBytes(nome, bytes, true);
   } catch (e) { avisar(e.message, 5000); }
 }
-// no celular os núcleos são libretro em WebAssembly (nucleo.js); no PC, o núcleo Kof
-async function novoNucleo(bytes, nome) {
-  return typeof KofLibretro !== 'undefined' ? KofLibretro.criar(bytes, nome) : new KofNucleo.Snes(Int32Array.from(bytes));
+// no celular os núcleos são libretro em WebAssembly (nucleo.js); no PC, SNES é o núcleo Kof e os outros sistemas, libretro
+async function novoNucleo(bytes, sis) {
+  if (sis === 'snes' && !CELULAR && typeof KofNucleo !== 'undefined') return new KofNucleo.Snes(Int32Array.from(bytes));
+  return KofLibretro.criar(bytes, sis);
 }
 async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
-  if (bytes.length < 0x8000) throw new Error('isso não parece uma ROM de SNES');
+  // sistema pela extensão; jogo antigo da biblioteca guardado sem extensão é de SNES
+  const sis = !/\.[a-z0-9]{2,4}$/i.test(nome) ? 'snes' : sistemaDoNome(nome);
+  if (!sis) throw new Error('não conheço esse tipo de arquivo (' + SIS_ATIVOS.map((k) => SIS[k].ext.map((e) => '.' + e).join(' ')).join(' ') + ')');
+  if (bytes.length < SIS[sis].minimo) throw new Error('isso não parece uma ROM de ' + SIS[sis].nome);
   registrarTempo(); salvarSram(); await salvarAuto();
-  const s = await novoNucleo(bytes, nome);
+  const s = await novoNucleo(bytes, sis);
   romNome = nome.replace(/\.[^.]+$/, '');
   jogoId = s.cart.title.trim() + '|' + bytes.length;
   chaveSram = 'sram.' + s.cart.title.trim() + '.' + bytes.length;
@@ -847,6 +868,9 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
     for (let i = 0; i < b.length && i < s.cart.sram.length; i++) s.cart.sram[i] = b.charCodeAt(i);
   }
   s.reset();
+  tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
+  document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy: só A, B, Start e Select)
+  QUADRO_MS = 1000 / (s.fps || 60.0988);
   snes = s; romAtual = bytes; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob(); avisarMudo(2200);
   document.body.classList.remove('vazio');
   fecharJanelas();
@@ -856,7 +880,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   ajustarEscala();
   // a ROM vai pra biblioteca: da próxima vez abre sem diálogo nenhum
   try {
-    const novo = { id: jogoId, nome: romNome, arquivo: nome, titulo: s.cart.title.trim(), tamanho: bytes.length, ultimo: Date.now() };
+    const novo = { id: jogoId, nome: romNome, arquivo: nome, sistema: sis, titulo: s.cart.title.trim(), tamanho: bytes.length, ultimo: Date.now() };
     const id = jogoId;
     await bdMudarJogo(id, (antigo) => ({ ...(antigo || {}), ...novo }));
     if (guardarNaBiblioteca || !(await bdTem('roms', id))) await bdPor('roms', id, bytes);
@@ -1073,7 +1097,7 @@ let pastaCache = null, lendoPasta = null, jogosItens = [], soPrincipais = ler('s
 async function varrer(dir, prof, saida) {
   for await (const [nome, h] of dir.entries()) {
     if (h.kind === 'directory' && prof < 2) await varrer(h, prof + 1, saida);
-    else if (h.kind === 'file' && /\.(sfc|smc|zip|fig|swc)$/i.test(nome)) {
+    else if (h.kind === 'file' && (EXT_ROM.test(nome) || /\.zip$/i.test(nome))) {
       saida.push({ nome, h });
       if (saida.length % 250 === 0) estadoBib(`📁 lendo a pasta de ROMs… ${saida.length.toLocaleString('pt-BR')} arquivos`);
     }
@@ -1268,6 +1292,8 @@ function adicionarLis(ate) {
       li.appendChild(fig);
     }
     const nm = document.createElement('span'); nm.textContent = r.nome; li.appendChild(nm);
+    const sis = SIS_ATIVOS.length > 1 && sistemaDoItem(r);
+    if (sis && sis !== 'snes') { const tag = document.createElement('small'); tag.className = 'sis-tag'; tag.textContent = SIS[sis].curto; li.appendChild(tag); }
     const sm = document.createElement('small');
     sm.textContent = r.jogo ? (contagem[r.jogo.id] ? '💾 ' + contagem[r.jogo.id] : '★') : r.ext;
     li.appendChild(sm);
@@ -1296,7 +1322,7 @@ function mostrarInfo() {
   if (r.jogo) {
     const n = contagem[r.jogo.id] || 0;
     const e = estat[r.jogo.id], tempo = e && e.tempo ? ` · ${duracao(e.tempo)} no total em ${e.sessoes} ${e.sessoes === 1 ? 'sessão' : 'sessões'}` : '';
-    $('#info-det').textContent = `jogado ${quando(r.jogo.ultimo)}${tempo} · ${n} ${n === 1 ? 'estado salvo' : 'estados salvos'} · ${(r.jogo.tamanho / 1048576).toFixed(1)} MB`;
+    $('#info-det').textContent = (SIS_ATIVOS.length > 1 ? SIS[sistemaDoItem(r)].nome + ' · ' : '') + `jogado ${quando(r.jogo.ultimo)}${tempo} · ${n} ${n === 1 ? 'estado salvo' : 'estados salvos'} · ${(r.jogo.tamanho / 1048576).toFixed(1)} MB`;
   } else $('#info-det').textContent = 'na pasta de ROMs · ainda não jogado';
   const auto = autoSalvar && !!(r.jogo && r.jogo.temAuto);
   $('[data-acao="jogar"]').textContent = auto ? '▶ Continuar' : '▶ Jogar';
@@ -1380,13 +1406,13 @@ const ITENS_RAPIDO = [
   { t: '▶ Continuar', f: () => fecharRapido() },
   { t: '💾 Salvar estado', f: () => { fecharRapido(); salvarEstado(); } },
   { t: '⟲ Carregar último estado', f: () => { fecharRapido(); carregarUltimo(); } },
-  { t: '🎵 Guardar esta música', f: () => { fecharRapido(); guardarMusica(); } },
+  { t: '🎵 Guardar esta música', so: () => !snes || !snes.lr || snes.s9x, f: () => { fecharRapido(); guardarMusica(); } },
   { t: '🐞 Reportar bug', f: () => { fecharRapido(); abrirBug(); } },
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
   { t: '🎨 Tema', v: () => TODOS_TEMAS.find(([k]) => k === temaSalvo)[1], aj: (d) => tema(ciclar(TODOS_TEMAS, temaSalvo, d)), f: () => { fecharRapido(); acao('temas'); } },
   { t: 'Filtro', v: () => FILTROS.find(([k]) => k === filtro)[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, filtro, d)) },
-  { t: 'Proporção', v: () => PROPORCOES.find(([k]) => k === proporcao)[1], aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
+  { t: 'Proporção', v: () => nomeProporcao(proporcao), aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
   { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS, moldura, d)) },
   { t: 'Volume', v: () => (mudo ? 'mudo' : volume + '%'), aj: (d) => mudarVolume(d * 10) },
   { t: '⛶ Tela cheia', f: () => acao('cheia') },
@@ -1396,6 +1422,7 @@ function montarRapido() {
   const ul = $('#rapido-lista'); ul.innerHTML = '';
   ITENS_RAPIDO.forEach((it, i) => {
     const li = document.createElement('li'); if (i === selR) li.className = 'sel';
+    if (it.so && !it.so()) li.hidden = true;
     const nm = document.createElement('span'); nm.textContent = it.t; li.appendChild(nm);
     if (it.aj) {
       const aj = document.createElement('span'); aj.className = 'ajuste';
@@ -1437,7 +1464,10 @@ function rapidoTecla(e) {
   if (e.repeat && e.code === 'Enter') { e.preventDefault(); return; }   // Enter ainda segurado do Select+Start
   if (['Escape', 'Backspace', 'F2'].includes(e.code)) { e.preventDefault(); fecharRapido(); return; }
   if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
-    e.preventDefault(); selR = (selR + (e.code === 'ArrowDown' ? 1 : -1) + ITENS_RAPIDO.length) % ITENS_RAPIDO.length; montarRapido(); return;
+    e.preventDefault();
+    const d = e.code === 'ArrowDown' ? 1 : -1, N = ITENS_RAPIDO.length;
+    do selR = (selR + d + N) % N; while (ITENS_RAPIDO[selR].so && !ITENS_RAPIDO[selR].so());   // pula o que não vale pra esse sistema
+    montarRapido(); return;
   }
   if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && it.aj) { e.preventDefault(); it.aj(e.code === 'ArrowRight' ? 1 : -1); montarRapido(); return; }
   if (e.code === 'Enter') { e.preventDefault(); if (it.f) it.f(); else { it.aj(1); montarRapido(); } }
@@ -1606,7 +1636,7 @@ const DICAS_CEL = [
   'Segure <b>⏪</b>: o jogo volta até 5 segundos, em preto e branco. Depois a ampulheta ⏳ recarrega enquanto você joga.',
   'Em <b>Controles</b> você troca o modelo do controle, o tamanho, a transparência e liga o modo canhoto.',
   'Gire o celular: na horizontal os botões ficam nos cantos e o jogo ganha a tela.',
-  'Toque em <b>Abrir uma ROM</b> pra escolher um jogo do seu celular (.sfc, .smc ou .zip).',
+  'Toque em <b>Abrir uma ROM</b> pra escolher um jogo do seu celular (.sfc, .smc, .gb, .gbc ou .zip).',
   'Na Biblioteca, toque num jogo pra abrir; <b>Continuar</b> volta de onde você parou.',
   'Tocou aquela música que você ama? <b>☰ → Guardar esta música</b>: ela vai pra Jukebox e toca sem o jogo.',
   'Achou um bug? <b>☰ → Reportar bug</b> abre o GitHub com tudo pra reproduzir.',
@@ -2089,10 +2119,10 @@ $('[data-acao="capas"]').textContent = capasNet ? '🖼 Capas oficiais: ligadas'
 ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
-window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
   volume: () => volume, juke: () => ({ faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, rebobEstado: () => ({ limite: rebobLimite, recarga: Math.round(rebobRecarga), fotos: rebob ? rebob.fotos : -1, ativo: !!rebobinou }), estat: () => estat, tema: () => document.documentElement.dataset.tema, rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
-  assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < 57344; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
+  assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < f.length; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
 })();

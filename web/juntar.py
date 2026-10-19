@@ -19,7 +19,11 @@ import sys
 saida_kof, web, icone, destino = (pathlib.Path(a) for a in sys.argv[1:5])
 # 5º argumento (opcional): a pasta com os núcleos (nucleo-libretro/saida: snes9x.js, gambatte.js...) -> gera o
 # KOFnes-android.html (núcleos libretro + controle virtual)
-android = pathlib.Path(sys.argv[5]) if len(sys.argv) > 5 else None
+# 6º argumento "pc": versão do PC, que só leva os núcleos dos OUTROS sistemas (o SNES fica no núcleo Kof)
+pasta_nucleos = pathlib.Path(sys.argv[5]) if len(sys.argv) > 5 else None
+pc = len(sys.argv) > 6 and sys.argv[6] == "pc"
+android = pasta_nucleos if pasta_nucleos and not pc else None
+nucleos = [f for f in sorted(pasta_nucleos.glob("*.js")) if not (pc and f.stem == "snes9x")] if pasta_nucleos else []
 
 
 def versao():
@@ -66,9 +70,9 @@ partes = {
     "{{CSS}}": (web / "estilo.css").read_text() + ((web / "android.css").read_text() if android else ""),
     "{{NUCLEO}}": script,
     "{{APP}}": (
-        ("".join(f.read_text() + "\n" for f in sorted(android.glob("*.js"))) if android else "")   # todos os núcleos compilados (snes9x.js, gambatte.js...)
+        "".join(f.read_text() + "\n" for f in nucleos)   # núcleos compilados (celular: todos; PC: gambatte.js...)
         + (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
-        + ((web / "nucleo.js").read_text() + "\n" if android else "")   # depois do estado.js: ele troca o savestate pelo do núcleo libretro
+        + ((web / "nucleo.js").read_text() + "\n" if nucleos else "")   # depois do estado.js: ele troca o savestate pelo do núcleo libretro
         + app_js
     ),
     "{{ICONE}}": "data:image/png;base64," + base64.b64encode(icone.read_bytes()).decode(),

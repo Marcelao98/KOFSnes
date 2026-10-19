@@ -100,6 +100,7 @@ body.vazio #tela { visibility: hidden; }
   overflow: hidden; text-overflow: ellipsis; display: flex; justify-content: space-between; gap: 12px;
 }
 #roms li small { color: var(--fraco); }
+#roms li .sis-tag { margin-left: auto; padding: 0 .4em; border: 1px solid var(--borda); border-radius: 4px; font-size: .75em; }
 #roms li:hover, #roms li.sel { background: var(--sel); }
 #roms li.sel { outline: 1px solid var(--destaque); }
 

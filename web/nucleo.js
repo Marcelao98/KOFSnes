@@ -192,9 +192,9 @@ const KofLibretro = (() => {
     KofEstado.Rebobinador = (r, lim, max) => (r && r.lr ? Rebobinador(r, lim, max) : reb(r, lim, max));
   }
 
-  // nome do arquivo decide o sistema (sem nome: SNES, como era antes)
+  // o sistema vem pelo id ('snes', 'gb') ou pelo nome do arquivo (sem nenhum dos dois: SNES, como era antes)
   async function criar(bytes, nome) {
-    const sis = nome ? sistemaDe(nome) : 'snes';
+    const sis = SISTEMAS[nome] ? nome : nome ? sistemaDe(nome) : 'snes';
     if (!sis) throw new Error('não conheço esse tipo de arquivo');
     const mod = await iniciar(SISTEMAS[sis].nucleo);
     const c = new Consolinho(Uint8Array.from(bytes), sis, mod);

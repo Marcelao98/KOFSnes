@@ -159,8 +159,14 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   `sistemaDe(nome)`, `disponivel(sis)`; o objeto tem `sistema`, `nucleo`, `largura/altura`, `fps`, `taxaAudio`, `rgba` (já no
   formato do canvas) e `ppu.frame` (getter no formato Kof). Estado: `{lr: núcleo, d}` (Snes9x mantém `s9x: 1`). O juntar.py
   embute todo `nucleo-libretro/saida/*.js`. Pacote de bug: `nucleo` = 'kof' | 's9x' | 'gambatte'. Teste:
-  `node testes/libretro/nucleo.cjs rom.sfc|rom.gb`. Próximas: tirar 256x224/32 kHz/60,1 fps fixos do app.js, Game Boy no
-  app (A/B/Start/Select, extensões, biblioteca), APK com os dois núcleos, PC com Gambatte em WebAssembly.
+  `node testes/libretro/nucleo.cjs rom.sfc|rom.gb`. Etapas 3-5 feitas: app.js sem 256x224 fixo (`telaL/telaA`,
+  `tamanhoTela()`, textura/foto/escala/proporção pelo núcleo; Game Boy: "Original" = 10:9), áudio na taxa do núcleo (jukebox
+  segue 32 kHz), `QUADRO_MS` pelo fps do núcleo; `body[data-sis]` (controle virtual do GB só A/B/Start/Select em
+  `android.css`); `SIS_ATIVOS`/`EXT_ROM` (extensões, zip, pasta, accept), rótulo "GB" na biblioteca, `sistema` no registro do
+  jogo, "Guardar esta música" some fora do SNES (`so:` nos itens do menu rápido). PC: `juntar.py ... saida pc` embute só os
+  núcleos que não são do SNES (Gambatte, ~870 KB); SNES no PC continua no núcleo Kof (`novoNucleo`); `CELULAR` agora é só a
+  classe do html. Gancho de teste `KOFnes.nucleo()`. Teste: `node testes/libretro/gameboy.cjs dist/web rom.gb rom.sfc prints/`.
+  APK da branch: `android/apk/KOFnes.apk` (link raw na branch `multi-sistema`). Falta: o Marcelo testar no celular e no PC.
 - README: não existe *release* no GitHub (o README aponta pra `publicado/`); sugerido criar uma
   com o zip. O print do modo sofá no README mostra capas comerciais e nomes de teste repetidos.
 - Bugs conhecidos de compatibilidade: defeito gráfico na parte de baixo da tela no **Mega Man X**;

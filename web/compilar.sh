@@ -19,7 +19,12 @@ cp "$AQUI/nucleo.kf" "$T/src/"
 cp -r "$RAIZ/snes" "$T/src/snes"
 kof build "$T/src/nucleo.kf" --target js --output "$T/out"
 python3 "$RAIZ/empacotar/icone.py" "$T" >/dev/null
-python3 "$AQUI/juntar.py" "$T/out" "$AQUI" "$T/icone.png" "$SAIDA/KOFnes.html"
+# PC: SNES no núcleo Kof; Game Boy pelo Gambatte em WebAssembly, se ele estiver compilado (nucleo-libretro/construir.sh gambatte)
+if [ -f "$RAIZ/nucleo-libretro/saida/gambatte.js" ]; then
+    python3 "$AQUI/juntar.py" "$T/out" "$AQUI" "$T/icone.png" "$SAIDA/KOFnes.html" "$RAIZ/nucleo-libretro/saida" pc
+else
+    python3 "$AQUI/juntar.py" "$T/out" "$AQUI" "$T/icone.png" "$SAIDA/KOFnes.html"
+fi
 # Android: o mesmo app com os núcleos libretro (Snes9x, Gambatte...) e o controle virtual (precisa do
 # nucleo-libretro/saida/snes9x.js; veja nucleo-libretro/construir.sh)
 if [ -f "$RAIZ/nucleo-libretro/saida/snes9x.js" ]; then

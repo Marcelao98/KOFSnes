@@ -189,3 +189,14 @@ body.canhoto #ctl [data-b="L"] { --x: 83%; } body.canhoto #ctl [data-b="R"] { --
 /* menu rápido (☰): rola quando a tela é baixa (celular deitado) e tem linhas fáceis de tocar */
 html.celular #rapido { position: fixed !important; top: 6px !important; left: 50% !important; transform: translateX(-50%) !important; max-height: calc(100dvh - 12px); overflow-y: auto; z-index: 40; padding: 12px 14px 8px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 html.celular #rapido-lista li { min-height: 42px; }
+
+/* Game Boy: só A, B, Start e Select; B embaixo à esquerda e A em cima à direita, como no aparelho */
+html.celular body[data-sis="gb"] #ctl [data-b="X"], html.celular body[data-sis="gb"] #ctl [data-b="Y"],
+html.celular body[data-sis="gb"] #ctl [data-b="L"], html.celular body[data-sis="gb"] #ctl [data-b="R"] { display: none; }
+html.celular body[data-sis="gb"] #ctl [data-b="B"] { --x: 66%; --y: 64%; --w: calc(var(--u) * 24); }
+html.celular body[data-sis="gb"] #ctl [data-b="A"] { --x: 86%; --y: 48%; --w: calc(var(--u) * 24); }
+html.celular body.canhoto[data-sis="gb"] #ctl [data-b="B"] { --x: 14%; } html.celular body.canhoto[data-sis="gb"] #ctl [data-b="A"] { --x: 34%; }
+@media (orientation: landscape) {
+  html.celular body.cel-jogo[data-sis="gb"] #ctl [data-b="B"] { --x: 79%; --y: 70%; }
+  html.celular body.cel-jogo[data-sis="gb"] #ctl [data-b="A"] { --x: 93%; --y: 52%; }
+}
