@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Compila um núcleo libretro pra WebAssembly e junta com a nossa ponte (ponte.cpp).
-# Uso: nucleo-libretro/construir.sh snes9x|gambatte|fceumm|genplus|mgba   (sem argumento: todos)
+# Uso: nucleo-libretro/construir.sh snes9x|gambatte|fceumm|genplus|mgba|fbneo   (sem argumento: todos)
 # Resultado: nucleo-libretro/saida/<núcleo>.js (um arquivo só, com o .wasm embutido; não vai pro git).
 # O módulo se chama Nucleo_<núcleo> (ex.: Nucleo_snes9x) e as funções da ponte são lr_*.
 # Precisa: emscripten (no Ubuntu: apt install emscripten) e git. O Snes9x demora ~4 min na primeira vez.
@@ -22,7 +22,9 @@ construir() {
               dir="$T/genplus"; lc="$dir/libretro/libretro-common"; bc="$dir/genesis_plus_gx_libretro_emscripten.bc" ;;
     mgba)     repo=https://github.com/libretro/mgba.git; commit=7a12d6d4b9acb14c0ae62c9166b6a2f3d08007f6
               dir="$T/mgba"; lc="$dir/src/platform/libretro"; bc="$dir/build/mgba_libretro.bc" ;;
-    *) echo "núcleo desconhecido: $nome (use snes9x, gambatte, fceumm, genplus ou mgba)"; exit 1 ;;
+    fbneo)    repo=https://github.com/libretro/FBNeo.git; commit=2dbbac7623fbae1c7894a6437769e8a3adb78610
+              dir="$T/fbneo"; lc="$dir/src/burner/libretro/libretro-common"; bc="$dir/src/burner/libretro/fbneo_neogeo_libretro_emscripten.bc" ;;
+    *) echo "núcleo desconhecido: $nome (use snes9x, gambatte, fceumm, genplus, mgba ou fbneo)"; exit 1 ;;
   esac
   if [ ! -d "$dir" ]; then git clone -q "$repo" "$dir"; fi
   git -C "$dir" fetch -q --depth 1 origin "$commit" 2>/dev/null || true
@@ -41,6 +43,9 @@ construir() {
                 -DENABLE_GDB_STUB=OFF -DENABLE_SCRIPTING=OFF -DBUILD_GL=OFF -DBUILD_GLES2=OFF -DBUILD_GLES3=OFF -DUSE_EPOXY=OFF \
                 -DBUILD_LTO=OFF -DHAVE_POPCOUNT32=0 -DHAVE_PTHREAD_H=0 -DHAVE_SNPRINTF_L=0 >/dev/null \
               && cmake --build "$dir/build" --target mgba_libretro -j"$(nproc)" ;;
+    # FBNeo só com o Neo Geo (SUBSET=neogeo: ~1 min em vez de horas, núcleo pequeno) e com o zlib dele mesmo
+    fbneo)    (cd "$dir/src/burner/libretro" && make clean platform=emscripten SUBSET=neogeo >/dev/null && make generate-files platform=emscripten SUBSET=neogeo >/dev/null \
+                && emmake make -j"$(nproc)" platform=emscripten SUBSET=neogeo EXTERNAL_ZLIB=0) ;;   # generate-files: lista de drivers só do Neo Geo
   esac
   local O="$T/obj-$nome"; rm -rf "$O"; mkdir -p "$O"
   local INC="-I$(dirname "$bc") -I$lc/include -I$lc -I$dir"
@@ -51,7 +56,7 @@ construir() {
            encodings/encoding_utf encodings/encoding_deflate file/file_path file/file_path_io streams/file_stream \
            streams/file_stream_transforms string/stdstring time/rtime vfs/vfs_implementation file/retro_dirent; do
     [ -f "$lc/$f.c" ] || continue
-    i=$((i+1)); emcc -O3 -DNDEBUG $INC -c "$lc/$f.c" -o "$O/c$i.o"
+    i=$((i+1)); emcc -O3 -DNDEBUG -I"$lc/include" -c "$lc/$f.c" -o "$O/c$i.o"   # só os cabeçalhos do libretro-common (a pasta do núcleo pode ter outros com o mesmo nome)
   done
   local F=_lr_alloc,_lr_init,_lr_load,_lr_info,_lr_unload,_lr_run,_lr_pad,_lr_fb,_lr_w,_lr_h,_lr_audio,_lr_audio_n,_lr_audio_total
   F=$F,_lr_arquivo,_lr_apagar,_lr_var,_lr_canais,_lr_sonda,_lr_mudas,_lr_onda,_lr_onda_pos,_lr_onda_pos_c,_lr_reset,_lr_state_size,_lr_state_save,_lr_state_load,_lr_mem_ptr,_lr_mem_size,_malloc,_free
@@ -62,5 +67,5 @@ construir() {
   ls -l "$AQUI/saida/$nome.js"
 }
 
-if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus mgba; fi
+if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus mgba fbneo; fi
 for n in "$@"; do construir "$n"; done

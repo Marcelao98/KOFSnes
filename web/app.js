@@ -23,8 +23,10 @@ const tela = $('#tela');
 const SIS = typeof KofLibretro !== 'undefined' ? KofLibretro.SISTEMAS : { snes: { nome: 'Super Nintendo', curto: 'SNES', ext: ['sfc', 'smc', 'fig', 'swc'], minimo: 0x8000 } };
 const SIS_ATIVOS = Object.keys(SIS).filter((k) => k === 'snes' || (typeof KofLibretro !== 'undefined' && KofLibretro.disponivel(k)));
 const EXT_ROM = new RegExp('\\.(' + [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).join('|') + ')$', 'i');
-const sistemaDoNome = (n) => SIS_ATIVOS.find((k) => SIS[k].ext.some((e) => (n || '').toLowerCase().endsWith('.' + e))) || null;
-const sistemaDoItem = (r) => (r.jogo && (r.jogo.sistema || sistemaDoNome(r.jogo.arquivo))) || sistemaDoNome(r.nome) || 'snes';
+// zip de Neo Geo (mslug.zip...) é o jogo inteiro: reconhecido pelo nome na lista do FBNeo
+const neoGeo = (n) => SIS_ATIVOS.includes('neogeo') && !!KofLibretro.setNeoGeo(n);
+const sistemaDoNome = (n) => (neoGeo(n) ? 'neogeo' : SIS_ATIVOS.find((k) => SIS[k].ext.some((e) => (n || '').toLowerCase().endsWith('.' + e))) || null);
+const sistemaDoItem = (r) => (r.jogo && (r.jogo.sistema || sistemaDoNome(r.jogo.arquivo))) || sistemaDoNome(r.arquivo) || sistemaDoNome(r.nome) || 'snes';
 $('#arquivo').accept = [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).map((e) => '.' + e).join(',') + ',.zip';
 let telaL = 256, telaA = 224, img = new ImageData(telaL, telaA), px = new Uint32Array(img.data.buffer), bytesTela = new Uint8Array(img.data.buffer);
 let filtro = ler('filtro') || 'nitido';
@@ -524,7 +526,7 @@ async function jukeTocar(i) {
       if (typeof KofLibretro === 'undefined' || !KofLibretro.disponivel(f.sistema)) throw new Error('essa versão do KOFstation não toca música de ' + (SIS[f.sistema] ? SIS[f.sistema].nome : f.sistema));
       const rom = await bdPegar('roms', f.jogoId);
       if (!rom) throw new Error('a ROM de ' + f.jogo + ' não está mais na biblioteca: abra o jogo uma vez e tente de novo');
-      tk = await KofLibretro.tocador(f.sistema, rom, f.lr);
+      tk = await KofLibretro.tocador(f.sistema, rom, f.lr, f.arquivo, f.sistema === 'neogeo' ? await zipsDoPai(f.arquivo) : []);
     } else {
       const apu = new KofNucleo.Apu(); apu.reset();
       if (f.estado) KofEstado.restaurar(apu, JSON.parse(f.estado)); else KofSpc.ler(apu, f.spc);
@@ -560,7 +562,7 @@ async function guardarMusica() {
     const reg = { origem: 'jogo', titulo: `Faixa ${n}`, jogo: romNome, jogoId, quando: Date.now(), capa: foto(256) };
     // núcleo Kof: o estado do chip de som inteiro; núcleo Snes9x (celular): um .spc tirado do estado dele;
     // outros sistemas (Game Boy): o savestate do jogo inteiro (a jukebox roda o jogo parado naquela tela)
-    if (snes.lr && !snes.s9x) { reg.sistema = snes.sistema; reg.lr = KofEstado.capturar(snes).d; } else if (snes.s9x) reg.spc = snes.gravarSpc({ titulo: reg.titulo, jogo: romNome, segundos: PADRAO_SEG, fadeMs: PADRAO_FADE }); else reg.estado = JSON.stringify(KofEstado.capturar(snes.apu));
+    if (snes.lr && !snes.s9x) { reg.sistema = snes.sistema; reg.lr = KofEstado.capturar(snes).d; reg.arquivo = romArquivo; } else if (snes.s9x) reg.spc = snes.gravarSpc({ titulo: reg.titulo, jogo: romNome, segundos: PADRAO_SEG, fadeMs: PADRAO_FADE }); else reg.estado = JSON.stringify(KofEstado.capturar(snes.apu));
     await bdGuardar('musicas', reg);
     await jukeCarregar(); montarJuke();
     avisar(`🎵 música guardada na jukebox: ${romNome} · Faixa ${n} (Som → Jukebox)`, 3500);
@@ -1010,11 +1012,11 @@ function foto(largura) {   // print do quadro (sem filtro); webp quando dá: bem
 const quando = (t) => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
 // ---------------- abrir um jogo ----------------
-let jogoId = '';
+let jogoId = '', romArquivo = '';
 async function abrirArquivo(arq) {
   try {
     let nome = arq.name, bytes = new Uint8Array(await arq.arrayBuffer());
-    if (/\.zip$/i.test(nome)) ({ nome, bytes } = await lerZip(bytes.buffer));
+    if (/\.zip$/i.test(nome) && !neoGeo(nome)) ({ nome, bytes } = await lerZip(bytes.buffer));
     await abrirBytes(nome, bytes, true);
   } catch (e) { avisar(e.message, 5000); }
 }
@@ -1030,6 +1032,7 @@ async function escolherBios() {
     await bdPor('bios', arq, { sistema: sis, dados });
     KofLibretro.bios(SIS[sis].nucleo, arq, dados);
     avisar('BIOS do ' + SIS[sis].nome + ' guardada: vale no próximo jogo que abrir', 4000);
+    if (biosEsperando && !$('#bios-tela').hidden) { const f = biosEsperando; biosEsperando = null; $('#bios-tela').hidden = true; try { await f(); } catch (er) { avisar(er.message, 6000); } }
   };
   e.click();
 }
@@ -1044,19 +1047,45 @@ async function carregarBios() {
 }
 const biosProntas = carregarBios().catch(() => {});
 // no celular os núcleos são libretro em WebAssembly (nucleo.js); no PC, SNES é o núcleo Kof e os outros sistemas, libretro
-async function novoNucleo(bytes, sis) {
+async function novoNucleo(bytes, sis, nome) {
   if (sis === 'snes' && !CELULAR && typeof KofNucleo !== 'undefined') return new KofNucleo.Snes(Int32Array.from(bytes));
   await biosProntas;
-  return KofLibretro.criar(bytes, sis);
+  if (sis !== 'neogeo') return KofLibretro.criar(bytes, sis);
+  return KofLibretro.criar(bytes, nome, await zipsDoPai(nome));
+}
+// Neo Geo: jogo "clone" (ex.: kof98a) pode precisar também do zip do pai (kof98.zip). Procura na biblioteca e na pasta de ROMs
+async function zipsDoPai(nome) {
+  const pai = (KofLibretro.NEOGEO[KofLibretro.setNeoGeo(nome)] || [])[1];
+  if (!pai) return [];
+  const arq = pai + '.zip';
+  try {
+    const j = (await bdTodos('jogos')).find((x) => (x.arquivo || '').toLowerCase() === arq);
+    const bytes = j && await bdPegar('roms', j.id);
+    if (bytes) return [{ nome: arq, bytes }];
+  } catch (e) { /* sem banco */ }
+  const l = await lerPasta(false).catch(() => []), it = l.find((x) => x.arquivo.toLowerCase() === arq);
+  if (it) return [{ nome: arq, bytes: new Uint8Array(await (await it.h.getFile()).arrayBuffer()) }];
+  return [];   // sem o pai: se o zip do clone já vier completo, abre; senão o nucleo.js avisa qual zip falta
+}
+// tela "falta a BIOS": abre ao tentar jogar Neo Geo sem o neogeo.zip; escolhida a BIOS, abre o jogo que estava esperando
+let biosEsperando = null;
+function pedirBios(sis, abrir) {
+  biosEsperando = abrir;
+  $('#bios-nome').textContent = SIS[sis].nome; $('#bios-arquivo').textContent = SIS[sis].bios.map((b) => b.arquivo).join(', ');
+  fecharJanelas(); $('#bios-tela').hidden = false;
 }
 async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   // sistema pela extensão; jogo antigo da biblioteca guardado sem extensão é de SNES
   const sis = !/\.[a-z0-9]{2,4}$/i.test(nome) ? 'snes' : sistemaDoNome(nome);
   if (!sis) throw new Error('não conheço esse tipo de arquivo (' + SIS_ATIVOS.map((k) => SIS[k].ext.map((e) => '.' + e).join(' ')).join(' ') + ')');
   if (bytes.length < SIS[sis].minimo) throw new Error('isso não parece uma ROM de ' + SIS[sis].nome);
+  if (SIS[sis].bios && typeof KofLibretro !== 'undefined') {
+    await biosProntas;
+    if (!KofLibretro.temBios(sis)) { pedirBios(sis, () => abrirBytes(nome, bytes, guardarNaBiblioteca)); return; }
+  }
   registrarTempo(); salvarSram(); await salvarAuto();
-  const s = await novoNucleo(bytes, sis);
-  romNome = nome.replace(/\.[^.]+$/, '');
+  const s = await novoNucleo(bytes, sis, nome);
+  romNome = nome.replace(/\.[^.]+$/, ''); romArquivo = nome;
   capaSis.set(romNome, sis === 'gb' && /\.gbc$/i.test(nome) ? 'gbc' : sis);
   jogoId = s.cart.title.trim() + '|' + bytes.length;
   chaveSram = 'sram.' + s.cart.title.trim() + '.' + bytes.length;
@@ -1588,7 +1617,7 @@ async function mostrarBiblioteca(pedir, relerPasta) {
     if (antes) { const j = visiveis.indexOf(antes); if (j >= 0) marcarSel(j); }
   }
 }
-function fecharJanelas() { fecharTemas(false); for (const id of ['home', 'biblioteca', 'estados', 'guia', 'teclas', 'estatisticas', 'jukebox']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
+function fecharJanelas() { fecharTemas(false); for (const id of ['home', 'biblioteca', 'estados', 'guia', 'teclas', 'estatisticas', 'jukebox', 'bios-tela']) $('#' + id).hidden = true; capturando = null; if (rapidoAberto) fecharRapido(); }
 // controle também navega na biblioteca
 let padAntes = 0;
 setInterval(() => {
@@ -2229,6 +2258,7 @@ async function acao(a) {
   switch (a) {
     case 'abrir': $('#arquivo').click(); break;
     case 'bios': escolherBios(); break;
+    case 'bios-fechar': biosEsperando = null; $('#bios-tela').hidden = true; break;
     case 'pasta':
       if (!temPasta) { avisar('este navegador não deixa escolher pasta; use Adicionar arquivo', 4000); break; }
       try { pasta = await showDirectoryPicker({ id: 'kofnes-roms', mode: 'read' }); await bdPor('c', 'pasta', pasta); pastaCache = null; await mostrarBiblioteca(true, true); } catch (e) { /* cancelou */ }

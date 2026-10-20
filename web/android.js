@@ -25,7 +25,10 @@
   const ROTULOS = {
     md: { Y: 'A', B: 'B', A: 'C', L: 'X', X: 'Y', R: 'Z', Select: 'MODE' },
     sms: { B: '1', A: '2', Start: 'PAUSE' }, gg: { B: '1', A: '2' },
+    neogeo: { B: 'A', A: 'B', Y: 'C', X: 'D', Select: 'FICHA' },
   };
+  // o app.js chama ao abrir um jogo; esta parte toda mora dentro de uma função, então vai pelo window
+  window.rotularControle = rotularControle;
   function rotularControle(sis) {
     const r = ROTULOS[sis] || {};
     ctl.querySelectorAll('[data-b]').forEach((e) => {

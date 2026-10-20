@@ -38,12 +38,29 @@ const KofLibretro = (() => {
       bios: [{ arquivo: 'gba_bios.bin', tamanho: 16384, opcional: true }],
       canais: ['Pulso 1', 'Pulso 2', 'Onda', 'Ruído', 'Direct A', 'Direct B'], papeis: ['quadrada + sweep', 'quadrada', 'tabela 4 bits', 'LFSR', 'amostras PCM', 'amostras PCM'],
       escalas: [1 / 16, 1 / 16, 1 / 16, 1 / 16, 1 / 128, 1 / 128] },
+    // Neo Geo (FBNeo só com o Neo Geo): o jogo é o zip inteiro do fliperama (mslug.zip), reconhecido pelo nome na lista do
+    // FBNeo (neogeo-jogos.js); vai pro disco virtual /jogos com o zip do "pai" (clones) e a BIOS neogeo.zip em /sistema.
+    // Modo AES (o console de casa: sem ficha) por padrão. Botões: A, B, C, D = B, A, Y, X do SNES; Select = Ficha
+    neogeo: { nome: 'Neo Geo', curto: 'NEO', ext: [], nucleo: 'fbneo', largura: 320, altura: 224, dinamico: true, tv43: true, caminho: true,
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'X', 'Y', 'Start', 'Select'], musica: false, minimo: 22,   // nomes do lado do SNES (no controle: A B C D e Ficha)
+      bios: [{ arquivo: 'neogeo.zip' }], opcoes: { 'fbneo-neogeo-mode': 'AES_EUR' },
+      // YM2610 (nucleo-libretro/fbneo-sonda.patch): 4 FM, 3 quadradas (SSG), 6 de amostras ADPCM-A (percussão, vozes) e 1 ADPCM-B
+      canais: ['FM 1', 'FM 2', 'FM 3', 'FM 4', 'SSG 1', 'SSG 2', 'SSG 3', 'ADPCM-A 1', 'ADPCM-A 2', 'ADPCM-A 3', 'ADPCM-A 4', 'ADPCM-A 5', 'ADPCM-A 6', 'ADPCM-B'],
+      papeis: ['FM', 'FM', 'FM', 'FM', 'quadrada', 'quadrada', 'quadrada', 'amostras', 'amostras', 'amostras', 'amostras', 'amostras', 'amostras', 'amostras'],
+      escalas: [1 / 8192, 1 / 8192, 1 / 8192, 1 / 8192, 1 / 8192, 1 / 8192, 1 / 8192, 1 / 4096, 1 / 4096, 1 / 4096, 1 / 4096, 1 / 4096, 1 / 4096, 1 / 8192] },
     gg: { nome: 'Game Gear', curto: 'GG', ext: ['gg'], nucleo: 'genplus', largura: 160, altura: 144, dinamico: true, proporcao: 10 / 9,   // a tela do aparelho, quase quadrada
       botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start'], musica: false, minimo: 0x2000,
       canais: ['PSG 1', 'PSG 2', 'PSG 3', 'Ruído'], papeis: ['quadrada', 'quadrada', 'quadrada', 'LFSR'], indices: [6, 7, 8, 9], escalas: [1 / 2100, 1 / 2100, 1 / 2100, 1 / 2100] },
   };
   const extensao = (nome) => (/\.([^.]+)$/.exec(nome || '') || [])[1]?.toLowerCase() || '';
+  // set do Neo Geo pelo nome do zip ('mslug.zip' -> 'mslug'), se estiver na lista do FBNeo
+  const NEOGEO = typeof KofNeoGeoJogos !== 'undefined' ? KofNeoGeoJogos : {};
+  function setNeoGeo(nome) {
+    const m = /([^/\\]+)\.zip$/i.exec(nome || '');
+    return m && NEOGEO[m[1].toLowerCase()] ? m[1].toLowerCase() : null;
+  }
   function sistemaDe(nome) {
+    if (setNeoGeo(nome)) return 'neogeo';
     const e = extensao(nome);
     return Object.keys(SISTEMAS).find((k) => SISTEMAS[k].ext.includes(e)) || null;
   }
@@ -76,6 +93,7 @@ const KofLibretro = (() => {
   // BIOS do usuário (o app lê do banco e entrega aqui): núcleo -> {arquivo: bytes}; vai pro disco virtual /sistema antes do jogo
   const BIOS = {};
   function bios(nucleo, arquivo, bytes) { (BIOS[nucleo] = BIOS[nucleo] || {})[arquivo] = bytes; }
+  const temBios = (sis) => (SISTEMAS[sis].bios || []).every((b) => b.opcional || (BIOS[SISTEMAS[sis].nucleo] || {})[b.arquivo]);
   // de qual sistema é esse arquivo de BIOS (pelo nome e, se tiver, pelo tamanho)
   function sistemaDaBios(nome, tamanho) {
     const n = (nome || '').toLowerCase();
@@ -99,7 +117,18 @@ const KofLibretro = (() => {
   }
   // opções padrão de cada núcleo (as do sistema), por baixo das que o app escolher
   for (const S of Object.values(SISTEMAS)) if (S.opcoes) opcoes[S.nucleo] = Object.assign({}, S.opcoes, opcoes[S.nucleo]);
-  const novaInstancia = (nucleo, f) => f({ print: () => {}, printErr: () => {} }).then((m) => { instancias.push([nucleo, m]); passarOpcoes(m, nucleo); m._lr_init(); return m; });
+  // o que o núcleo escreve (ex.: o FBNeo diz qual arquivo do zip faltou) fica nas últimas linhas de m.kofLog, pro erro mostrar
+  const novaInstancia = (nucleo, f) => {
+    const log = [], anotar = (t) => { log.push(String(t)); if (log.length > 40) log.shift(); };
+    return f({ print: anotar, printErr: anotar }).then((m) => { m.kofLog = log; instancias.push([nucleo, m]); passarOpcoes(m, nucleo); m._lr_init(); return m; });
+  };
+  const gravar = (mod, caminho, dados) => {
+    const c = caminho + '\0', pc = mod._lr_alloc(c.length), pd = mod._lr_alloc(dados.length);
+    for (let i = 0; i < c.length; i++) mod.HEAPU8[pc + i] = c.charCodeAt(i);
+    mod.HEAPU8.set(dados, pd); const ok = mod._lr_arquivo(pc, pd, dados.length); mod._free(pc); mod._free(pd);
+    return ok;
+  };
+  const apagar = (mod, caminho) => { const c = caminho + '\0', pc = mod._lr_alloc(c.length); for (let i = 0; i < c.length; i++) mod.HEAPU8[pc + i] = c.charCodeAt(i); mod._lr_apagar(pc); mod._free(pc); };
   async function iniciar(nucleo) {
     if (!modulos[nucleo]) modulos[nucleo] = buscar(nucleo).then((f) => novaInstancia(nucleo, f)).catch((e) => { delete modulos[nucleo]; throw e; });
     return modulos[nucleo];
@@ -121,6 +150,7 @@ const KofLibretro = (() => {
     return ((crc ^ 0xFFFFFFFF) >>> 0).toString(16).toUpperCase().padStart(8, '0');
   }
   function titulo(rom, sis) {
+    if (sis === 'neogeo') return '';   // vem do nome do zip (criar)
     if (sis === 'gba') {   // nome de 12 letras no cabeçalho (0xA0); sem nome, o CRC32
       const t = texto(rom, 0xA0, 12).trim();
       return /[A-Za-z0-9]{2}/.test(t) ? t : 'GBA ' + crc32(rom, 0);
@@ -156,16 +186,14 @@ const KofLibretro = (() => {
       this.apu = { dsp: { outBuf: new Int16Array(32768 * 2), outCount: 0 } };
       this.cpu = { pc: 0 };
       this.cart = { title: titulo(rom, sis), superfx: false, mapper: this.nucleo, sram: new Uint8Array(0), hasSram: () => false };
+      this.extras = [];
       this.quadros = 0;
     }
     carregar() {
       const mod = this.mod, n = this.nucleo;
       if (mod.kofAtual && mod.kofAtual !== this) mod._lr_unload();   // cada instância do módulo roda um jogo por vez
-      for (const [arq, dados] of Object.entries(BIOS[n] || {})) {
-        const c = '/sistema/' + arq + '\0', pc = mod._lr_alloc(c.length), pd = mod._lr_alloc(dados.length);
-        for (let i = 0; i < c.length; i++) mod.HEAPU8[pc + i] = c.charCodeAt(i);
-        mod.HEAPU8.set(dados, pd); mod._lr_arquivo(pc, pd, dados.length); mod._free(pc); mod._free(pd);
-      }
+      for (const [arq, dados] of Object.entries(BIOS[n] || {})) gravar(mod, '/sistema/' + arq, dados);
+      if (SISTEMAS[this.sistema].caminho) return this.carregarPorCaminho();
       const p = mod._lr_alloc(this.rom.length);
       mod.HEAPU8.set(this.rom, p);
       const nome = 'rom.' + (this.sistema === 'gb' && (this.rom[0x143] & 0x80) ? 'gbc' : SISTEMAS[this.sistema].ext[0]) + '\0';
@@ -174,6 +202,39 @@ const KofLibretro = (() => {
       const ok = mod._lr_load(p, this.rom.length, pn);
       mod._free(p); mod._free(pn);
       if (!ok) throw new Error(`o ${n} não aceitou essa ROM`);
+      this.depoisDeCarregar();
+    }
+    // núcleo que só abre o jogo por arquivo (FBNeo): o zip (e os do pai) vão pro disco virtual /jogos; depois de carregar,
+    // saem de lá (o núcleo já copiou tudo pra memória dele) pra não ocupar a memória duas vezes
+    carregarPorCaminho() {
+      const mod = this.mod, S = SISTEMAS[this.sistema], arqs = [[this.set + '.zip', this.rom], ...this.extras.map((e) => [e.nome, e.bytes])];
+      for (const [nome, dados] of arqs) if (!gravar(mod, '/jogos/' + nome, dados)) throw new Error('faltou memória pra abrir ' + nome);
+      const caminho = '/jogos/' + this.set + '.zip\0', pc = mod._lr_alloc(caminho.length);
+      for (let i = 0; i < caminho.length; i++) mod.HEAPU8[pc + i] = caminho.charCodeAt(i);
+      mod.kofLog.length = 0;
+      let ok = mod._lr_load(0, 0, pc);
+      if (!ok && S.opcoes && S.opcoes['fbneo-neogeo-mode'] && (opcoes[this.nucleo] || {})['fbneo-neogeo-mode'] !== 'DIPSWITCH') {
+        // a BIOS do usuário não tem a do AES: tenta de novo com a BIOS que o neogeo.zip escolher sozinho (MVS)
+        const antes = opcoes[this.nucleo]['fbneo-neogeo-mode'];
+        opcoes[this.nucleo]['fbneo-neogeo-mode'] = 'DIPSWITCH'; passarOpcoes(mod, this.nucleo);
+        ok = mod._lr_load(0, 0, pc);
+        opcoes[this.nucleo]['fbneo-neogeo-mode'] = antes; passarOpcoes(mod, this.nucleo);
+        if (ok) this.modoMvs = true;
+      }
+      mod._free(pc);
+      for (const [nome] of arqs) apagar(mod, '/jogos/' + nome);
+      // o FBNeo às vezes "abre" só pra mostrar a tela de erro dele (driver não iniciou: estado de tamanho 0)
+      if (ok && !mod._lr_state_size()) { mod._lr_unload(); ok = 0; }
+      if (!ok) {
+        const pai = (NEOGEO[this.set] || [])[1];
+        if (pai && !this.extras.length) throw new Error(`esse jogo precisa também do ${pai}.zip (o jogo original de onde ele saiu): abra o ${pai}.zip uma vez ou deixe ele na pasta de ROMs`);
+        const falta = mod.kofLog.filter((l) => /required|missing|not found|bad crc|error|failed/i.test(l)).slice(-3).join(' · ');
+        throw new Error(`o ${S.nome} não abriu esse jogo` + (falta ? ': ' + falta : ' (confira o zip e o neogeo.zip)'));
+      }
+      this.depoisDeCarregar();
+    }
+    depoisDeCarregar() {
+      const mod = this.mod;
       mod.kofAtual = this;
       const i = mod._lr_info() >> 3, info = mod.HEAPF64;
       this.fps = info[i + 5]; this.taxaAudio = info[i + 6]; this.proporcao = SISTEMAS[this.sistema].proporcao || info[i + 4];
@@ -241,11 +302,17 @@ const KofLibretro = (() => {
     }
     // savestate: bytes do núcleo
     serializar() {
-      const n = this.tamEstado, mod = this.mod;
-      if (!mod._lr_state_save(this.estadoBuf, n)) throw new Error('não consegui guardar o estado');
-      return new Uint8Array(mod.HEAPU8.buffer, this.estadoBuf, n).slice();
+      const mod = this.mod;
+      if (!mod._lr_state_save(this.estadoBuf, this.tamEstado)) {
+        // o tamanho do estado mudou depois que o jogo começou (FBNeo): pergunta de novo e tenta mais uma vez
+        const n = mod._lr_state_size();
+        if (n !== this.tamEstado) { mod._free(this.estadoBuf); this.tamEstado = n; this.estadoBuf = mod._lr_alloc((n + 3) & ~3); }
+        if (!mod._lr_state_save(this.estadoBuf, this.tamEstado)) throw new Error('não consegui guardar o estado');
+      }
+      return new Uint8Array(mod.HEAPU8.buffer, this.estadoBuf, this.tamEstado).slice();
     }
     desserializar(u8) {
+      if (u8.length > this.tamEstado) { this.mod._free(this.estadoBuf); this.tamEstado = u8.length; this.estadoBuf = this.mod._lr_alloc((u8.length + 3) & ~3); }
       this.mod.HEAPU8.set(u8, this.estadoBuf);
       return !!this.mod._lr_state_load(this.estadoBuf, u8.length);
     }
@@ -294,21 +361,28 @@ const KofLibretro = (() => {
   }
 
   // o sistema vem pelo id ('snes', 'gb') ou pelo nome do arquivo (sem nenhum dos dois: SNES, como era antes)
-  async function criar(bytes, nome) {
+  // extras: outros arquivos que o jogo precisa no disco virtual (Neo Geo: o zip do pai), [{nome, bytes}]
+  function novoConsolinho(bytes, sis, nome, mod, extras) {
+    const c = new Consolinho(Uint8Array.from(bytes), sis, mod);
+    if (sis === 'neogeo') { c.set = setNeoGeo(nome); c.cart.title = NEOGEO[c.set][0]; c.extras = extras || []; }
+    return c;
+  }
+  async function criar(bytes, nome, extras) {
     const sis = SISTEMAS[nome] ? nome : nome ? sistemaDe(nome) : 'snes';
     if (!sis) throw new Error('não conheço esse tipo de arquivo');
+    if (!temBios(sis)) throw new Error('falta a BIOS do ' + SISTEMAS[sis].nome);
     const mod = await iniciar(SISTEMAS[sis].nucleo);
-    const c = new Consolinho(Uint8Array.from(bytes), sis, mod);
+    const c = novoConsolinho(bytes, sis, nome, mod, extras);
     c.carregar();
     return c;
   }
   // jukebox: toca a música de um estado guardado, numa instância SEPARADA do núcleo (o jogo aberto não é tocado),
   // sem imagem e sem botão apertado; a sonda do núcleo entrega a onda de cada canal e o mudo por canal
-  async function tocador(sis, rom, estadoB64) {
+  async function tocador(sis, rom, estadoB64, nome, extras) {
     const S = SISTEMAS[sis], chave = S.nucleo + ':jukebox';
     if (!modulos[chave]) modulos[chave] = buscar(S.nucleo).then((f) => novaInstancia(S.nucleo, f)).catch((e) => { delete modulos[chave]; throw e; });
     const mod = await modulos[chave];
-    const c = new Consolinho(Uint8Array.from(rom), sis, mod);
+    const c = novoConsolinho(rom, sis, nome, mod, extras);
     c.carregar();
     if (!c.desserializar(deB64(estadoB64))) throw new Error('não consegui restaurar a música');
     mod._lr_pad(0); mod._lr_sonda(1);
@@ -321,7 +395,7 @@ const KofLibretro = (() => {
     // Genesis Plus GX: o mudo de cada canal é a opção de volume dele (só nesta instância da jukebox, o jogo não muda)
     const mudoGenplus = (m) => idx.slice(0, n).forEach((c, l) => varNucleo(c < 6 ? `genesis_plus_gx_md_channel_${c}_volume` : `genesis_plus_gx_psg_channel_${c - 6}_volume`, m & (1 << l) ? '0' : '100'));
     // taxa da onda: o FCEUmm/Gambatte gravam ~32 kHz; o Genesis Plus GX, ~26,6 kHz (metade do chip FM)
-    const taxaOnda = S.nucleo === 'genplus' ? 26633 : S.nucleo === 'fceumm' ? 1789773 / 56 : 32768;
+    const taxaOnda = S.nucleo === 'genplus' ? 26633 : S.nucleo === 'fceumm' ? 1789773 / 56 : S.nucleo === 'fbneo' ? 8000000 / 144 : 32768;
     return {
       sis, canais: n, nomes: S.canais.slice(0, n), papeis: (S.papeis || []).slice(0, n), taxa: c.taxaAudio,
       encher() { mod._lr_run(1, 0); return { b: new Int16Array(mod.HEAPU8.buffer, mod._lr_audio(), mod._lr_audio_n() * 2), n: mod._lr_audio_n() * 2 }; },
@@ -333,6 +407,6 @@ const KofLibretro = (() => {
       fechar() { mod._lr_sonda(0); this.mudas(0); },
     };
   }
-  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, bios, sistemaDaBios, SISTEMAS, EXTENSOES, ARQUIVOS };
+  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, bios, temBios, sistemaDaBios, setNeoGeo, NEOGEO, SISTEMAS, EXTENSOES, ARQUIVOS };
 })();
 if (typeof module !== 'undefined') module.exports = KofLibretro;

@@ -118,7 +118,7 @@
       <article class="hm-destaque" id="hm-destaque"></article>
       <div class="hm-atalhos">
         <button data-acao="biblioteca"><i>📚</i><b>Biblioteca</b><small>seus jogos e a pasta de ROMs</small></button>
-        <button data-acao="abrir"><i>＋</i><b>Abrir uma ROM</b><small>.sfc, .smc, .nes, .gb, .gbc, .gba, .md, .sms, .gg ou .zip<span class="so-pc"> (ou arraste)</span></small></button>
+        <button data-acao="abrir"><i>＋</i><b>Abrir uma ROM</b><small>.sfc, .smc, .nes, .gb, .gbc, .gba, .md, .sms, .gg ou .zip (Neo Geo: o zip do fliperama)<span class="so-pc"> (ou arraste)</span></small></button>
         <button data-acao="jukebox"><i>🎵</i><b>Jukebox</b><small>as trilhas que você guardou</small></button>
         <button data-acao="estatisticas"><i>📊</i><b>Estatísticas</b><small>quanto você jogou, e o quê</small></button>
         <button data-acao="temas"><i>🎨</i><b>Temas</b><small><span class="n-temas">28</span> jeitos de deixar com a sua cara</small></button>
@@ -271,6 +271,15 @@
     <button class="grande sec" data-acao="teclas-padrao">Restaurar padrão</button>
   </section>
 
+  <section id="bios-tela" class="janela" hidden>
+    <div class="titulo-j"><span>🔑 Falta a BIOS do <b id="bios-nome">Neo Geo</b></span><button class="x" data-acao="bios-fechar">×</button></div>
+    <p>Esse console precisa do programa interno dele (a BIOS) pra ligar: o arquivo <b id="bios-arquivo">neogeo.zip</b>.
+      O KOFstation não traz BIOS junto: escolha a sua uma vez e ela fica guardada.</p>
+    <div class="bug-botoes">
+      <button class="grande" data-acao="bios">Escolher a BIOS…</button>
+      <button class="grande sec" data-acao="bios-fechar">Agora não</button>
+    </div>
+  </section>
   <section id="bug" class="janela" hidden>
     <div class="titulo-j"><span id="bug-titulo">🐞 Reportar bug</span><button class="x" data-acao="bug-fechar">×</button></div>
     <p id="bug-erro" hidden></p>

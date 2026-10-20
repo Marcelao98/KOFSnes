@@ -61,6 +61,21 @@
 > jsmolka: memory passa; arm 522 e thumb 230 falham (STM com o registrador base no meio da lista: caso raríssimo, jogo
 > comercial não usa). Testes: `testes/navegador/gba.cjs`, `nucleos.cjs` (6º argumento .gba) e `testes/libretro/jukebox.cjs`
 > com uma ROM de GBA com som (gerada: escreve nos registradores de som e trava num laço).
+> **Neo Geo (branch `neogeo`, saindo da `gba`, 20/10, não publicado; o Marcelo aprovou a `gba` e vai testar as duas):**
+> núcleo **FBNeo** `SUBSET=neogeo` (`construir.sh fbneo`: `make generate-files` gera a lista de drivers só do Neo Geo; zlib
+> interno; ~8 MB). Zip reconhecido pelo nome em `web/neogeo-jogos.js` (697 jogos, `nucleo-libretro/lista-neogeo.py` do
+> `gamelist.txt` do FBNeo; o juntar.py embute antes do nucleo.js) e aberto INTEIRO: `/jogos/<set>.zip` (+ zip do pai, achado
+> na biblioteca/pasta por `zipsDoPai`), BIOS em `/sistema/neogeo.zip`, `lr_load(0, 0, caminho)`, apaga os zips depois.
+> Banco v7 da `gba` já tem a loja `bios`. Tela `#bios-tela` (pagina.html) quando falta a BIOS; escolhida, abre o jogo que
+> esperava (`biosEsperando`). `fbneo-neogeo-mode=AES_EUR` (se falhar, tenta `DIPSWITCH`; o FBNeo também cai sozinho pra
+> outra BIOS). Driver que não inicia = FBNeo "abre" com a tela de erro (640x480, estado 0): o adaptador trata como falha e
+> mostra a linha do log (`m.kofLog`) ou "precisa também do <pai>.zip". O tamanho do estado do FBNeo muda depois do 1º
+> quadro: `serializar` relê o tamanho se falhar. Restaurar estado não é bit a bit (6 campos do ADPCM-A recalculados ao
+> carregar). Sonda `nucleo-libretro/fbneo-sonda.patch`: 14 canais a 8 MHz/144, posição por canal. Botões: A/B/C/D = B/A/Y/X
+> do SNES, Ficha = Select; `ROTULOS.neogeo` no android.js. **Bug antigo corrigido:** `rotularControle` estava presa dentro do
+> IIFE do android.js (os nomes A/B/C do Mega Drive nunca apareciam): agora vai pelo `window`. Teste sem BIOS nem jogo:
+> `testes/neogeo/zip-falso.py` (nomes e CRCs do d_neogeo.cpp, conteúdo zerado com 4 bytes ajustados pro CRC) +
+> `testes/navegador/neogeo.cjs`. Jogo de verdade só o Marcelo testa.
 > **Decisões de 19/10 (fim do dia):** (1) Sega testado pelo Marcelo (Sonic ok), branch `sega` AINDA NÃO publicada (perguntar).
 > (2) Próximo: branch `nucleos` (criada a partir da `sega`, sem mudanças ainda) = **núcleos em arquivos separados**:
 > `dist/web/nucleos/<núcleo>-<hash8>.js` (nome com hash do conteúdo, o html leva a lista exata; carrega com `<script src>`

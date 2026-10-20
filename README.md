@@ -29,7 +29,7 @@ Dois cliques no `KOFnes.exe` (no PC) ou no app do **Android** e você cai numa t
 |---|---|
 | 🏠 **Início** | continuar de onde parou (com print), jogados recentemente, atalhos e dica do dia. Até a frase de boas-vindas muda com o tema |
 | 🧭 **Navegação** | menu lateral, botão **Voltar** com histórico (`Alt+←`, `Esc`, botão voltar do mouse) e um **Guia do KOFstation** dentro do próprio emulador |
-| 🕹️ **Sistemas** | **Super Nintendo** (`.sfc`, `.smc`), **NES** (`.nes`), **Game Boy / Game Boy Color** (`.gb`, `.gbc`), **Mega Drive** (`.md`, `.gen`, `.bin`), **Master System** (`.sms`) e **Game Gear** (`.gg`) e **Game Boy Advance** (`.gba`) na mesma biblioteca, com o rótulo do sistema. No PC o SNES roda no núcleo em Kof; os outros em núcleos libretro em WebAssembly: [FCEUmm](https://github.com/libretro/libretro-fceumm), [Gambatte](https://github.com/libretro/gambatte-libretro) [Genesis Plus GX](https://github.com/libretro/Genesis-Plus-GX) e [mGBA](https://github.com/libretro/mgba) |
+| 🕹️ **Sistemas** | **Super Nintendo** (`.sfc`, `.smc`), **NES** (`.nes`), **Game Boy / Game Boy Color** (`.gb`, `.gbc`), **Mega Drive** (`.md`, `.gen`, `.bin`), **Master System** (`.sms`) e **Game Gear** (`.gg`) **Game Boy Advance** (`.gba`) e **Neo Geo** (o `.zip` do fliperama + a sua BIOS `neogeo.zip`) na mesma biblioteca, com o rótulo do sistema. No PC o SNES roda no núcleo em Kof; os outros em núcleos libretro em WebAssembly: [FCEUmm](https://github.com/libretro/libretro-fceumm), [Gambatte](https://github.com/libretro/gambatte-libretro) [Genesis Plus GX](https://github.com/libretro/Genesis-Plus-GX), [mGBA](https://github.com/libretro/mgba) e [FBNeo](https://github.com/libretro/FBNeo) |
 | 📱 **Android** | APK com controle virtual na tela (6 modelos, multitoque, canhoto), em pé ou deitado com a tela grande e os botões nas laterais. No celular o SNES roda no [Snes9x](https://github.com/libretro/snes9x) e o Game Boy no Gambatte, em WebAssembly |
 | 📚 **Biblioteca** | estilo ZSNES: escolha a pasta de ROMs uma vez, busque por palavras em qualquer ordem, esconda hacks e variantes com **Só os principais**, capas oficiais ([libretro-thumbnails](https://github.com/libretro-thumbnails)) e **modo sofá** (grade de capas pra jogar de longe, com o controle) |
 | 🎨 **126 temas** | oito jeitos de café, jogos, animais, consoles, Windows antigo, internet de 1999, anime, bem brasileiro Animes, 20 de Nostalgia BR, 20 de Brasilidades e 20 Clássicos do SNES, com galeria de prévias ao vivo |
@@ -184,6 +184,7 @@ O Kof é uma linguagem brasileira nova, da **Mel Santos**: [github.com/KofLang/K
 - [x] 🕹️ **Game Boy / Game Boy Color** e **NES** na mesma biblioteca
 - [x] 🕹️ **Mega Drive, Master System e Game Gear**
 - [x] 🕹️ **Game Boy Advance** (mGBA; BIOS opcional em Arquivo > BIOS…)
+- [x] 🕹️ **Neo Geo** (FBNeo; modo AES, o zip inteiro do jogo, clones acham o zip do pai na biblioteca; a BIOS é sua)
 - [ ] 🕹️ Mais sistemas: Neo Geo, Game Boy Advance, PlayStation...
 - [ ] 📱 Play Store e escolher a pasta de ROMs inteira no Android
 - [ ] 🏆 **Conquistas**

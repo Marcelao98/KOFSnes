@@ -1,4 +1,4 @@
-KOFstation - Super Nintendo, Game Boy, GBA, NES e Sega, feito em Kof (Linux)
+KOFstation - Super Nintendo, Game Boy, GBA, NES, Sega e Neo Geo, feito em Kof (Linux)
 
 1. Extraia esta pasta onde quiser.
 2. Abra um terminal nela e rode:   ./kofnes.sh
@@ -10,7 +10,7 @@ Brave ou Vivaldi) e curl ou wget pra atualizar. O Firefox abre o jogo mas não t
 de ROMs nem o "Salvar perfil" (falta uma API dele).
 
 Ele procura atualização sozinho ao abrir; o que aconteceu fica em atualizacao.log.
-A pasta "nucleos" tem os emuladores de Game Boy, GBA, NES e Sega: deixe ela junto do
+A pasta "nucleos" tem os emuladores de Game Boy, GBA, NES, Sega e Neo Geo: deixe ela junto do
 KOFnes.html (o kofnes.sh baixa o que faltar).
 Pra não atualizar, crie um arquivo vazio chamado "nao-atualizar" nesta pasta.
 

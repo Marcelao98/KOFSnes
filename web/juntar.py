@@ -96,6 +96,7 @@ partes = {
     "{{NUCLEO}}": script,
     "{{APP}}": (
         (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
+        + ((web / "neogeo-jogos.js").read_text() + "\n" if nucleos else "")   # lista dos jogos de Neo Geo (reconhecer o zip)
         + ((web / "nucleo.js").read_text().replace("/*{{NUCLEOS}}*/ {}", separar_nucleos()) + "\n" if nucleos else "")   # depois do estado.js: ele troca o savestate pelo do núcleo libretro
         + app_js
     ),

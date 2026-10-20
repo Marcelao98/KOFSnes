@@ -199,6 +199,7 @@ html.celular #rapido-lista li { min-height: 42px; }
 /* Game Boy e NES: só A, B, Start e Select; B embaixo à esquerda e A em cima à direita, como no aparelho */
 html.celular body.so-ab #ctl [data-b="X"], html.celular body.so-ab #ctl [data-b="Y"],
 html.celular body.so-ab:not([data-sis="gba"]) #ctl [data-b="L"], html.celular body.so-ab:not([data-sis="gba"]) #ctl [data-b="R"] { display: none; }   /* o GBA tem L e R */
+html.celular body[data-sis="neogeo"] #ctl [data-b="L"], html.celular body[data-sis="neogeo"] #ctl [data-b="R"] { display: none; }   /* Neo Geo: A B C D, sem L/R */
 html.celular body.so-ab #ctl [data-b="B"] { --x: 66%; --y: 64%; --w: calc(var(--u) * 24); }
 html.celular body.so-ab #ctl [data-b="A"] { --x: 86%; --y: 48%; --w: calc(var(--u) * 24); }
 html.celular body.canhoto.so-ab #ctl [data-b="B"] { --x: 14%; } html.celular body.canhoto.so-ab #ctl [data-b="A"] { --x: 34%; }

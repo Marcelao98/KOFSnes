@@ -60,7 +60,8 @@ está a ROM, valor das opções...). No KOFstation o frontend é a nossa **ponte
 
 Núcleos usados hoje: **Snes9x** (SNES no celular, licença só não comercial), **Gambatte** (Game Boy/Color, GPL-2),
 **FCEUmm** (NES, GPL-2), **Genesis Plus GX** (Mega Drive, Master System, Game Gear; só não comercial) e **mGBA**
-(Game Boy Advance, MPL-2.0; compilado com CMake, ver os comentários no `construir.sh`). Cada um é
+(Game Boy Advance, MPL-2.0; compilado com CMake, ver os comentários no `construir.sh`) e **FBNeo** só com o Neo Geo
+(`SUBSET=neogeo`, só não comercial). Cada um é
 baixado do GitHub do libretro num commit fixo (`nucleo-libretro/construir.sh`).
 
 ## 4. WebAssembly e a ponte
@@ -132,6 +133,19 @@ Onde os núcleos vão em cada versão:
 | PWA (site) | `nucleos/` ao lado do index.html | `compilar.sh`; o `sw.js` guarda todos pra funcionar sem internet |
 | Publicado | `publicado/nucleos/` | `publicar.sh` (só os do PC) |
 
+## 6b. Neo Geo: o jogo é um zip
+
+Fliperama não tem "uma ROM": o jogo é um zip com vários chips (programa, gráficos, som), e o FBNeo só abre por arquivo.
+Então o zip de Neo Geo **não** é descompactado: o app reconhece o nome (`mslug.zip`) na lista dos jogos do FBNeo
+(`web/neogeo-jogos.js`, gerada por `nucleo-libretro/lista-neogeo.py` a partir do `gamelist.txt` do FBNeo), grava o zip
+inteiro em `/jogos` no disco virtual, a BIOS `neogeo.zip` em `/sistema`, chama `lr_load` com a ROM nula e o caminho, e
+apaga os zips do disco virtual depois (o núcleo já copiou tudo pra memória dele). Jogo "clone" (`kof98a`) pode precisar
+do zip do pai (`kof98.zip`): o app procura na biblioteca e na pasta de ROMs. Sem BIOS, abre a tela "falta a BIOS"; ao
+escolher, o jogo que estava esperando abre sozinho. Modo AES (console, sem ficha) por padrão. Quando o FBNeo não
+consegue iniciar o jogo, ele "abre" só pra mostrar a tela de erro dele (estado de tamanho 0): o adaptador percebe isso e
+mostra o erro com a linha do log que diz qual arquivo faltou. Sem BIOS e jogo de verdade, o teste usa zips falsos
+(`testes/neogeo/zip-falso.py`: nomes e CRCs certos, conteúdo zerado).
+
 ## 7. O atualizador
 
 ### Windows: `KOFstation.exe` (`web/lancador_win.c`, em C, compilado com mingw)
@@ -200,7 +214,8 @@ trocam o endereço.
   misturado, então cada núcleo ganhou um remendo (`nucleo-libretro/<núcleo>-sonda.patch`) que copia a saída de cada
   canal num buffer próprio (`kof_onda`) antes da mistura. A ponte lê esses buffers (`lr_onda`, `lr_onda_pos_c`).
   Canais: SNES 8 vozes (na `Dsp.kf`, em Kof), Game Boy 4, NES 5, Mega Drive 10 (6 FM + 4 PSG), SMS/GG 4,
-  GBA 6 (os 4 do Game Boy + Direct Sound A e B, a 32.768 Hz; o mudo usa o `forceDisableCh` do próprio mGBA).
+  GBA 6 (os 4 do Game Boy + Direct Sound A e B, a 32.768 Hz; o mudo usa o `forceDisableCh` do próprio mGBA), Neo Geo 14
+  (YM2610: 4 FM, 3 SSG, 6 ADPCM-A, 1 ADPCM-B, a ~55,5 kHz; FM e ADPCM gravados no `fm.c`, SSG no `burn_ym2610.cpp`).
 - **Mudo/Solo** por canal: o remendo zera o canal escolhido (`lr_mudas`); no Genesis Plus GX usa as opções de volume
   por canal do próprio núcleo. Vale só na instância da jukebox.
 
@@ -248,8 +263,6 @@ nome velho.
 
 ## 14. O que vem depois
 
-- **Neo Geo** (FBNeo): mais um núcleo em `nucleos/`, uma entrada em `SISTEMAS` e um remendo de sonda, mais uma tela
-  pra BIOS (`neogeo.zip`) e o zip inteiro no disco virtual (`/jogos`).
 - **Kof aos poucos**: reescrever cada console em Kof usando o núcleo libretro como gabarito (rodar os dois lado a lado e
   comparar quadro a quadro, graças ao determinismo).
 - Limites: WebAssembly aguenta até GBA/Neo Geo com folga; PS1 no limite do celular; N64/Saturn pra cima precisariam de

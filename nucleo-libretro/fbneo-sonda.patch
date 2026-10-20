@@ -1,0 +1,84 @@
+diff --git a/src/burn/snd/burn_ym2610.cpp b/src/burn/snd/burn_ym2610.cpp
+index 65f3f37..c9ba4ce 100644
+--- a/src/burn/snd/burn_ym2610.cpp
++++ b/src/burn/snd/burn_ym2610.cpp
+@@ -12,6 +12,7 @@ static INT16* pYM2610Buffer[6];
+ 
+ static INT32* pAYBuffer;
+ 
++extern "C" { extern int kof_sonda; extern unsigned kof_mudas; extern INT16 kof_onda[]; extern unsigned kof_ondaPosC[]; }
+ static INT32 nYM2610Position;
+ static INT32 nAY8910Position;
+ 
+@@ -49,6 +50,17 @@ static void AY8910Render(INT32 nSegmentLength)
+ 
+ 	AY8910Update(0, &pYM2610Buffer[2], nSegmentLength);
+ 
++	// KOFstation: sonda e mudo dos 3 canais SSG (canais 4-6 da sonda, ver fm.c)
++	if (kof_sonda || (kof_mudas & 0x70)) {
++		for (INT32 c = 0; c < 3; c++) {
++			INT16* b = pYM2610Buffer[2 + c];
++			for (INT32 k = 0; k < nSegmentLength; k++) {
++				if (kof_sonda) { unsigned p = kof_ondaPosC[4 + c] & 4095; kof_onda[(4 + c) * 4096 + p] = b[k]; kof_ondaPosC[4 + c] = p + 1; }
++				if ((kof_mudas >> (4 + c)) & 1) b[k] = 0;
++			}
++		}
++	}
++
+ 	nAY8910Position += nSegmentLength;
+ }
+ 
+diff --git a/src/burn/snd/fm.c b/src/burn/snd/fm.c
+index 0bbf884..4668791 100644
+--- a/src/burn/snd/fm.c
++++ b/src/burn/snd/fm.c
+@@ -3624,6 +3624,22 @@ int YM2608TimerOver(int n,int c)
+ static YM2610 *FM2610=NULL;	/* array of YM2610's */
+ static int YM2610NumChips;
+ 
++/* KOFstation: sonda do osciloscópio (jukebox) e mudo por canal do YM2610. 14 canais, cada um no seu anel de 4096
++   amostras na taxa do chip (clock / 144 = ~55,5 kHz): 0-3 FM, 4-6 SSG (gravados no burn_ym2610.cpp), 7-12 ADPCM-A, 13 ADPCM-B */
++int kof_sonda = 0;
++unsigned kof_mudas = 0;
++INT16 kof_onda[14 * 4096];
++unsigned kof_ondaPos = 0;
++unsigned kof_ondaPosC[16];
++int kof_temPosCanal = 1;
++int kof_canais = 14;
++static void kof_gravar(int c, int v)
++{
++	unsigned p = kof_ondaPosC[c] & 4095;
++	kof_onda[c * 4096 + p] = v > 32767 ? 32767 : v < -32768 ? -32768 : v;
++	kof_ondaPosC[c] = p + 1;
++}
++
+ /* Generate samples for one of the YM2610s */
+ void YM2610UpdateOne(int num, INT16 **buffer, int length)
+ {
+@@ -3713,11 +3729,25 @@ void YM2610UpdateOne(int num, INT16 **buffer, int length)
+ 		if( DELTAT->portstate&0x80 )
+ 			YM_DELTAT_ADPCM_CALC(DELTAT);
+ 
+-		/* ADPCMA */
++		/* ADPCMA (KOFstation: cada canal soma no out_adpcm; a diferença antes/depois é o canal) */
+ 		for( j = 0; j < 6; j++ )
+ 		{
++			INT32 antes[3] = { out_adpcm[0], out_adpcm[1], out_adpcm[2] };
+ 			if( F2610->adpcm[j].flag )
+ 				ADPCMA_calc_chan( F2610, &F2610->adpcm[j]);
++			if (kof_sonda) kof_gravar(7 + j, (out_adpcm[0] + out_adpcm[1] + out_adpcm[2]) - (antes[0] + antes[1] + antes[2]));
++			if ((kof_mudas >> (7 + j)) & 1) { out_adpcm[0] = antes[0]; out_adpcm[1] = antes[1]; out_adpcm[2] = antes[2]; }
++		}
++		if (kof_sonda) {
++			kof_gravar(0, out_fm[1] >> 1); kof_gravar(1, out_fm[2] >> 1); kof_gravar(2, out_fm[4] >> 1); kof_gravar(3, out_fm[5] >> 1);
++			kof_gravar(13, (out_delta[0] + out_delta[1] + out_delta[2]) >> 9);
++		}
++		if (kof_mudas) {
++			if (kof_mudas & 1) out_fm[1] = 0;
++			if (kof_mudas & 2) out_fm[2] = 0;
++			if (kof_mudas & 4) out_fm[4] = 0;
++			if (kof_mudas & 8) out_fm[5] = 0;
++			if (kof_mudas & (1 << 13)) out_delta[0] = out_delta[1] = out_delta[2] = 0;
+ 		}
+ 
+ 		/* buffering */
