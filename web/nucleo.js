@@ -51,6 +51,13 @@ const KofLibretro = (() => {
     gg: { nome: 'Game Gear', curto: 'GG', ext: ['gg'], nucleo: 'genplus', largura: 160, altura: 144, dinamico: true, proporcao: 10 / 9,   // a tela do aparelho, quase quadrada
       botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start'], musica: false, minimo: 0x2000,
       canais: ['PSG 1', 'PSG 2', 'PSG 3', 'Ruído'], papeis: ['quadrada', 'quadrada', 'quadrada', 'LFSR'], indices: [6, 7, 8, 9], escalas: [1 / 2100, 1 / 2100, 1 / 2100, 1 / 2100] },
+    // PlayStation (PCSX-ReARMed): o CD fica no disco virtual /jogos enquanto o jogo roda (o núcleo lê o CD aos poucos).
+    // .cue precisa dos .bin junto (o app procura na pasta, nos arquivos soltos juntos ou pergunta). BIOS opcional: sem ela o
+    // PCSX imita a BIOS (muitos jogos rodam; com a de verdade roda mais). Botões: ✕ ○ □ △ = B A Y X do SNES, L1/R1 = L/R
+    ps1: { nome: 'PlayStation', curto: 'PS1', ext: ['cue', 'chd', 'pbp', 'iso', 'exe'], nucleo: 'pcsx', largura: 320, altura: 240, dinamico: true, tv43: true, caminho: true,
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'X', 'Y', 'L', 'R', 'Start', 'Select'], musica: false, minimo: 16, grande: true,   // o .cue é só um texto pequeno
+      bios: ['scph5501.bin', 'scph1001.bin', 'scph7001.bin', 'scph5500.bin', 'scph5502.bin', 'scph101.bin', 'scph7502.bin', 'psxonpsp660.bin'].map((arquivo) => ({ arquivo, tamanho: 524288, opcional: true })),
+      canais: [] },
   };
   const extensao = (nome) => (/\.([^.]+)$/.exec(nome || '') || [])[1]?.toLowerCase() || '';
   // set do Neo Geo pelo nome do zip ('mslug.zip' -> 'mslug'), se estiver na lista do FBNeo
@@ -177,7 +184,7 @@ const KofLibretro = (() => {
     return ((crc ^ 0xFFFFFFFF) >>> 0).toString(16).toUpperCase().padStart(8, '0');
   }
   function titulo(rom, sis) {
-    if (sis === 'neogeo') return '';   // vem do nome do zip (criar)
+    if (sis === 'neogeo' || sis === 'ps1') return '';   // vem do nome do arquivo (criar)
     if (sis === 'gba') {   // nome de 12 letras no cabeçalho (0xA0); sem nome, o CRC32
       const t = texto(rom, 0xA0, 12).trim();
       return /[A-Za-z0-9]{2}/.test(t) ? t : 'GBA ' + crc32(rom, 0);
@@ -234,9 +241,14 @@ const KofLibretro = (() => {
     // núcleo que só abre o jogo por arquivo (FBNeo): o zip (e os do pai) vão pro disco virtual /jogos; depois de carregar,
     // saem de lá (o núcleo já copiou tudo pra memória dele) pra não ocupar a memória duas vezes
     carregarPorCaminho() {
-      const mod = this.mod, S = SISTEMAS[this.sistema], arqs = [[this.set + '.zip', this.rom], ...this.extras.map((e) => [e.nome, e.bytes])];
-      for (const [nome, dados] of arqs) if (!gravar(mod, '/jogos/' + nome, dados)) throw new Error('faltou memória pra abrir ' + nome);
-      const caminho = '/jogos/' + this.set + '.zip\0', pc = mod._lr_alloc(caminho.length);
+      const mod = this.mod, S = SISTEMAS[this.sistema], ps1 = this.sistema === 'ps1';
+      const principal = ps1 ? this.arquivo : this.set + '.zip', arqs = [[principal, this.rom], ...this.extras.map((e) => [e.nome, e.bytes])];
+      // PlayStation: o CD do jogo anterior sai do disco virtual antes do novo entrar (cada CD pode ter 700 MB)
+      for (const nome of mod.kofCd || []) apagar(mod, '/jogos/' + nome);
+      mod.kofCd = [];
+      for (const [nome, dados] of arqs) if (!gravar(mod, '/jogos/' + nome, dados)) throw new Error('faltou memória pra abrir ' + nome + (ps1 ? ' (CD grande demais: tente o jogo em .chd, que é comprimido)' : ''));
+      if (ps1) { mod.kofCd = arqs.map(([n]) => n); this.rom = new Uint8Array(0); this.extras = []; }   // os bytes já estão no disco virtual
+      const caminho = '/jogos/' + principal + '\0', pc = mod._lr_alloc(caminho.length);
       for (let i = 0; i < caminho.length; i++) mod.HEAPU8[pc + i] = caminho.charCodeAt(i);
       mod.kofLog.length = 0;
       let ok = mod._lr_load(0, 0, pc);
@@ -249,9 +261,13 @@ const KofLibretro = (() => {
         if (ok) this.modoMvs = true;
       }
       mod._free(pc);
-      for (const [nome] of arqs) apagar(mod, '/jogos/' + nome);
+      if (!ps1) for (const [nome] of arqs) apagar(mod, '/jogos/' + nome);
       // o FBNeo às vezes "abre" só pra mostrar a tela de erro dele (driver não iniciou: estado de tamanho 0)
       if (ok && !mod._lr_state_size()) { mod._lr_unload(); ok = 0; }
+      if (!ok && ps1) {
+        const falta = mod.kofLog.filter((l) => /fail|error|missing|not found|could not/i.test(l)).slice(-2).join(' · ');
+        throw new Error('o PlayStation não abriu esse jogo' + (falta ? ': ' + falta : /\.cue$/i.test(principal) ? ' (os arquivos .bin do .cue precisam vir junto)' : ''));
+      }
       if (!ok) {
         const pai = (NEOGEO[this.set] || [])[1];
         if (pai && !this.extras.length) throw new Error(`esse jogo precisa também do ${pai}.zip (o jogo original de onde ele saiu): abra o ${pai}.zip uma vez ou deixe ele na pasta de ROMs`);
@@ -390,8 +406,9 @@ const KofLibretro = (() => {
   // o sistema vem pelo id ('snes', 'gb') ou pelo nome do arquivo (sem nenhum dos dois: SNES, como era antes)
   // extras: outros arquivos que o jogo precisa no disco virtual (Neo Geo: o zip do pai), [{nome, bytes}]
   function novoConsolinho(bytes, sis, nome, mod, extras) {
-    const c = new Consolinho(Uint8Array.from(bytes), sis, mod);
+    const c = new Consolinho(SISTEMAS[sis].grande ? bytes : Uint8Array.from(bytes), sis, mod);   // CD de 700 MB: não copia
     if (sis === 'neogeo') { c.set = setNeoGeo(nome); c.cart.title = NEOGEO[c.set][0]; c.extras = extras || []; }
+    if (sis === 'ps1') { c.arquivo = (nome || 'jogo.cue').replace(/^.*[\\/]/, ''); c.cart.title = c.arquivo.replace(/\.[^.]+$/, ''); c.extras = extras || []; }
     return c;
   }
   async function criar(bytes, nome, extras) {

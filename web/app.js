@@ -1157,7 +1157,7 @@ let rebob = null, rebobLigado = true, desdeFoto = 0, voltandoTecla = false, rebo
 const voltando = () => voltandoTecla || (estado() & 0x6000) === 0x6000;
 const rebobPronto = () => !!rebob && rebobRecarga <= 0 && rebob.fotos > 0;
 function novoRebob() {
-  rebob = rebobLigado && snes ? KofEstado.Rebobinador(snes, 48 << 20, rebobLimite * 30) : null;   // ~30 fotos por segundo
+  rebob = rebobLigado && snes && !(SIS[snes.sistema] && SIS[snes.sistema].grande) ? KofEstado.Rebobinador(snes, 48 << 20, rebobLimite * 30) : null;   // ~30 fotos por segundo (PS1: o estado tem ~4 MB, fica sem)
   desdeFoto = 0; rebobRecarga = 0; marcarAmpulheta(); novoMarco(true);
 }
 function marcarAmpulheta() {
@@ -1470,9 +1470,44 @@ async function primeiraVez() {
 
 // ---------------- abrir um jogo ----------------
 let jogoId = '', romArquivo = '';
-async function abrirArquivo(arq) {
+// PlayStation: o .cue é um índice que aponta pros .bin do CD (FILE "jogo.bin" BINARY). Acha cada um nos arquivos que vieram
+// junto, na pasta de ROMs ou pergunta
+async function binsDoCue(bytes, soltos = []) {
+  const nomes = [...new TextDecoder().decode(bytes).matchAll(/FILE\s+"([^"]+)"/gi)].map((m) => m[1].replace(/^.*[\\/]/, ''));
+  const achados = [], faltam = [];
+  let pasta = null;
+  for (const n of nomes) {
+    let f = soltos.find((x) => x.name.toLowerCase() === n.toLowerCase());
+    if (!f) { pasta = pasta || await lerPasta(false).catch(() => []); const it = pasta.find((x) => x.arquivo.toLowerCase() === n.toLowerCase()); if (it) f = await it.h.getFile(); }
+    if (f) achados.push({ nome: n, bytes: new Uint8Array(await f.arrayBuffer()) }); else faltam.push(n);
+  }
+  if (faltam.length) {
+    avisar('escolha também ' + faltam.join(', ') + ' (o .cue aponta pra eles)', 6000);
+    const fs = await new Promise((ok) => { const e = document.createElement('input'); e.type = 'file'; e.multiple = true; e.onchange = () => ok([...e.files]); e.click(); });
+    for (const n of faltam) {
+      const f = fs.find((x) => x.name.toLowerCase() === n.toLowerCase());
+      if (!f) throw new Error('faltou ' + n + ' (o .cue do jogo aponta pra ele)');
+      achados.push({ nome: n, bytes: new Uint8Array(await f.arrayBuffer()) });
+    }
+  }
+  return achados;
+}
+// a ROM de um jogo da biblioteca: do banco; o CD de PlayStation não fica no banco (até 700 MB): vem da pasta de ROMs
+async function bytesDoJogo(j) {
+  const rom = await bdPegar('roms', j.id);
+  if (rom) return { bytes: rom };
+  if (j.sistema === 'ps1') {
+    const it = (await lerPasta(false).catch(() => [])).find((x) => x.arquivo.toLowerCase() === (j.arquivo || '').toLowerCase());
+    if (!it) throw new Error('o CD desse jogo de PlayStation não fica guardado dentro do app: deixe ele na pasta de ROMs ou abra o arquivo de novo');
+    const bytes = new Uint8Array(await (await it.h.getFile()).arrayBuffer());
+    return { bytes, extras: /\.cue$/i.test(j.arquivo) ? await binsDoCue(bytes) : [] };
+  }
+  throw new Error('a ROM desse jogo não está na biblioteca');
+}
+async function abrirArquivo(arq, soltos = []) {
   try {
     let nome = arq.name, bytes = new Uint8Array(await arq.arrayBuffer());
+    if (/\.cue$/i.test(nome) && SIS_ATIVOS.includes('ps1')) { await abrirBytes(nome, bytes, true, await binsDoCue(bytes, soltos)); return; }
     // zip pelo nome ou pelos primeiros bytes ("PK"): o seletor do Android às vezes entrega o arquivo sem a extensão
     const ehZip = /\.zip$/i.test(nome) || (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 3 && bytes[3] === 4);
     if (ehZip && !neoGeo(nome)) {
@@ -1534,9 +1569,10 @@ async function carregarBios() {
 }
 const biosProntas = carregarBios().catch(() => {});
 // no celular os núcleos são libretro em WebAssembly (nucleo.js); no PC, SNES é o núcleo Kof e os outros sistemas, libretro
-async function novoNucleo(bytes, sis, nome) {
+async function novoNucleo(bytes, sis, nome, extras) {
   if (sis === 'snes' && !CELULAR && typeof KofNucleo !== 'undefined') return new KofNucleo.Snes(Int32Array.from(bytes));
   await biosProntas;
+  if (sis === 'ps1') return KofLibretro.criar(bytes, nome, extras || []);
   if (sis !== 'neogeo') return KofLibretro.criar(bytes, sis);
   return KofLibretro.criar(bytes, nome, await zipsDoPai(nome));
 }
@@ -1561,18 +1597,18 @@ function pedirBios(sis, abrir) {
   $('#bios-nome').textContent = SIS[sis].nome; $('#bios-arquivo').textContent = SIS[sis].bios.map((b) => b.arquivo).join(', ');
   fecharJanelas(); $('#bios-tela').hidden = false;
 }
-async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
+async function abrirBytes(nome, bytes, guardarNaBiblioteca, extras) {
   // sistema pela extensão; jogo antigo da biblioteca guardado sem extensão é de SNES
   const sis = !/\.[a-z0-9]{2,4}$/i.test(nome) ? 'snes' : sistemaDoNome(nome);
   if (!sis) throw new Error('não conheço esse tipo de arquivo (' + SIS_ATIVOS.map((k) => SIS[k].ext.map((e) => '.' + e).join(' ')).join(' ') + ')');
   if (bytes.length < SIS[sis].minimo) throw new Error('isso não parece uma ROM de ' + SIS[sis].nome);
   if (SIS[sis].bios && typeof KofLibretro !== 'undefined') {
     await biosProntas;
-    if (!KofLibretro.temBios(sis)) { pedirBios(sis, () => abrirBytes(nome, bytes, guardarNaBiblioteca)); return; }
+    if (!KofLibretro.temBios(sis)) { pedirBios(sis, () => abrirBytes(nome, bytes, guardarNaBiblioteca, extras)); return; }
   }
   registrarTempo(); salvarSram(); await salvarAuto();
   pararMusica(); fecharAbertura();
-  const s = await novoNucleo(bytes, sis, nome);
+  const s = await novoNucleo(bytes, sis, nome, extras);
   romNome = nome.replace(/\.[^.]+$/, ''); romArquivo = nome;
   capaSis.set(romNome, sis === 'gb' && /\.gbc$/i.test(nome) ? 'gbc' : sis);
   jogoId = s.cart.title.trim() + '|' + bytes.length;
@@ -1590,7 +1626,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   document.body.classList.toggle('so-ab', !!(SIS[sis] && SIS[sis].botoes && !SIS[sis].botoes.includes('X')));
   if (typeof rotularControle === 'function') rotularControle(sis);   // celular: nomes dos botões do console (Mega Drive A/B/C...)
   QUADRO_MS = 1000 / (s.fps || 60.0988);
-  snes = s; romAtual = bytes; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob(); avisarMudo(2200);
+  snes = s; romAtual = SIS[sis].grande ? new Uint8Array(0) : bytes; sramAntes = textoSram(); pausado = false; sobra = 0; novoRebob(); avisarMudo(2200);
   document.body.classList.remove('vazio');
   fecharJanelas();
   $('#st-jogo').textContent = romNome + ' · ' + (s.cart.title.trim() || '?');
@@ -1602,7 +1638,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
     const novo = { id: jogoId, nome: romNome, arquivo: nome, sistema: sis, titulo: s.cart.title.trim(), tamanho: bytes.length, ultimo: Date.now() };
     const id = jogoId;
     await bdMudarJogo(id, (antigo) => ({ ...(antigo || {}), ...novo }));
-    if (guardarNaBiblioteca || !(await bdTem('roms', id))) await bdPor('roms', id, bytes);
+    if (!SIS[sis].grande && (guardarNaBiblioteca || !(await bdTem('roms', id)))) await bdPor('roms', id, bytes);   // CD de PS1 não vai pro banco
     autoAntes = Date.now();
   } catch (e) { console.warn('biblioteca indisponível', e); }
   contarSessao(jogoId, romNome);
@@ -1693,7 +1729,12 @@ async function mostrarEstat() {
   $('#corpo-estat').innerHTML = h;
 }
 
-$('#arquivo').addEventListener('change', (e) => { if (e.target.files[0]) abrirArquivo(e.target.files[0]); e.target.value = ''; });
+$('#arquivo').multiple = true;   // PlayStation: dá pra escolher o .cue junto com os .bin
+$('#arquivo').addEventListener('change', (e) => {
+  const fs = [...e.target.files], cue = fs.find((f) => /\.cue$/i.test(f.name));
+  if (cue) abrirArquivo(cue, fs); else if (fs[0]) abrirArquivo(fs[0]);
+  e.target.value = '';
+});
 addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('arrastando'); });
 addEventListener('dragleave', (e) => { if (!e.relatedTarget) document.body.classList.remove('arrastando'); });
 addEventListener('drop', (e) => {
@@ -1703,6 +1744,8 @@ addEventListener('drop', (e) => {
   // ROM + patch soltos juntos: aplica a tradução nessa ROM
   const pt = fs.find((f) => KofPatch.EXT.test(f.name)), rm = fs.find((f) => EXT_ROM.test(f.name));
   if (pt && rm) { (async () => aplicarPatch(pt.name, new Uint8Array(await pt.arrayBuffer()), { nome: rm.name, bytes: new Uint8Array(await rm.arrayBuffer()) }))().catch((er) => avisar(er.message, 5000)); return; }
+  const cue = fs.find((f) => /\.cue$/i.test(f.name));
+  if (cue) { abrirArquivo(cue, fs); return; }
   if (fs[0]) abrirArquivo(fs[0]);
 });
 
@@ -1740,9 +1783,10 @@ async function salvarEstado() {
 async function carregarEstado(est) {
   try {
     if (est.jogo !== jogoId) {          // estado de outro jogo: abre o jogo antes
-      const j = await bdPegar('jogos', est.jogo), rom = await bdPegar('roms', est.jogo);
-      if (!j || !rom) { avisar('a ROM desse jogo não está na biblioteca', 4000); return; }
-      await abrirBytes(j.arquivo || j.nome, rom, false);
+      const j = await bdPegar('jogos', est.jogo);
+      if (!j) { avisar('a ROM desse jogo não está na biblioteca', 4000); return; }
+      const { bytes, extras } = await bytesDoJogo(j);
+      await abrirBytes(j.arquivo || j.nome, bytes, false, extras);
     }
     KofEstado.restaurar(snes, JSON.parse(await descomprimir(est.dados)));
     snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0; pausado = false; novoRebob();
@@ -1752,10 +1796,9 @@ async function carregarEstado(est) {
   } catch (e) { avisar('não consegui carregar: ' + e.message, 4000); }
 }
 async function continuar(j) {
-  const rom = await bdPegar('roms', j.id);
-  if (!rom) throw new Error('a ROM desse jogo não está na biblioteca');
+  const { bytes, extras } = await bytesDoJogo(j);
   const auto = j.temAuto ? await bdPegar('autos', j.id) : null;
-  await abrirBytes(j.arquivo || j.nome, rom, false);
+  await abrirBytes(j.arquivo || j.nome, bytes, false, extras);
   if (!auto) return;
   KofEstado.restaurar(snes, JSON.parse(auto));
   snes.apu.dsp.outCount = 0; ini = fim = 0; sobra = 0; novoRebob();
@@ -1840,9 +1883,12 @@ function lerPasta(pedir, forcar) {
       estadoBib('📁 lendo a pasta de ROMs…');
       const l = []; await varrer(pasta, 0, l);
       l.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+      // PlayStation: os .bin de um .cue ("Jogo (Track 1).bin" do "Jogo.cue") são faixas do CD, não jogos de Mega Drive
+      const cues = l.filter((r) => /\.cue$/i.test(r.nome)).map((r) => r.nome.replace(/\.cue$/i, '').toLowerCase());
       pastaCache = l.map((r) => {
         const nome = r.nome.replace(/\.[^.]+$/, '');
-        return { nome, arquivo: r.nome, h: r.h, ext: r.nome.split('.').pop().toUpperCase(), chave: normal(nome), variante: VARIANTE.test(nome) };
+        const faixa = /\.bin$/i.test(r.nome) && cues.some((c) => nome.toLowerCase().startsWith(c));
+        return { nome, arquivo: r.nome, h: r.h, ext: r.nome.split('.').pop().toUpperCase(), chave: normal(nome), variante: VARIANTE.test(nome), faixa };
       });
       return pastaCache;
     } catch (e) { return pastaCache || []; } finally { lendoPasta = null; }
@@ -1858,7 +1904,7 @@ async function montarItens() {
 }
 function juntarItens() {
   const ja = new Set(jogosItens.map((r) => (r.jogo.arquivo || '').toLowerCase()));
-  itens = jogosItens.concat((pastaCache || []).filter((r) => !ja.has(r.arquivo.toLowerCase())));
+  itens = jogosItens.concat((pastaCache || []).filter((r) => !r.faixa && !ja.has(r.arquivo.toLowerCase())));
 }
 function marcarPrincipais() { const b = $('[data-acao="so-principais"]'); b.textContent = '🧹 Só os principais: ' + (soPrincipais ? 'ligado' : 'desligado'); b.title = 'esconde hacks [h], cópias ruins [b] [o], trainers [t]… (traduções [T+Por] ficam)'; }
 function estadoBib(t) { const e = $('#bib-estado'); e.textContent = t || ''; e.hidden = !t; }
@@ -1868,7 +1914,7 @@ function estadoBib(t) { const e = $('#bib-estado'); e.textContent = t || ''; e.h
 // um acervo por sistema; o app anota o sistema de cada nome de jogo que mostra (capaSis) pra buscar no acervo certo
 const ACERVO = { snes: 'Nintendo_-_Super_Nintendo_Entertainment_System', nes: 'Nintendo_-_Nintendo_Entertainment_System', gb: 'Nintendo_-_Game_Boy', gbc: 'Nintendo_-_Game_Boy_Color',
   md: 'Sega_-_Mega_Drive_-_Genesis', sms: 'Sega_-_Master_System_-_Mark_III', gg: 'Sega_-_Game_Gear', gba: 'Nintendo_-_Game_Boy_Advance',
-  neogeo: 'FBNeo_-_Arcade_Games' };   // Neo Geo: as capas do FBNeo, pelo nome completo do jogo (o do set vem da lista)
+  neogeo: 'FBNeo_-_Arcade_Games', ps1: 'Sony_-_PlayStation' };   // Neo Geo: as capas do FBNeo, pelo nome completo do jogo (o do set vem da lista)
 const capaSis = new Map();
 const urlAcervo = (nome) => `https://raw.githubusercontent.com/libretro-thumbnails/${ACERVO[capaSis.get(nome)] || ACERVO.snes}/master/Named_Boxarts/`;
 let capasNet = ler('capas') !== '0';
@@ -2061,7 +2107,7 @@ function marcarSel(i) {
 }
 function mostrarInfo() {
   const r = visiveis[selecionada], img = $('#capa-img');
-  if (!r) { $('#info-nome').textContent = 'KOFstation'; $('#info-det').textContent = 'Super Nintendo, NES, Game Boy, GBA, Sega e Neo Geo'; img.hidden = true; $('#capa-vazia').hidden = false; return; }
+  if (!r) { $('#info-nome').textContent = 'KOFstation'; $('#info-det').textContent = 'Super Nintendo, NES, Game Boy, GBA, Sega, Neo Geo e PlayStation'; img.hidden = true; $('#capa-vazia').hidden = false; return; }
   $('#info-nome').textContent = r.nome;
   if (r.jogo) {
     const n = contagem[r.jogo.id] || 0;
@@ -2085,9 +2131,8 @@ async function abrirJogo(r, doZero) {
   try {
     if (autoSalvar && r.jogo && r.jogo.temAuto && !doZero) await continuar(r.jogo);
     else if (r.jogo) {
-      const rom = await bdPegar('roms', r.jogo.id);
-      if (!rom) throw new Error('a ROM desse jogo não está na biblioteca');
-      await abrirBytes(r.jogo.arquivo || r.nome, rom, false);
+      const { bytes, extras } = await bytesDoJogo(r.jogo);
+      await abrirBytes(r.jogo.arquivo || r.nome, bytes, false, extras);
     }
     else await abrirArquivo(await r.h.getFile());
   } catch (e) { avisar(e.message, 4000); }

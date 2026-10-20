@@ -223,6 +223,17 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > (`kofnes.moldPorSis`, `PADRAO_SIS`) e **moldura sua em PNG** (acha o buraco transparente a partir do centro; guardada no
 > banco `c`/`molduraPropria`). Prints de teste usam `KOFnes.imagemTeste(rgba, l, a)` (o print do FF6 veio do
 > libretro-thumbnails `Named_Snaps`, só pra prévia, fora do git).
+> **PlayStation (branch `ps1`, 20/10, não publicada):** núcleo **PCSX-ReARMed** (`construir.sh pcsx`, GPL-2; o Makefile.libretro já
+> tem `platform=emscripten`; o build troca a zlib do emscripten pela miniz, porque o cache do emscripten do Ubuntu é congelado;
+> sem dynarec = interpretador: ~150 fps no Node com demo 3D). `nucleos/pcsx-<hash>.js` ~1,3 MB. Sistema `ps1` (.cue .chd .pbp
+> .iso .exe; 320x240 dinâmico, 4:3, `caminho: true`, `grande: true`): o CD vai pro disco virtual `/jogos` e FICA lá enquanto
+> o jogo roda (o PCSX lê o CD aos poucos; `mod.kofCd` apaga o anterior), sem copiar o Uint8Array; não vai pro banco `roms`
+> (até 700 MB): a biblioteca reabre pela pasta de ROMs (`bytesDoJogo`). `.cue` = `binsDoCue` (acha os .bin nos arquivos
+> escolhidos/arrastados juntos, na pasta ou pergunta; `#arquivo` aceita vários). Os .bin de um .cue não aparecem como jogo de
+> Mega Drive na biblioteca (`faixa`). BIOS opcional (scph5501.bin etc., 512 KB; sem ela o PCSX usa a BIOS imitada). Rebobinar
+> desligado no PS1 (estado de ~4,4 MB). Controle: ✕ ○ □ △ = B A Y X, L1/R1 = L/R (L2/R2 e analógico ainda não). Capas:
+> `Sony_-_PlayStation`. Teste: `testes/navegador/ps1.cjs` com o Cube.exe do PeterLemon/PSX e um CD montado com ele
+> (genisoimage + SYSTEM.CNF `BOOT = cdrom:\CUBE.EXE;1` + .cue MODE1/2048).
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
 > **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso

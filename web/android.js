@@ -26,6 +26,7 @@
     md: { Y: 'A', B: 'B', A: 'C', L: 'X', X: 'Y', R: 'Z', Select: 'MODE' },
     sms: { B: '1', A: '2', Start: 'PAUSE' }, gg: { B: '1', A: '2' },
     neogeo: { B: 'A', A: 'B', Y: 'C', X: 'D', Select: 'FICHA' },
+    ps1: { B: '✕', A: '○', Y: '□', X: '△', L: 'L1', R: 'R1' },
   };
   // o app.js chama ao abrir um jogo; esta parte toda mora dentro de uma função, então vai pelo window
   window.rotularControle = rotularControle;

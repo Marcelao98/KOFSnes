@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Compila um núcleo libretro pra WebAssembly e junta com a nossa ponte (ponte.cpp).
-# Uso: nucleo-libretro/construir.sh snes9x|gambatte|fceumm|genplus|mgba|fbneo|somfm   (sem argumento: todos)
+# Uso: nucleo-libretro/construir.sh snes9x|gambatte|fceumm|genplus|mgba|fbneo|pcsx|somfm   (sem argumento: todos)
 # somfm = só o chip de som do Mega Drive (somfm.c + YM2612/PSG do Genesis Plus GX), pra trilha: saida/som/somfm.js (~100 KB)
 # Resultado: nucleo-libretro/saida/<núcleo>.js (um arquivo só, com o .wasm embutido; não vai pro git).
 # O módulo se chama Nucleo_<núcleo> (ex.: Nucleo_snes9x) e as funções da ponte são lr_*.
@@ -46,7 +46,9 @@ construir() {
               dir="$T/mgba"; lc="$dir/src/platform/libretro"; bc="$dir/build/mgba_libretro.bc" ;;
     fbneo)    repo=https://github.com/libretro/FBNeo.git; commit=2dbbac7623fbae1c7894a6437769e8a3adb78610
               dir="$T/fbneo"; lc="$dir/src/burner/libretro/libretro-common"; bc="$dir/src/burner/libretro/fbneo_neogeo_libretro_emscripten.bc" ;;
-    *) echo "núcleo desconhecido: $nome (use snes9x, gambatte, fceumm, genplus, mgba, fbneo ou somfm)"; exit 1 ;;
+    pcsx)     repo=https://github.com/libretro/pcsx_rearmed.git; commit=c8816799b50388e61cfe237fe2cdbb7d8175f20a
+              dir="$T/pcsx"; lc="$dir/deps/libretro-common"; bc="$dir/pcsx_rearmed_libretro_emscripten.bc" ;;
+    *) echo "núcleo desconhecido: $nome (use snes9x, gambatte, fceumm, genplus, mgba, fbneo, pcsx ou somfm)"; exit 1 ;;
   esac
   if [ ! -d "$dir" ]; then git clone -q "$repo" "$dir"; fi
   git -C "$dir" fetch -q --depth 1 origin "$commit" 2>/dev/null || true
@@ -66,6 +68,9 @@ construir() {
                 -DBUILD_LTO=OFF -DHAVE_POPCOUNT32=0 -DHAVE_PTHREAD_H=0 -DHAVE_SNPRINTF_L=0 >/dev/null \
               && cmake --build "$dir/build" --target mgba_libretro -j"$(nproc)" ;;
     # FBNeo só com o Neo Geo (SUBSET=neogeo: ~1 min em vez de horas, núcleo pequeno) e com o zlib dele mesmo
+    # PCSX-ReARMed (PlayStation): o emscripten do Ubuntu não deixa baixar a zlib dele (cache congelado): usa a miniz que vem junto
+    pcsx)     sed -i '/platform), emscripten)/,/USE_ASYNC_SPU=0/{s/^   USE_MINIZ = 0/   USE_MINIZ = 1/;/-sUSE_ZLIB=1/d}' "$dir/Makefile.libretro"
+              (cd "$dir" && emmake make -f Makefile.libretro platform=emscripten -j"$(nproc)") ;;
     fbneo)    (cd "$dir/src/burner/libretro" && make clean platform=emscripten SUBSET=neogeo >/dev/null && make generate-files platform=emscripten SUBSET=neogeo >/dev/null \
                 && emmake make -j"$(nproc)" platform=emscripten SUBSET=neogeo EXTERNAL_ZLIB=0) ;;   # generate-files: lista de drivers só do Neo Geo
   esac
@@ -91,5 +96,5 @@ construir() {
   if [ "$nome" = fbneo ]; then python3 "$AQUI/lista-neogeo.py" "$dir/gamelist.txt" "$dir/src/burn/drv/neogeo/d_neogeo.cpp" "$AQUI/../web/neogeo-jogos.js"; fi
 }
 
-if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus mgba fbneo somfm; fi
+if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus mgba fbneo pcsx somfm; fi
 for n in "$@"; do construir "$n"; done
