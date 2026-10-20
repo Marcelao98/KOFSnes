@@ -7,12 +7,19 @@
 #   ./kofnes.sh --desinstalar
 # Dá pra trocar o navegador com KOFNES_NAVEGADOR=/caminho/do/navegador. Se existir um
 # arquivo "nao-atualizar" do lado do script, ele não procura atualização.
-LANCADOR=1
+# Os núcleos (Game Boy, NES, Sega...) moram em nucleos/<núcleo>-<hash>.js; o versao.txt lista cada um
+# ("nucleo=<arquivo>:<tamanho>") e o que falta é baixado antes de trocar o html. Um "fonte.txt" do lado
+# do script (ou KOFNES_URL) troca o endereço de onde baixa (pra testar uma branch).
+LANCADOR=2
 BASE="${KOFNES_URL:-https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado}"
 
 eu="$(readlink -f "$0" 2>/dev/null || printf '%s' "$0")"
 dir="$(cd "$(dirname "$eu")" && pwd)"
 html="$dir/KOFnes.html"
+if [ -z "$KOFNES_URL" ] && [ -s "$dir/fonte.txt" ]; then
+    f="$(head -n 1 "$dir/fonte.txt" | tr -d '\r \t')"
+    case "$f" in http://*|https://*) BASE="${f%/}" ;; ?*) f="${f#/}"; BASE="https://raw.githubusercontent.com/${f%/}" ;; esac
+fi
 log="$dir/atualizacao.log"
 dados="${XDG_DATA_HOME:-$HOME/.local/share}"
 
@@ -81,8 +88,21 @@ atualizar() {
     nova="$(campo "$dir/versao.txt.novo" versao)"; tam="$(campo "$dir/versao.txt.novo" tamanho)"
     lanc="$(campo "$dir/versao.txt.novo" lancador_linux)"; tamsh="$(campo "$dir/versao.txt.novo" tamanho_linux)"
     anotar "versão no GitHub: $nova (lançador linux $lanc)"
+    # núcleos primeiro: o html novo só entra se todos os dele já estiverem na pasta
+    nucok=1; mkdir -p "$dir/nucleos"
+    for linha in $(sed -n 's/^nucleo=\([A-Za-z0-9._-]*\.js:[0-9][0-9]*\).*/\1/p' "$dir/versao.txt.novo"); do
+        n="${linha%%:*}"; t="${linha##*:}"
+        [ "$(tamanho "$dir/nucleos/$n")" = "$t" ] && continue
+        if baixar "nucleos/$n" "$dir/nucleos/$n.novo" 90 && [ "$(tamanho "$dir/nucleos/$n.novo")" = "$t" ]; then
+            mv -f "$dir/nucleos/$n.novo" "$dir/nucleos/$n" && anotar "núcleo $n baixado ($t bytes)"
+        else
+            anotar "núcleo $n veio errado (esperava $t bytes)"; rm -f "$dir/nucleos/$n.novo"; nucok=0
+        fi
+    done
     trocou=0
-    if [ "$nova" -gt "$aqui" ] && [ "$tam" -gt 0 ]; then
+    if [ "$nova" -gt "$aqui" ] && [ "$tam" -gt 0 ] && [ "$nucok" -eq 0 ]; then
+        anotar "faltou baixar algum núcleo: fica a versão daqui (tenta de novo na próxima vez)"
+    elif [ "$nova" -gt "$aqui" ] && [ "$tam" -gt 0 ]; then
         if baixar KOFnes.html "$html.novo" 90 && [ "$(tamanho "$html.novo")" = "$tam" ] \
             && head -c 14 "$html.novo" | grep -qi '<!doctype html'; then
             mv -f "$html.novo" "$html" && trocou=1 && anotar "atualizado pra versão $nova" \
@@ -103,7 +123,18 @@ atualizar() {
         fi
         rm -f "$eu.novo"
     fi
-    if [ "$trocou" -eq 1 ] || [ "$nova" -le "$aqui" ]; then mv -f "$dir/versao.txt.novo" "$dir/versao.txt"; else rm -f "$dir/versao.txt.novo"; fi
+    if [ "$trocou" -eq 1 ] || [ "$nova" -le "$aqui" ]; then
+        mv -f "$dir/versao.txt.novo" "$dir/versao.txt"
+        # núcleos que não estão mais na lista (versão velha) saem
+        if [ "$nucok" -eq 1 ] && grep -q '^nucleo=' "$dir/versao.txt"; then
+            for f in "$dir"/nucleos/*; do
+                [ -f "$f" ] || continue
+                grep -q "^nucleo=$(basename "$f"):" "$dir/versao.txt" || { rm -f "$f" && anotar "núcleo velho apagado: $(basename "$f")"; }
+            done
+        fi
+    else
+        rm -f "$dir/versao.txt.novo"
+    fi
 }
 
 if [ ! -e "$dir/nao-atualizar" ]; then
