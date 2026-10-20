@@ -1076,8 +1076,50 @@ function marcarMusicaInicio() {
 }
 marcarMusicaInicio();
 const deB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+// o Air em violino de verdade (The USAF Strings, domínio público): Opus num arquivo à parte (nucleos/violino-<hash>.js, como
+// os núcleos: o lançador baixa e o APK leva), carregado só na hora de tocar e decodificado pelo navegador
+let violino = null;
+function carregarViolino() {
+  const arq = typeof KofLibretro !== 'undefined' && KofLibretro.ARQUIVOS.violino;
+  if (!arq) return Promise.reject(new Error('sem o violino'));
+  if (!violino) violino = new Promise((ok, erro) => {
+    const s = document.createElement('script');
+    s.src = arq;
+    s.onload = () => (typeof KofViolino === 'string' ? ok() : erro(new Error('violino vazio')));
+    s.onerror = () => { s.remove(); erro(new Error('faltou baixar o violino')); };
+    document.head.appendChild(s);
+  }).then(() => new OfflineAudioContext(2, 1, 48000).decodeAudioData(deB64(KofViolino).buffer))
+    .catch((e) => { violino = null; throw e; });
+  return violino;
+}
+async function tocadorViolino() {
+  const buf = await carregarViolino(), taxa = buf.sampleRate, total = buf.length;
+  const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
+  const BLOCO = 1024, saida = new Int16Array(BLOCO * 2), onda = new Int16Array(2 * 4096);
+  let pos = 0, mudas = 0, n = 0;
+  return {
+    sis: 'violino', canais: 2, nomes: ['Esquerda', 'Direita'], papeis: ['violino', 'violino'], taxa, segundos: total / taxa,
+    encher() {
+      for (let i = 0; i < BLOCO; i++) {
+        const l = L[pos] * 32767, r = R[pos] * 32767;
+        onda[n & 4095] = l; onda[4096 + (n & 4095)] = r; n++;
+        saida[i * 2] = mudas & 1 ? 0 : l; saida[i * 2 + 1] = mudas & 2 ? 0 : r;
+        if (++pos >= total) pos = 0;   // acabou: volta pro começo (loop)
+      }
+      return { b: saida, n: BLOCO * 2 };
+    },
+    limpar() {},
+    mudas(m) { mudas = m; },
+    onda(v) { return { buf: onda, base: v * 4096, tam: 4096, pos: n & 4095, escala: 1 / 16000, taxa }; },
+    nivel: null,
+    fechar() {},
+  };
+}
 async function tocadorMusica(qual) {
   const m = TRILHA.find((x) => x.id === qual);
+  if (m && m.violino) {
+    try { return await tocadorViolino(); } catch (e) { /* sem o arquivo do violino: o Air em 8 bits */ }
+  }
   if (m && typeof KofSomFm !== 'undefined' && KofSomFm.disponivel()) {
     try { return await KofSomFm.tocador(deB64(m.cmd)); } catch (e) { /* sem o núcleo de som: tenta o 8 bits */ }
   }

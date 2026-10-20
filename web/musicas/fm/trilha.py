@@ -298,8 +298,13 @@ pasta_rom = pathlib.Path(sys.argv[sys.argv.index('--rom') + 1]) if '--rom' in sy
 saida = {'musicas': []}
 for m in MUSICAS:
     dados, seg = gerar_comandos(m)
-    saida['musicas'].append({'id': m['id'], 'titulo': m['titulo'], 'autor': m['autor'], 'fonte': m['fonte'],
-                             'segundos': round(seg, 2), 'cmd': base64.b64encode(dados).decode()})
+    if m['id'] == 'air':   # o Air toca na gravação de violino (musicas/air-violino.opus); o FM fica só na ROM (--rom)
+        saida['musicas'].append({'id': 'air', 'titulo': m['titulo'], 'autor': 'J. S. Bach (The USAF Strings)',
+                                 'fonte': 'Wikimedia Commons, File:Air.ogg, United States Air Force Band (domínio público)',
+                                 'segundos': 183.28, 'violino': True})
+    else:
+        saida['musicas'].append({'id': m['id'], 'titulo': m['titulo'], 'autor': m['autor'], 'fonte': m['fonte'],
+                                 'segundos': round(seg, 2), 'cmd': base64.b64encode(dados).decode()})
     if pasta_rom:
         pasta_rom.mkdir(parents=True, exist_ok=True)
         (pasta_rom / f"kofstation-{m['id']}.md").write_bytes(gerar_rom(m, dados))

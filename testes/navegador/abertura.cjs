@@ -22,6 +22,8 @@ const [,, pasta, rom, saida = '/tmp'] = process.argv;
     if (cel) await p.tap('#abertura'); else await p.keyboard.press('Enter');
     await p.waitForTimeout(3200);
     conferir(/Shhh/.test(await p.textContent('#ab-frase')) && (await juke(p)).interna === 'air' && (await juke(p)).tocando, `${nome}: frase "Shhh…" com o Air tocando`);
+    // o Air é a gravação de violino (nucleos/violino-<hash>.js), não o FM nem o 8 bits
+    conferir((await juke(p)).sisMusica === 'violino' && await p.evaluate(() => !!document.querySelector('script[src*="nucleos/violino-"]')), `${nome}: o Air toca no violino de verdade (${(await juke(p)).sisMusica})`);
     await p.screenshot({ path: `${saida}/ab-${nome}-2-frase.png` });
     if (!cel) {   // o filme inteiro, só no PC
       await p.waitForFunction(() => document.querySelector('#ab-tema').textContent.length > 0, null, { timeout: 40000 });

@@ -197,8 +197,12 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > (não baixa o Genesis Plus GX de 3,8 MB). Som conferido contra o núcleo inteiro (mesmo volume, envelope 0,98). Sem o núcleo
 > de som, cai pro 8 bits (`musica.js`, só air/rua). `trilha.py --rom <pasta>` ainda grava as ROMs de Mega Drive (tocador em
 > 68000 `fm/tocador.s` -> `tocador.bin` em 0x200, comandos em 0x800), idênticas às de antes. Músicas: air, rua, guarani,
-> ticotico, abrealas, balao. O Marcelo NÃO gostou do Air em FM: a abertura vai de violino de verdade (File:Air.ogg do
-> Wikimedia, USAF Band, domínio público; o download deu 429 "too many requests" em 20/10, tentar de novo ou pedir o arquivo).
+> ticotico, abrealas, balao. O Marcelo NÃO gostou do Air em FM: o **Air toca em violino de verdade** (File:Air.ogg do
+> Wikimedia, The USAF Strings / United States Air Force Band, domínio público; o Marcelo mandou o arquivo) em
+> `web/musicas/air-violino.opus` (Opus 40 kbps, ~1 MB, era 3,6 MB). O juntar.py transforma em `nucleos/violino-<hash>.js`
+> (`KofViolino` em base64, entra na lista `nucleo=` do versao.txt: o lançador 7/kofnes.sh baixam, APK/PWA levam);
+> `carregarViolino`/`tocadorViolino` no app.js (decodifica com `OfflineAudioContext` a 48 kHz, 2 canais Esquerda/Direita nas
+> Ondas, loop). Vale pra abertura, Início e jukebox; sem o arquivo, cai pro Air em 8 bits. O Air em FM só sai no `--rom`.
 > Início: escolha em Som e no rodapé do Início (`INICIO`, `kofnes.musicaInicio`: id, 'sortear' ou '0'); só toca depois do
 > 1º toque/tecla (`houveGesto`). Jukebox: as 6 aparecem como "🎵 Trilha do KOFstation" (`juke.lista` com `trilha`,
 > sem renomear/apagar), com Ondas dos 10 canais e exportar .wav. Teste: `testes/navegador/trilha.cjs`.

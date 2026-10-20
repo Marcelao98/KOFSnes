@@ -47,6 +47,17 @@ def separar_nucleos():
         lista[f.stem] = "nucleos/" + nome
         linhas.append(f"{nome}:{len(dados)}\n")
         print(f"  nucleos/{nome}: {len(dados) // 1024} KB")
+    # o Air em violino de verdade (gravação de domínio público, Opus ~1 MB) vai pelo mesmo caminho dos núcleos: arquivo à
+    # parte com nome por hash, baixado pelo lançador e levado no APK/PWA; o html só carrega quando vai tocar o Air
+    violino = web / "musicas" / "air-violino.opus"
+    if violino.exists():
+        import base64
+        dados = ("var KofViolino = '" + base64.b64encode(violino.read_bytes()).decode() + "';\n").encode()
+        nome = f"violino-{hashlib.sha256(dados).hexdigest()[:8]}.js"
+        (pasta / nome).write_bytes(dados)
+        lista["violino"] = "nucleos/" + nome
+        linhas.append(f"{nome}:{len(dados)}\n")
+        print(f"  nucleos/{nome}: {len(dados) // 1024} KB")
     if os.environ.get("KOFNES_LISTA"):
         pathlib.Path(os.environ["KOFNES_LISTA"]).write_text("".join(linhas))
     return json.dumps(lista)
