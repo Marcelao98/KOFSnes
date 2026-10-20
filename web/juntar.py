@@ -26,6 +26,7 @@ saida_kof, web, icone, destino = (pathlib.Path(a) for a in sys.argv[1:5])
 pasta_nucleos = pathlib.Path(sys.argv[5]) if len(sys.argv) > 5 else None
 pc = len(sys.argv) > 6 and sys.argv[6] == "pc"
 android = pasta_nucleos if pasta_nucleos and not pc else None
+somfm = (pasta_nucleos or web.parent / "nucleo-libretro" / "saida") / "som" / "somfm.js"
 nucleos = [f for f in sorted(pasta_nucleos.glob("*.js")) if not (pc and f.stem == "snes9x")] if pasta_nucleos else []
 
 
@@ -98,8 +99,10 @@ partes = {
         (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
         # música própria em 8 bits (abertura e Início): o Air vem da partitura de domínio público já convertida (musicas/air.json)
         + (web / "musica.js").read_text().replace("/*{{AIR}}*/ null", (web / "musicas" / "air.json").read_text().strip()) + "\n"
-        # a trilha no som do Mega Drive (ROMs pequenas geradas por musicas/fm/trilha.py; tocam no Genesis Plus GX)
+        # a trilha no som do Mega Drive (comandos gerados por musicas/fm/trilha.py) e o núcleo só de som que toca ela
+        # (nucleo-libretro/somfm.c, ~80 KB, embutido: toca sem baixar nada; sem ele, a trilha cai pro 8 bits)
         + (web / "musicas" / "trilha.js").read_text() + "\n"
+        + (somfm.read_text() + "\n" + (web / "somfm.js").read_text() + "\n" if somfm.exists() else "")
         + ((web / "neogeo-jogos.js").read_text() + "\n" if nucleos else "")   # lista dos jogos de Neo Geo (reconhecer o zip)
         + ((web / "nucleo.js").read_text().replace("/*{{NUCLEOS}}*/ {}", separar_nucleos()) + "\n" if nucleos else "")   # depois do estado.js: ele troca o savestate pelo do núcleo libretro
         + app_js

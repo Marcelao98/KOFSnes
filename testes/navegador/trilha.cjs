@@ -1,5 +1,5 @@
 // Trilha do KOFstation no som do Mega Drive: o Início só carrega a música depois do primeiro toque/tecla, toca no FM
-// (Genesis Plus GX, 10 canais), o botão "🎵 ..." do Início troca a música (as 5, sortear, desligada) e a jukebox mostra
+// (núcleo só de som, nucleo-libretro/somfm.c: YM2612 + PSG do Genesis Plus GX, 10 canais), o botão "🎵 ..." do Início troca a música (as 5, sortear, desligada) e a jukebox mostra
 // a trilha e toca as faixas dela.
 //   node testes/navegador/trilha.cjs dist/web
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -17,6 +17,8 @@ const [,, pasta] = process.argv;
   await p.mouse.click(5, 300); await p.waitForTimeout(2500);
   let j = await juke();
   conferir(j.tocando && j.interna === 'rua' && j.sisMusica === 'md' && j.canais === 10, `depois do toque: "Se Essa Rua" no FM do Mega Drive ${JSON.stringify(j)}`);
+  // quem toca é o núcleo só de som embutido (~80 KB): o Genesis Plus GX inteiro (3,8 MB) nem é baixado
+  conferir(!(await p.evaluate(() => document.querySelector('script[src*="genplus"]'))), 'tocando sem carregar o núcleo inteiro do Mega Drive');
   const nomes = [];
   for (let i = 0; i < 7; i++) {
     await p.evaluate(() => document.querySelector('.hm-rodape [data-acao="musica-inicio"]').click()); await p.waitForTimeout(1500);

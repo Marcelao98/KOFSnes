@@ -1078,15 +1078,15 @@ marcarMusicaInicio();
 const deB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 async function tocadorMusica(qual) {
   const m = TRILHA.find((x) => x.id === qual);
-  if (m && typeof KofLibretro !== 'undefined' && KofLibretro.disponivel('md')) {
-    try { return await KofLibretro.tocador('md', deB64(m.rom), null, 'trilha.md', []); } catch (e) { /* sem o núcleo: tenta o 8 bits */ }
+  if (m && typeof KofSomFm !== 'undefined' && KofSomFm.disponivel()) {
+    try { return await KofSomFm.tocador(deB64(m.cmd)); } catch (e) { /* sem o núcleo de som: tenta o 8 bits */ }
   }
   return typeof KofMusica !== 'undefined' && KofMusica.MUSICAS[qual] ? KofMusica.tocador(qual) : null;
 }
 let musicaVez = 0, houveGesto = false, musicaEsperando = null;
 async function tocarMusica(qual, sempre) {
   if (!musicaInicio && !sempre) return;
-  // o navegador só toca som depois do primeiro toque/tecla: até lá nem carrega o núcleo do Mega Drive (o app abre leve)
+  // o navegador só toca som depois do primeiro toque/tecla: até lá nem liga o chip de som
   if (!houveGesto && !sempre) { musicaEsperando = qual; return; }
   if (juke.tocando && !juke.interna) return;            // a pessoa está ouvindo a jukebox: não atrapalha
   if (juke.interna === qual && juke.tocando) return;

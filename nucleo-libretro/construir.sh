@@ -1,16 +1,38 @@
 #!/usr/bin/env bash
 # Compila um núcleo libretro pra WebAssembly e junta com a nossa ponte (ponte.cpp).
-# Uso: nucleo-libretro/construir.sh snes9x|gambatte|fceumm|genplus|mgba|fbneo   (sem argumento: todos)
+# Uso: nucleo-libretro/construir.sh snes9x|gambatte|fceumm|genplus|mgba|fbneo|somfm   (sem argumento: todos)
+# somfm = só o chip de som do Mega Drive (somfm.c + YM2612/PSG do Genesis Plus GX), pra trilha: saida/som/somfm.js (~100 KB)
 # Resultado: nucleo-libretro/saida/<núcleo>.js (um arquivo só, com o .wasm embutido; não vai pro git).
 # O módulo se chama Nucleo_<núcleo> (ex.: Nucleo_snes9x) e as funções da ponte são lr_*.
 # Precisa: emscripten (no Ubuntu: apt install emscripten) e git. O Snes9x demora ~4 min na primeira vez.
 set -euo pipefail
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 T="${T:-/tmp/kofnes-libretro}"
-mkdir -p "$T" "$AQUI/saida"
+mkdir -p "$T" "$AQUI/saida" "$AQUI/saida/som"
+
+# núcleo só de som: os chips do Genesis Plus GX (com a sonda) e o somfm.c no lugar do resto do console
+construir_som() {
+  local G="$T/genplus" O="$T/obj-somfm"
+  if [ ! -d "$G" ]; then git clone -q https://github.com/libretro/Genesis-Plus-GX.git "$G"; fi
+  git -C "$G" fetch -q --depth 1 origin aa74d79634cd230f65cce4180e92688e53883d2f 2>/dev/null || true
+  git -C "$G" checkout -q -- . && git -C "$G" checkout -q aa74d79634cd230f65cce4180e92688e53883d2f
+  git -C "$G" apply "$AQUI/genplus-sonda.patch"
+  rm -rf "$O"; mkdir -p "$O"
+  local f INC="-I$G/core -I$G/core/sound -I$G/core/cart_hw -I$G/core/cart_hw/svp -I$G/core/cd_hw -I$G/core/input_hw -I$G/core/m68k -I$G/core/z80 -I$G/core/debug -I$G/core/ntsc -I$G/libretro -I$G/libretro/libretro-common/include"
+  for f in "$G/core/sound/ym2612.c" "$G/core/sound/psg.c" "$G/core/sound/blip_buf.c" "$AQUI/somfm.c"; do
+    emcc -O3 -DNDEBUG -DLSB_FIRST -DALIGN_LONG -DBYTE_ORDER=LITTLE_ENDIAN -DUSE_PER_SOUND_CHANNELS_CONFIG -D__LIBRETRO__ \
+      -DINLINE="static inline" $INC -w -c "$f" -o "$O/$(basename "$f" .c).o"
+  done
+  emcc -O3 "$O"/*.o -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME=Nucleo_somfm -s ENVIRONMENT=web,node -s SINGLE_FILE=1 \
+    -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_RUNTIME_METHODS=HEAPU8,HEAP16,HEAPU32 \
+    -s EXPORTED_FUNCTIONS=_som_iniciar,_som_tocar,_som_mudas,_som_quadro,_som_saida,_som_onda,_som_onda_pos,_malloc,_free \
+    -o "$AQUI/saida/som/somfm.js"
+  ls -l "$AQUI/saida/som/somfm.js"
+}
 
 construir() {
   local nome="$1" repo commit dir lc bc
+  if [ "$nome" = somfm ]; then construir_som; return; fi
   case "$nome" in
     snes9x)   repo=https://github.com/libretro/snes9x.git; commit=fae2fea08f74180759ef540ee94259213f503480
               dir="$T/snes9x"; lc="$dir/libretro/libretro-common"; bc="$dir/libretro/snes9x_libretro_emscripten.bc" ;;
@@ -24,7 +46,7 @@ construir() {
               dir="$T/mgba"; lc="$dir/src/platform/libretro"; bc="$dir/build/mgba_libretro.bc" ;;
     fbneo)    repo=https://github.com/libretro/FBNeo.git; commit=2dbbac7623fbae1c7894a6437769e8a3adb78610
               dir="$T/fbneo"; lc="$dir/src/burner/libretro/libretro-common"; bc="$dir/src/burner/libretro/fbneo_neogeo_libretro_emscripten.bc" ;;
-    *) echo "núcleo desconhecido: $nome (use snes9x, gambatte, fceumm, genplus, mgba ou fbneo)"; exit 1 ;;
+    *) echo "núcleo desconhecido: $nome (use snes9x, gambatte, fceumm, genplus, mgba, fbneo ou somfm)"; exit 1 ;;
   esac
   if [ ! -d "$dir" ]; then git clone -q "$repo" "$dir"; fi
   git -C "$dir" fetch -q --depth 1 origin "$commit" 2>/dev/null || true
@@ -69,5 +91,5 @@ construir() {
   if [ "$nome" = fbneo ]; then python3 "$AQUI/lista-neogeo.py" "$dir/gamelist.txt" "$dir/src/burn/drv/neogeo/d_neogeo.cpp" "$AQUI/../web/neogeo-jogos.js"; fi
 }
 
-if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus mgba fbneo; fi
+if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus mgba fbneo somfm; fi
 for n in "$@"; do construir "$n"; done

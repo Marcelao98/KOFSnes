@@ -189,14 +189,18 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > arranjo Daniel Pynkus, em `RUA.melodia`) no Início; toca como faixa interna da jukebox (`juke.interna`, loop, sem mini-player), para ao abrir jogo ou a
 > jukebox; Som > "Música no Início". `.so-cel` agora some no PC pelo estilo.css. Teste: `testes/navegador/abertura.cjs`.
 > **Trilha no som do Mega Drive (mesma branch):** `web/musicas/fm/trilha.py` transforma partituras (texto `nota:duração`) +
-> acordes + instrumentos FM desenhados lá numa ROM de Mega Drive por música: tocador em 68000 (`fm/tocador.s` -> `tocador.bin`,
-> 166 bytes, montado com `binutils-m68k-linux-gnu`) em 0x200 lê comandos em 0x800 (YM parte I/II, PSG, espera N quadros,
-> marca/volta loop). Saída `web/musicas/trilha.js` (`KofTrilha`, base64), embutida pelo juntar.py. Toca no Genesis Plus GX
-> pelo `KofLibretro.tocador('md', rom, null)` (sem estado = desde o reset); sem o núcleo, cai pro 8 bits (`musica.js`, só
-> air/rua). Músicas: air, rua, guarani (8 compassos do tema), ticotico (partes A e B), abrealas, balao — partituras que o
-> Marcelo mandou (prints); Air com violino de verdade (Wikimedia, USAF, domínio público) ficou pra quando liberar o domínio.
-> Início: escolha em Som e no rodapé do Início (`INICIO`, `kofnes.musicaInicio`: id, 'sortear' ou '0'); só carrega o núcleo
-> depois do 1º toque/tecla (`houveGesto`). Jukebox: as 6 aparecem como "🎵 Trilha do KOFstation" (`juke.lista` com `trilha`,
+> acordes + instrumentos FM desenhados lá numa lista de comandos por música (YM parte I/II, PSG, espera N quadros, marca/volta
+> loop); saída `web/musicas/trilha.js` (`KofTrilha`, campo `cmd` em base64; as 5 brasileiras somam ~16 KB). Quem toca é o
+> **núcleo só de som** `nucleo-libretro/somfm.c` (`construir.sh somfm` -> `saida/som/somfm.js`, **82 KB**): YM2612 + PSG +
+> blip_buf do Genesis Plus GX com a sonda, sem 68000/Z80/vídeo; `web/somfm.js` (`KofSomFm.tocador(cmd)`, mesma cara dos
+> tocadores da jukebox, 10 canais, mudo por `config.md_ch_volumes`/`psg_ch_volumes`); o juntar.py embute os dois no html
+> (não baixa o Genesis Plus GX de 3,8 MB). Som conferido contra o núcleo inteiro (mesmo volume, envelope 0,98). Sem o núcleo
+> de som, cai pro 8 bits (`musica.js`, só air/rua). `trilha.py --rom <pasta>` ainda grava as ROMs de Mega Drive (tocador em
+> 68000 `fm/tocador.s` -> `tocador.bin` em 0x200, comandos em 0x800), idênticas às de antes. Músicas: air, rua, guarani,
+> ticotico, abrealas, balao. O Marcelo NÃO gostou do Air em FM: a abertura vai de violino de verdade (File:Air.ogg do
+> Wikimedia, USAF Band, domínio público; o download deu 429 "too many requests" em 20/10, tentar de novo ou pedir o arquivo).
+> Início: escolha em Som e no rodapé do Início (`INICIO`, `kofnes.musicaInicio`: id, 'sortear' ou '0'); só toca depois do
+> 1º toque/tecla (`houveGesto`). Jukebox: as 6 aparecem como "🎵 Trilha do KOFstation" (`juke.lista` com `trilha`,
 > sem renomear/apagar), com Ondas dos 10 canais e exportar .wav. Teste: `testes/navegador/trilha.cjs`.
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 

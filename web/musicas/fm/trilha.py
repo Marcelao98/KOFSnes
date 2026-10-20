@@ -1,16 +1,19 @@
 """Trilha do KOFstation no som do Mega Drive (YM2612 FM + PSG), tocando no chip de verdade (o Genesis Plus GX emulado).
 
-Cada música vira uma ROM pequena de Mega Drive: o tocador em 68000 (tocador.s -> tocador.bin, 166 bytes) em 0x200 e,
-em 0x800, a lista de comandos que este script gera a partir das partituras (escritas aqui como texto) e dos
-instrumentos FM desenhados aqui. Saída: web/musicas/trilha.js (KofTrilha: id, título, autor, segundos, ROM em base64).
+Cada música vira uma lista de comandos pros chips (YM2612 parte I/II, PSG, espera N quadros, loop), gerada a partir das
+partituras (escritas aqui como texto) e dos instrumentos FM desenhados aqui. Saída: web/musicas/trilha.js (KofTrilha: id,
+título, autor, segundos, comandos em base64), tocada pelo núcleo só de som (nucleo-libretro/somfm.c, ~80 KB).
+Com --rom <pasta>, grava também uma ROM de Mega Drive por música (o tocador em 68000, tocador.s -> tocador.bin, em 0x200
+e os comandos em 0x800), que toca em qualquer emulador de Mega Drive.
 Todas as músicas são de domínio público (composição) e o arranjo é nosso; ver a fonte de cada partitura abaixo.
-Uso: python3 web/musicas/fm/trilha.py
+Uso: python3 web/musicas/fm/trilha.py [--rom <pasta>]
 """
 import base64
 import json
 import math
 import pathlib
 import re
+import sys
 
 AQUI = pathlib.Path(__file__).resolve().parent
 QUADROS = 60.0                     # o tocador anda um quadro por vblank (NTSC)
@@ -166,7 +169,7 @@ def arranjar(m):
             k += 1
     return ev
 
-def gerar_rom(m):
+def gerar_comandos(m):
     seg = 60.0 / m['bpm']
     init = [(0, 0x22, 0), (0, 0x27, 0), (0, 0x2B, 0)]
     for c in range(6):
@@ -209,6 +212,9 @@ def gerar_rom(m):
     for c in range(6):
         emitir(fm_solta(c))
     dados.append(4)                                      # volta pro começo do loop
+    return bytes(dados), total_q / QUADROS
+
+def gerar_rom(m, dados):
     toc = (AQUI / 'tocador.bin').read_bytes()
     rom = bytearray(max(0x2000, 0x800 + len(dados) + 0x7FF & ~0x7FF))
     rom[0:4] = (0x00FFFE00).to_bytes(4, 'big')
@@ -220,7 +226,7 @@ def gerar_rom(m):
     rom[0x1F0:0x1F3] = b'JUE'
     rom[0x200:0x200 + len(toc)] = toc
     rom[0x800:0x800 + len(dados)] = dados
-    return bytes(rom), total_q / QUADROS
+    return bytes(rom)
 
 # ---------------- as músicas ----------------
 air = json.loads((AQUI.parent / 'air.json').read_text())
@@ -288,12 +294,16 @@ musica('ticotico', 'Tico-Tico no Fubá', 'Zequinha de Abreu (1917)', 'partitura 
        'Am7|E7|E7|Am7|Dm7|Am7|B7|E7|Am7|E7|E7|Am7|Dm7|Am7|E7|Am7|C|G7|G7|C|Ebdim|Dm7|G7|C|C|G7|G7|C|F F#ø|C A7|Dm7 G7|C',
        dict(baixo='marcha', acorde='stab', patch_acorde='cavaco', chimbal=0.25), 'flauta', transpor=12)
 
+pasta_rom = pathlib.Path(sys.argv[sys.argv.index('--rom') + 1]) if '--rom' in sys.argv else None
 saida = {'musicas': []}
 for m in MUSICAS:
-    rom, seg = gerar_rom(m)
+    dados, seg = gerar_comandos(m)
     saida['musicas'].append({'id': m['id'], 'titulo': m['titulo'], 'autor': m['autor'], 'fonte': m['fonte'],
-                             'segundos': round(seg, 2), 'rom': base64.b64encode(rom).decode()})
-    print(f"{m['id']:9} {len(rom) // 1024:3} KB  {seg:6.1f} s")
+                             'segundos': round(seg, 2), 'cmd': base64.b64encode(dados).decode()})
+    if pasta_rom:
+        pasta_rom.mkdir(parents=True, exist_ok=True)
+        (pasta_rom / f"kofstation-{m['id']}.md").write_bytes(gerar_rom(m, dados))
+    print(f"{m['id']:9} {len(dados):6} bytes  {seg:6.1f} s")
 (AQUI.parent / 'trilha.js').write_text(
-    '// Gerado por web/musicas/fm/trilha.py: a trilha do KOFstation no som do Mega Drive (uma ROM pequena por música).\n'
+    '// Gerado por web/musicas/fm/trilha.py: a trilha do KOFstation no som do Mega Drive (comandos pros chips FM e PSG).\n'
     'const KofTrilha = ' + json.dumps(saida, ensure_ascii=False) + ';\n')
