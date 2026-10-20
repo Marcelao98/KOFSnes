@@ -1,6 +1,9 @@
 """Junta a saída do `kof build --target js` com a interface num HTML só.
 
-Uso: juntar.py <saida-do-kof> <pasta-web> <icone.png> <KOFnes.html>
+Uso: juntar.py <saida-do-kof> <pasta-web> <icone.png> <KOFnes.html> [<pasta-dos-núcleos> [pc]]
+
+Os núcleos libretro (Gambatte, FCEUmm, Genesis Plus GX, Snes9x) não entram no html: vão pra
+nucleos/<núcleo>-<hash>.js do lado dele e são carregados só quando abre um jogo daquele console.
 
 Navegador não carrega módulos ES de um arquivo local (file://), então os
 módulos viram um script comum dentro de uma função: o runtime do Kof, o
@@ -24,6 +27,28 @@ pasta_nucleos = pathlib.Path(sys.argv[5]) if len(sys.argv) > 5 else None
 pc = len(sys.argv) > 6 and sys.argv[6] == "pc"
 android = pasta_nucleos if pasta_nucleos and not pc else None
 nucleos = [f for f in sorted(pasta_nucleos.glob("*.js")) if not (pc and f.stem == "snes9x")] if pasta_nucleos else []
+
+
+def separar_nucleos():
+    """Os núcleos NÃO vão dentro do html: cada um vira <pasta do html>/nucleos/<núcleo>-<hash8>.js (hash do conteúdo:
+    núcleo novo = nome novo, então o navegador e o atualizador nunca misturam versões) e o html leva só a lista.
+    Se a variável KOFNES_LISTA existir, escreve nela "arquivo:tamanho" de cada núcleo (vai pro versao.txt)."""
+    import hashlib
+    import json
+    import os
+    pasta = destino.parent / "nucleos"
+    pasta.mkdir(parents=True, exist_ok=True)
+    lista, linhas = {}, []
+    for f in nucleos:
+        dados = f.read_bytes()
+        nome = f"{f.stem}-{hashlib.sha256(dados).hexdigest()[:8]}.js"
+        (pasta / nome).write_bytes(dados)
+        lista[f.stem] = "nucleos/" + nome
+        linhas.append(f"{nome}:{len(dados)}\n")
+        print(f"  nucleos/{nome}: {len(dados) // 1024} KB")
+    if os.environ.get("KOFNES_LISTA"):
+        pathlib.Path(os.environ["KOFNES_LISTA"]).write_text("".join(linhas))
+    return json.dumps(lista)
 
 
 def versao():
@@ -70,9 +95,8 @@ partes = {
     "{{CSS}}": (web / "estilo.css").read_text() + ((web / "android.css").read_text() if android else ""),
     "{{NUCLEO}}": script,
     "{{APP}}": (
-        "".join(f.read_text() + "\n" for f in nucleos)   # núcleos compilados (celular: todos; PC: gambatte.js...)
-        + (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
-        + ((web / "nucleo.js").read_text() + "\n" if nucleos else "")   # depois do estado.js: ele troca o savestate pelo do núcleo libretro
+        (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
+        + ((web / "nucleo.js").read_text().replace("/*{{NUCLEOS}}*/ {}", separar_nucleos()) + "\n" if nucleos else "")   # depois do estado.js: ele troca o savestate pelo do núcleo libretro
         + app_js
     ),
     "{{ICONE}}": "data:image/png;base64," + base64.b64encode(icone.read_bytes()).decode(),

@@ -10,6 +10,8 @@ Brave ou Vivaldi) e curl ou wget pra atualizar. O Firefox abre o jogo mas não t
 de ROMs nem o "Salvar perfil" (falta uma API dele).
 
 Ele procura atualização sozinho ao abrir; o que aconteceu fica em atualizacao.log.
+A pasta "nucleos" tem os emuladores de Game Boy, NES e Sega: deixe ela junto do
+KOFnes.html (o kofnes.sh baixa o que faltar).
 Pra não atualizar, crie um arquivo vazio chamado "nao-atualizar" nesta pasta.
 
 Navegador instalado por Snap ou Flatpak: funciona, mas o acesso às suas pastas é limitado.

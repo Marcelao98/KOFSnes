@@ -3,6 +3,8 @@ KOFstation - Super Nintendo e Game Boy, feito em Kof
 Dois cliques no KOFnes.exe. Ele abre o emulador numa janela do Microsoft
 Edge (que já vem no Windows 10 e 11), sem barra de endereço.
 Também dá pra abrir o KOFnes.html direto no Chrome ou no Edge.
+A pasta "nucleos" tem os emuladores de Game Boy, NES e Sega: deixe ela junto
+do html (o SNES não precisa dela). O KOFstation.exe baixa o que faltar.
 
 O KOFstation abre no INÍCIO: continuar de onde parou, recentes e atalhos. O menu da
 esquerda leva pra qualquer tela; Alt+← (ou Esc numa janela) volta pra anterior.

@@ -16,6 +16,13 @@
 // termina por trás (vale na próxima vez). Tudo fica anotado em
 // atualizacao.log. Os saves não moram aqui, então trocar os arquivos não mexe
 // neles. Um arquivo "nao-atualizar" do lado do .exe desliga isso.
+//
+// Lançador 7: os núcleos (Game Boy, NES, Sega...) moram em nucleos\<núcleo>-<hash>.js do
+// lado do html. O versao.txt lista cada um ("nucleo=<arquivo>:<tamanho>"); o que falta (ou
+// veio com tamanho errado) é baixado ANTES de trocar o html, e os que não estão mais na lista
+// são apagados. Um "fonte.txt" do lado do exe troca de onde baixa: um caminho do GitHub
+// ("/Marcelao98/KOFSnes/nucleos/publicado/", pra testar uma branch) ou um endereço inteiro
+// ("http://127.0.0.1:8000/publicado/", pra testar sem GitHub).
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -27,9 +34,9 @@
 #include <stdarg.h>
 #include <time.h>
 
-#define LANCADOR 6
-#define HOST L"raw.githubusercontent.com"
-#define CAMINHO L"/Marcelao98/KOFSnes/main/publicado/"
+#define LANCADOR 7
+#define GITHUB L"raw.githubusercontent.com"
+#define MAX_NUCLEOS 32
 #ifndef WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
 #define WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY 4
 #endif
@@ -37,7 +44,14 @@
 typedef struct {
     wchar_t dir[MAX_PATH];
     volatile LONG baixando;   // 1 = achou versão nova e está baixando
+    volatile LONG abriu;      // 1 = o navegador já abriu (aí não apaga núcleo velho: a página aberta pode precisar dele)
 } Atualizacao;
+
+// de onde baixa (o fonte.txt muda): servidor, porta, https ou não, e a pasta com o versao.txt
+static wchar_t host[128] = GITHUB;
+static wchar_t caminho[256] = L"/Marcelao98/KOFSnes/main/publicado/";
+static INTERNET_PORT porta = 443;
+static int seguro = 1;
 
 static FILE *registro = NULL;
 
@@ -58,7 +72,8 @@ static void anotar(const char *fmt, ...) {
 static long long campo(const wchar_t *arq, const char *nome) {
     FILE *f = _wfopen(arq, L"rb");
     if (!f) return 0;
-    char b[1024] = { 0 };
+    static char b[8192];
+    memset(b, 0, sizeof(b));
     fread(b, 1, sizeof(b) - 1, f);
     fclose(f);
     char *p = strstr(b, nome);
@@ -81,10 +96,10 @@ static long long baixar_winhttp(const wchar_t *nome, const wchar_t *destino) {
     if (!s) { anotar("WinHttpOpen falhou (erro %lu)", GetLastError()); return -1; }
     WinHttpSetTimeouts(s, 8000, 3000, 15000, 20000);
     long long total = -1;
-    HINTERNET c = WinHttpConnect(s, HOST, INTERNET_DEFAULT_HTTPS_PORT, 0);
-    wchar_t caminho[512];
-    swprintf(caminho, 512, CAMINHO L"%ls?t=%lu", nome, GetTickCount());
-    HINTERNET r = c ? WinHttpOpenRequest(c, L"GET", caminho, NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE) : NULL;
+    HINTERNET c = WinHttpConnect(s, host, porta, 0);
+    wchar_t alvo[512];
+    swprintf(alvo, 512, L"%ls%ls?t=%lu", caminho, nome, GetTickCount());
+    HINTERNET r = c ? WinHttpOpenRequest(c, L"GET", alvo, NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, seguro ? WINHTTP_FLAG_SECURE : 0) : NULL;
     if (r && WinHttpSendRequest(r, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) && WinHttpReceiveResponse(r, NULL)) {
         DWORD st = 0, tam = sizeof(st);
         WinHttpQueryHeaders(r, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX, &st, &tam, WINHTTP_NO_HEADER_INDEX);
@@ -119,7 +134,7 @@ static long long baixar_winhttp(const wchar_t *nome, const wchar_t *destino) {
 extern long long inet_baixar(const wchar_t *url, const wchar_t *destino, unsigned long *codigo, int *http);
 static long long baixar_inet(const wchar_t *nome, const wchar_t *destino) {
     wchar_t url[600];
-    swprintf(url, 600, L"https://" HOST CAMINHO L"%ls?t=%lu", nome, GetTickCount());
+    swprintf(url, 600, L"%ls://%ls:%u%ls%ls?t=%lu", seguro ? L"https" : L"http", host, (unsigned)porta, caminho, nome, GetTickCount());
     unsigned long cod; int http;
     long long b = inet_baixar(url, destino, &cod, &http);
     if (b < 0) {
@@ -187,14 +202,15 @@ static const char *escolher_ip(void) {
 
 // pelo curl.exe do Windows (10/11), preso no IP que respondeu; o certificado continua conferido pelo nome
 static long long baixar_curl(const wchar_t *nome, const wchar_t *destino) {
+    if (wcscmp(host, GITHUB) != 0) return -1;   // fonte.txt com outro servidor: vai direto pelo WinINet/WinHTTP
     const char *ip = escolher_ip();
     if (!ip) return -1;
     wchar_t curl[MAX_PATH], linha[2048];
     if (!GetSystemDirectoryW(curl, MAX_PATH)) return -1;
     wcscat(curl, L"\\curl.exe");
     if (GetFileAttributesW(curl) == INVALID_FILE_ATTRIBUTES) { anotar("sem curl.exe no Windows"); return -1; }
-    swprintf(linha, 2048, L"\"%ls\" -sSf -4 --connect-timeout 5 --max-time 60 --resolve " HOST L":443:%hs "
-             L"-o \"%ls\" \"https://" HOST CAMINHO L"%ls?t=%lu\"", curl, ip, destino, nome, GetTickCount());
+    swprintf(linha, 2048, L"\"%ls\" -sSf -4 --connect-timeout 5 --max-time 60 --resolve " GITHUB L":443:%hs "
+             L"-o \"%ls\" \"https://" GITHUB L"%ls%ls?t=%lu\"", curl, ip, destino, caminho, nome, GetTickCount());
     STARTUPINFOW si;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
@@ -229,6 +245,107 @@ static long long baixar(const wchar_t *nome, const wchar_t *destino) {
     return baixar_winhttp(nome, destino);
 }
 
+// fonte.txt (opcional, do lado do exe): outro lugar pra baixar. Um caminho do GitHub ("/dono/repo/branch/publicado/")
+// ou um endereço inteiro ("http://servidor:porta/pasta/").
+static void lerFonte(const wchar_t *dir) {
+    wchar_t arq[MAX_PATH];
+    swprintf(arq, MAX_PATH, L"%ls\\fonte.txt", dir);
+    FILE *f = _wfopen(arq, L"rb");
+    if (!f) return;
+    char b[400] = { 0 };
+    fread(b, 1, sizeof(b) - 1, f);
+    fclose(f);
+    b[strcspn(b, "\r\n \t")] = 0;
+    if (!b[0]) return;
+    char *p = b;
+    if (_strnicmp(p, "http://", 7) == 0 || _strnicmp(p, "https://", 8) == 0) {
+        seguro = p[4] == 's' || p[4] == 'S';
+        p += seguro ? 8 : 7;
+        porta = seguro ? 443 : 80;
+        char *barra = strchr(p, '/');
+        if (barra) *barra = 0;
+        char *dois = strchr(p, ':');
+        if (dois) { *dois = 0; porta = (INTERNET_PORT)atoi(dois + 1); }
+        swprintf(host, 128, L"%hs", p);
+        p = barra ? barra + 1 : p + strlen(p);
+        swprintf(caminho, 256, L"/%hs", p);
+    } else {
+        swprintf(caminho, 256, L"%ls%hs", p[0] == '/' ? L"" : L"/", p);
+    }
+    if (caminho[wcslen(caminho) - 1] != L'/') wcscat(caminho, L"/");
+    anotar("fonte.txt: baixando de %ls://%ls:%u%ls", seguro ? L"https" : L"http", host, (unsigned)porta, caminho);
+}
+
+static long long tamanhoArq(const wchar_t *arq) {
+    WIN32_FILE_ATTRIBUTE_DATA info;
+    if (!GetFileAttributesExW(arq, GetFileExInfoStandard, &info)) return -1;
+    return ((long long)info.nFileSizeHigh << 32) | info.nFileSizeLow;
+}
+
+// núcleos do versao.txt: linhas "nucleo=<arquivo>:<tamanho>"
+typedef struct { wchar_t nome[96]; long long tam; } Nucleo;
+static int lerNucleos(const wchar_t *arq, Nucleo *lista) {
+    FILE *f = _wfopen(arq, L"rb");
+    if (!f) return 0;
+    char linha[256];
+    int n = 0;
+    while (n < MAX_NUCLEOS && fgets(linha, sizeof(linha), f)) {
+        if (strncmp(linha, "nucleo=", 7) != 0) continue;
+        char *dois = strchr(linha + 7, ':');
+        if (!dois) continue;
+        *dois = 0;
+        // só nome simples de arquivo .js (nada de pasta ou "..")
+        if (strpbrk(linha + 7, "/\\:") || strstr(linha + 7, "..") || strlen(linha + 7) > 90) continue;
+        swprintf(lista[n].nome, 96, L"%hs", linha + 7);
+        lista[n].tam = _strtoi64(dois + 1, NULL, 10);
+        if (lista[n].tam > 0) n++;
+    }
+    fclose(f);
+    return n;
+}
+
+// baixa pra nucleos\ os que faltam ou estão com o tamanho errado; devolve 1 se no fim estão todos lá
+static int baixarNucleos(Atualizacao *a, Nucleo *lista, int n) {
+    wchar_t pasta[MAX_PATH], dest[MAX_PATH], novo[MAX_PATH], remoto[160];
+    swprintf(pasta, MAX_PATH, L"%ls\\nucleos", a->dir);
+    CreateDirectoryW(pasta, NULL);
+    int ok = 1;
+    for (int i = 0; i < n; i++) {
+        swprintf(dest, MAX_PATH, L"%ls\\%ls", pasta, lista[i].nome);
+        if (tamanhoArq(dest) == lista[i].tam) continue;
+        InterlockedExchange(&a->baixando, 1);
+        swprintf(novo, MAX_PATH, L"%ls.novo", dest);
+        swprintf(remoto, 160, L"nucleos/%ls", lista[i].nome);
+        long long b = baixar(remoto, novo);
+        if (b == lista[i].tam && MoveFileExW(novo, dest, MOVEFILE_REPLACE_EXISTING)) {
+            anotar("núcleo %ls baixado (%lld bytes)", lista[i].nome, b);
+        } else {
+            anotar("núcleo %ls veio errado (%lld bytes, esperava %lld)", lista[i].nome, b, lista[i].tam);
+            DeleteFileW(novo);
+            ok = 0;
+        }
+    }
+    return ok;
+}
+
+// apaga de nucleos\ o que não está mais na lista (núcleo de versão velha)
+static void limparNucleos(Atualizacao *a, Nucleo *lista, int n) {
+    wchar_t busca[MAX_PATH], arq[MAX_PATH];
+    swprintf(busca, MAX_PATH, L"%ls\\nucleos\\*", a->dir);
+    WIN32_FIND_DATAW d;
+    HANDLE h = FindFirstFileW(busca, &d);
+    if (h == INVALID_HANDLE_VALUE) return;
+    do {
+        if (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+        int usado = 0;
+        for (int i = 0; i < n && !usado; i++) usado = _wcsicmp(d.cFileName, lista[i].nome) == 0;
+        if (usado) continue;
+        swprintf(arq, MAX_PATH, L"%ls\\nucleos\\%ls", a->dir, d.cFileName);
+        if (DeleteFileW(arq)) anotar("núcleo velho apagado: %ls", d.cFileName);
+    } while (FindNextFileW(h, &d));
+    FindClose(h);
+}
+
 static DWORD WINAPI atualizar(LPVOID arg) {
     Atualizacao *a = (Atualizacao *)arg;
     wchar_t vNova[MAX_PATH], vAqui[MAX_PATH], hNovo[MAX_PATH], hAqui[MAX_PATH];
@@ -246,9 +363,16 @@ static DWORD WINAPI atualizar(LPVOID arg) {
     anotar("KOFstation.exe (lançador %d) · versão daqui: %lld", LANCADOR, aqui);
     if (baixar(L"versao.txt", vNova) <= 0) { DeleteFileW(vNova); return 0; }
     long long nova = campo(vNova, "versao="), tamHtml = campo(vNova, "tamanho="), lanc = campo(vNova, "lancador="), tamExe = campo(vNova, "tamanho_exe=");
-    anotar("versão no GitHub: %lld (lançador %lld)", nova, lanc);
+    static Nucleo nucs[MAX_NUCLEOS];
+    int nn = lerNucleos(vNova, nucs);
+    anotar("versão no GitHub: %lld (lançador %lld, %d núcleos)", nova, lanc, nn);
+    // núcleos primeiro: o html novo só entra se todos os núcleos dele já estiverem na pasta
+    // (também conserta a pasta de quem atualizou o html por um lançador antigo, que não baixa núcleo)
+    int nucleosOk = baixarNucleos(a, nucs, nn);
     int trocouHtml = 0;
-    if (nova > aqui && tamHtml > 0) {
+    if (nova > aqui && tamHtml > 0 && !nucleosOk) {
+        anotar("faltou baixar algum núcleo: fica a versão daqui (tenta de novo na próxima vez)");
+    } else if (nova > aqui && tamHtml > 0) {
         InterlockedExchange(&a->baixando, 1);
         long long b = baixar(L"KOFstation.html", hNovo);
         if (b != tamHtml || !comecaCom(hNovo, "<!doctype html")) {
@@ -284,8 +408,12 @@ static DWORD WINAPI atualizar(LPVOID arg) {
             DeleteFileW(eNovo);
         }
     }
-    if (trocouHtml || nova <= aqui) MoveFileExW(vNova, vAqui, MOVEFILE_REPLACE_EXISTING);
-    else DeleteFileW(vNova);
+    if (trocouHtml || nova <= aqui) {
+        MoveFileExW(vNova, vAqui, MOVEFILE_REPLACE_EXISTING);
+        if (nn > 0 && nucleosOk && !a->abriu) limparNucleos(a, nucs, nn);
+    } else {
+        DeleteFileW(vNova);
+    }
     return 0;
 }
 
@@ -350,6 +478,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
         if (renomeou[0]) anotar("arquivos renomeados: %ls", renomeou);
         wcscpy(at.dir, dir);
         at.baixando = 0;
+        at.abriu = 0;
+        lerFonte(dir);
         t = CreateThread(NULL, 0, atualizar, &at, 0, NULL);
         // sem pressa: rede lenta não pode fazer o lançador desistir de atualizar
         if (t && WaitForSingleObject(t, 15000) == WAIT_TIMEOUT) {
@@ -360,6 +490,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
     // a atualização pode ter criado o KOFstation.html agora (pasta que ainda tinha só o antigo)
     { wchar_t h2[MAX_PATH]; swprintf(h2, MAX_PATH, L"%ls\\KOFstation.html", dir); if (GetFileAttributesW(h2) != INVALID_FILE_ATTRIBUTES) wcscpy(html, h2); }
     if (UrlCreateFromPathW(html, url, &n, 0) != S_OK) return 1;
+    InterlockedExchange(&at.abriu, 1);
 
     int achou = acharNavegador(L"msedge.exe", nav, MAX_PATH);
     if (!achou) {

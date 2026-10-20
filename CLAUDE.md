@@ -35,6 +35,20 @@
 > `lr_onda_pos_c`); `SISTEMAS[x].indices` diz quais canais o sistema usa. Mudo/solo do genplus = opções de volume por canal
 > do núcleo (`genesis_plus_gx_md_channel_N_volume`/`psg_channel_N_volume`), só na instância da jukebox. HTML do PC ~6,7 MB,
 > do celular ~10,7 MB. ROMs de teste: geradas (68000 e Z80 escritos à mão: cor + FM + PSG); o 240p Test Suite só tem fonte.
+> **Núcleos separados (branch `nucleos`, 20/10, FEITO, não publicado; o Sega vai junto quando ele mandar publicar):**
+> `web/nucleo.js` tem `ARQUIVOS` (o juntar.py troca `/*{{NUCLEOS}}*/ {}` pela lista `{núcleo: 'nucleos/<núcleo>-<hash8>.js'}`)
+> e `buscar(n)` põe um `<script src>` só ao abrir um jogo daquele console (erro: "faltou baixar o núcleo do <console>...").
+> `juntar.py` grava `dist/web/nucleos/<núcleo>-<sha256[:8]>.js` e, com `KOFNES_LISTA`, a lista arquivo:tamanho. versao.txt
+> termina com `nucleo=<arquivo>:<tamanho>` (só os do PC). HTML do PC 615 KB, do celular 658 KB. Zip/tar levam `nucleos/`
+> (só PC); PWA (`dist/web/android/`) leva todos e o sw.js recebe a lista + cache por build; APK leva `assets/nucleos/`;
+> `publicar.sh` refaz `publicado/nucleos/`. **Lançador 7** (`lancador_win.c`): `fonte.txt` do lado do exe (caminho do
+> GitHub `/dono/repo/branch/publicado/` ou URL inteira `http://127.0.0.1:8765/publicado/`; com outro servidor pula o
+> curl), baixa os núcleos que faltam/tamanho errado ANTES do html (faltou um = html não troca), apaga os fora da lista (só
+> se o navegador ainda não abriu). **kofnes.sh LANCADOR=2** igual (+ `fonte.txt`/`KOFNES_URL`). Testado no Wine com
+> servidor local: pasta nova, núcleo corrompido, núcleo velho, núcleo faltando no servidor, lançador 6→7 (o 6 troca html
+> e exe; o 7 baixa os núcleos na abertura seguinte). Testes: `testes/navegador/nucleos.cjs` e `testes/android/apk-simulado.cjs`
+> (agora serve `nucleos/` como a Activity). ROM de Mega Drive gerada: vetores + "SEGA" em 0x100 + VDP cor de fundo.
+> Engenharia toda explicada em `docs/arquitetura.md`.
 > **Decisões de 19/10 (fim do dia):** (1) Sega testado pelo Marcelo (Sonic ok), branch `sega` AINDA NÃO publicada (perguntar).
 > (2) Próximo: branch `nucleos` (criada a partir da `sega`, sem mudanças ainda) = **núcleos em arquivos separados**:
 > `dist/web/nucleos/<núcleo>-<hash8>.js` (nome com hash do conteúdo, o html leva a lista exata; carrega com `<script src>`

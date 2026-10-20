@@ -7,7 +7,12 @@ const [,, html, rom] = process.argv;
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
-  await ctx.route('https://appassets.androidplatform.net/**', (rt) => rt.fulfill({ status: 200, contentType: 'text/html', body: fs.readFileSync(html) }));
+  // como o MainActivity.servir(): index.html = o html; o resto (nucleos/...) vem da pasta do html (dist/web)
+  await ctx.route('https://appassets.androidplatform.net/**', (rt) => {
+    const nome = decodeURIComponent(new URL(rt.request().url()).pathname.slice(1)) || 'index.html';
+    const arq = nome === 'index.html' ? html : require('path').join(require('path').dirname(html), nome);
+    rt.fulfill(fs.existsSync(arq) ? { status: 200, contentType: nome.endsWith('.js') ? 'application/javascript' : 'text/html', body: fs.readFileSync(arq) } : { status: 200, contentType: 'text/plain', body: '' });
+  });
   await ctx.route(/github\.com|raw\.githubusercontent/, (rt) => rt.fulfill({ status: 200, contentType: 'text/html', body: 'ok' }));
   await ctx.addInitScript(() => { window.__salvos = []; window.KOFnesApk = { salvar: (n, m, b64) => window.__salvos.push([n, m, b64.length]), versao: () => 'teste' }; });
   const p = await ctx.newPage(), erros = [], r = {};

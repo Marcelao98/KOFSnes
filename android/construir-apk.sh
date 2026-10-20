@@ -16,6 +16,8 @@ cp -r "$AQUI/res/." "$W/res/"; cp -r "$AQUI/src/." "$W/src/"
 sed "s/@VERSAO_CODE@/$CODIGO/; s/@VERSAO_NOME@/$NOME/" "$AQUI/AndroidManifest.xml" > "$W/AndroidManifest.xml"
 find "$W/src" -name '*.java' -exec sed -i "s/@VERSAO_NOME@/$NOME/" {} +
 cp "$HTML" "$W/assets/index.html"
+# núcleos (nucleos/<núcleo>-<hash>.js): o html carrega cada um só quando abre um jogo daquele console
+cp -r "$RAIZ/dist/web/nucleos" "$W/assets/"
 # ícone (vários tamanhos a partir do ícone do KOFnes)
 python3 - "$RAIZ/dist/web/KOFnes.png" "$W/res" <<'PY'
 import os, sys

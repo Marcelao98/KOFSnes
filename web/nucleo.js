@@ -41,9 +41,30 @@ const KofLibretro = (() => {
     return Object.keys(SISTEMAS).find((k) => SISTEMAS[k].ext.includes(e)) || null;
   }
   const EXTENSOES = [].concat(...Object.values(SISTEMAS).map((s) => s.ext));
-  // núcleo compilado presente no html (o juntar.py só embute os que existem)
+  // Cada núcleo mora num arquivo próprio do lado do html (nucleos/<núcleo>-<hash>.js; o hash muda quando o núcleo muda)
+  // e só é carregado quando abre um jogo daquele console. O juntar.py escreve aqui a lista exata desta versão.
+  // É <script src> e não fetch: o navegador bloqueia fetch de arquivo local (file://), script ele deixa.
+  const ARQUIVOS = /*{{NUCLEOS}}*/ {};
   const fabrica = (n) => (typeof globalThis['Nucleo_' + n] === 'function' ? globalThis['Nucleo_' + n] : null);
-  const disponivel = (sis) => !!(SISTEMAS[sis] && fabrica(SISTEMAS[sis].nucleo));
+  const disponivel = (sis) => !!(SISTEMAS[sis] && (fabrica(SISTEMAS[sis].nucleo) || ARQUIVOS[SISTEMAS[sis].nucleo]));
+  const baixando = {};
+  function buscar(n) {
+    if (fabrica(n)) return Promise.resolve(fabrica(n));
+    const arq = ARQUIVOS[n];
+    if (!arq || typeof document === 'undefined') return Promise.reject(new Error('esse KOFstation não tem o núcleo ' + n));
+    if (baixando[n]) return baixando[n];
+    const sis = Object.values(SISTEMAS).filter((S) => S.nucleo === n).map((S) => S.nome).join('/');
+    const faltou = () => new Error(`faltou baixar o núcleo do ${sis} (${arq}). `
+      + (document.documentElement.classList.contains('celular') ? 'Instale o app de novo.' : 'Abra o KOFstation de novo, com internet, que ele baixa.'));
+    baixando[n] = new Promise((ok, erro) => {
+      const s = document.createElement('script');
+      s.src = arq;
+      s.onload = () => (fabrica(n) ? ok(fabrica(n)) : erro(faltou()));
+      s.onerror = () => { s.remove(); erro(faltou()); };
+      document.head.appendChild(s);
+    }).catch((e) => { delete baixando[n]; throw e; });   // deu errado: na próxima tentativa procura de novo
+    return baixando[n];
+  }
 
   const modulos = {};
   // opções dos núcleos (as do libretro, ex.: paleta do Game Boy): valem pra todas as instâncias, também as que nascerem depois
@@ -64,10 +85,7 @@ const KofLibretro = (() => {
   for (const S of Object.values(SISTEMAS)) if (S.opcoes) opcoes[S.nucleo] = Object.assign({}, S.opcoes, opcoes[S.nucleo]);
   const novaInstancia = (nucleo, f) => f({ print: () => {}, printErr: () => {} }).then((m) => { instancias.push([nucleo, m]); passarOpcoes(m, nucleo); m._lr_init(); return m; });
   async function iniciar(nucleo) {
-    if (modulos[nucleo]) return modulos[nucleo];
-    const f = fabrica(nucleo);
-    if (!f) throw new Error('esse KOFstation não tem o núcleo ' + nucleo);
-    modulos[nucleo] = novaInstancia(nucleo, f);
+    if (!modulos[nucleo]) modulos[nucleo] = buscar(nucleo).then((f) => novaInstancia(nucleo, f)).catch((e) => { delete modulos[nucleo]; throw e; });
     return modulos[nucleo];
   }
 
@@ -262,9 +280,8 @@ const KofLibretro = (() => {
   // jukebox: toca a música de um estado guardado, numa instância SEPARADA do núcleo (o jogo aberto não é tocado),
   // sem imagem e sem botão apertado; a sonda do núcleo entrega a onda de cada canal e o mudo por canal
   async function tocador(sis, rom, estadoB64) {
-    const S = SISTEMAS[sis], f = fabrica(S.nucleo), chave = S.nucleo + ':jukebox';
-    if (!f) throw new Error('esse KOFstation não tem o núcleo ' + S.nucleo);
-    if (!modulos[chave]) modulos[chave] = novaInstancia(S.nucleo, f);
+    const S = SISTEMAS[sis], chave = S.nucleo + ':jukebox';
+    if (!modulos[chave]) modulos[chave] = buscar(S.nucleo).then((f) => novaInstancia(S.nucleo, f)).catch((e) => { delete modulos[chave]; throw e; });
     const mod = await modulos[chave];
     const c = new Consolinho(Uint8Array.from(rom), sis, mod);
     c.carregar();
@@ -291,6 +308,6 @@ const KofLibretro = (() => {
       fechar() { mod._lr_sonda(0); this.mudas(0); },
     };
   }
-  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, SISTEMAS, EXTENSOES };
+  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, SISTEMAS, EXTENSOES, ARQUIVOS };
 })();
 if (typeof module !== 'undefined') module.exports = KofLibretro;
