@@ -59,6 +59,33 @@ const KofLibretro = (() => {
     const m = /([^/\\]+)\.zip$/i.exec(nome || '');
     return m && NEOGEO[m[1].toLowerCase()] ? m[1].toLowerCase() : null;
   }
+  // zip com outro nome ("King of Fighters 98.zip"): o set sai dos CRCs que o próprio zip guarda (diretório central, sem
+  // descompactar), comparados com os dos chips de programa de cada jogo. Ganha o set com TODOS os chips de programa no zip
+  // (o que tiver mais chips, que é o mais específico); empate: o jogo original antes dos clones
+  const NEOCRC = typeof KofNeoGeoCrc !== 'undefined' ? KofNeoGeoCrc : {};
+  let progDoSet = null;
+  function setNeoGeoDoZip(u8) {
+    const v = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    let e = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (v.getUint32(i, true) === 0x06054b50) { e = i; break; }
+    if (e < 0) return null;
+    const crcs = new Set();
+    let p = v.getUint32(e + 16, true);
+    for (let k = v.getUint16(e + 10, true); k > 0 && p + 46 <= u8.length && v.getUint32(p, true) === 0x02014b50; k--) {
+      crcs.add(v.getUint32(p + 16, true).toString(16).padStart(8, '0'));
+      p += 46 + v.getUint16(p + 28, true) + v.getUint16(p + 30, true) + v.getUint16(p + 32, true);
+    }
+    if (!progDoSet) { progDoSet = {}; for (const [c, sets] of Object.entries(NEOCRC)) for (const n of sets) (progDoSet[n] = progDoSet[n] || []).push(c); }
+    const candidatos = new Set([].concat(...[...crcs].map((c) => NEOCRC[c] || [])));
+    let melhor = null;
+    for (const n of candidatos) {
+      const prog = progDoSet[n] || [];
+      if (!prog.every((c) => crcs.has(c))) continue;
+      const pontos = prog.length * 2 + (NEOGEO[n] && !NEOGEO[n][1] ? 1 : 0);
+      if (!melhor || pontos > melhor[1]) melhor = [n, pontos];
+    }
+    return melhor ? melhor[0] : null;
+  }
   function sistemaDe(nome) {
     if (setNeoGeo(nome)) return 'neogeo';
     const e = extensao(nome);
@@ -407,6 +434,6 @@ const KofLibretro = (() => {
       fechar() { mod._lr_sonda(0); this.mudas(0); },
     };
   }
-  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, bios, temBios, sistemaDaBios, setNeoGeo, NEOGEO, SISTEMAS, EXTENSOES, ARQUIVOS };
+  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, bios, temBios, sistemaDaBios, setNeoGeo, setNeoGeoDoZip, NEOGEO, SISTEMAS, EXTENSOES, ARQUIVOS };
 })();
 if (typeof module !== 'undefined') module.exports = KofLibretro;

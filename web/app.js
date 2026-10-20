@@ -1016,7 +1016,13 @@ let jogoId = '', romArquivo = '';
 async function abrirArquivo(arq) {
   try {
     let nome = arq.name, bytes = new Uint8Array(await arq.arrayBuffer());
-    if (/\.zip$/i.test(nome) && !neoGeo(nome)) ({ nome, bytes } = await lerZip(bytes.buffer));
+    // zip pelo nome ou pelos primeiros bytes ("PK"): o seletor do Android às vezes entrega o arquivo sem a extensão
+    const ehZip = /\.zip$/i.test(nome) || (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 3 && bytes[3] === 4);
+    if (ehZip && !neoGeo(nome)) {
+      // zip de Neo Geo com outro nome ("King of Fighters 98.zip"): reconhece pelo conteúdo e passa a usar o nome do set
+      const set = SIS_ATIVOS.includes('neogeo') && KofLibretro.setNeoGeoDoZip(bytes);
+      if (set) nome = set + '.zip'; else ({ nome, bytes } = await lerZip(bytes.buffer));
+    }
     await abrirBytes(nome, bytes, true);
   } catch (e) { avisar(e.message, 5000); }
 }

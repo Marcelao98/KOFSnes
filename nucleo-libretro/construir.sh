@@ -65,6 +65,8 @@ construir() {
     -s EXPORTED_RUNTIME_METHODS=ccall,HEAPU8,HEAPF64,stringToUTF8,lengthBytesUTF8 -s EXPORTED_FUNCTIONS=$F \
     -o "$AQUI/saida/$nome.js"
   ls -l "$AQUI/saida/$nome.js"
+  # Neo Geo: a lista dos jogos (nomes e CRCs) que o app usa pra reconhecer o zip sai do mesmo FBNeo
+  if [ "$nome" = fbneo ]; then python3 "$AQUI/lista-neogeo.py" "$dir/gamelist.txt" "$dir/src/burn/drv/neogeo/d_neogeo.cpp" "$AQUI/../web/neogeo-jogos.js"; fi
 }
 
 if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus mgba fbneo; fi
