@@ -2,24 +2,27 @@
 // músicas de domínio público com arranjo nosso, sem gravação de ninguém:
 //   air: Air ("on the G string"), J. S. Bach, BWV 1068 — notas da partitura de domínio público do Mutopia Project
 //        (web/musicas/air-bach-mutopia.ly -> LilyPond -> MIDI -> web/musicas/air-midi.py -> air.json; o juntar.py põe aqui)
-//   rua: "Se Essa Rua Fosse Minha", cantiga popular tradicional — melodia escrita de ouvido (texto abaixo, fácil de corrigir)
+//   rua: "Se Essa Rua Fosse Minha", cantiga popular tradicional — melodia de uma partitura de domínio público (abaixo)
 // O tocador tem a mesma cara dos tocadores da jukebox (encher/limpar/mudas/onda), então toca pelo mesmo caminho de áudio
 // e aparece no modo Ondas com os 4 canais.
 const KofMusica = (() => {
   'use strict';
   const TAXA = 32000;
   const AIR = /*{{AIR}}*/ null;
-  // "Se Essa Rua Fosse Minha" (ré menor): nota+oitava:duração em tempos ("-" = pausa). Melodia (pulso 1), baixo (triângulo)
-  // e os acordes de cada compasso (o pulso 2 faz o arpejo de caixinha de música)
+  // "Se Essa Rua Fosse Minha" (lá menor, 2/4): melodia da partitura de domínio público que o Marcelo mandou (arranjo de
+  // Daniel Pynkus no MuseScore, marcado "Domínio público"): nota+oitava:duração em tempos ("-" = pausa). Começa com a
+  // anacruse "Se es-sa" (1 tempo); cada compasso (2 tempos) tem um acorde: o triângulo faz o baixo (fundamental e quinta,
+  // como a mão esquerda da partitura) e o pulso 2 o arpejo de caixinha de música
   const RUA = {
-    bpm: 80, tempos: 32,
-    melodia: 'A3:.5 A3:.5 D4:.5 D4:1.5 A3:.5 A3:.5 E4:.5 E4:1.5 F4:1 E4:.5 D4:.5 E4:2 -:1 '
-      + 'C4:.5 C4:.5 E4:.5 E4:1.5 C4:.5 C4:.5 F4:.5 F4:1.5 G4:1 F4:.5 E4:.5 F4:2 -:1 '
-      + 'F4:.5 F4:.5 A4:.5 A4:1.5 G4:.5 G4:.5 Bb4:.5 Bb4:1.5 A4:1 G4:.5 F4:.5 E4:2 -:1 '
-      + 'A3:.5 A3:.5 D4:.5 D4:1.5 E4:.5 E4:.5 F4:.5 G4:1 F4:.5 E4:.5 D4:3 -:1',
-    acordes: 'Dm Dm A A C C F F Dm Gm A A Dm Gm A Dm',   // um por meio compasso (2 tempos)
+    bpm: 66, anacruse: 1,
+    melodia: 'E5:.5 E5:.5 '
+      + 'A5:.5 A5:.5 E5:.5 C5:.5 A4:.5 C5:.5 G5:.5 F5:.5 E5:1 B4:2 E5:.5 E5:.5 '
+      + 'B5:.5 B5:.5 F5:.5 E5:.5 F5:.5 E5:.5 C6:.5 B5:.5 A5:3 E5:.5 E5:.5 '
+      + 'A5:.5 A5:.5 C6:.5 B5:.5 A5:.5 G5:.5 F5:.5 E5:.5 G5:1 F5:2 E5:.5 D5:.5 '
+      + 'E5:1 B5:.5 G#5:.5 E5:.5 D5:.5 C5:.5 B4:.5 A4:2',
+    acordes: 'Am Am E E E E Am Am Am Am Dm Dm E E Am',   // um por compasso, depois da anacruse
   };
-  const ACORDE = { Dm: [50, 57, 62, 65], Gm: [43, 55, 58, 62], A: [45, 57, 61, 64], C: [48, 55, 60, 64], F: [41, 53, 57, 60] };
+  const ACORDE = { Am: [45, 52, 57, 60, 64], E: [40, 47, 56, 59, 64], Dm: [38, 45, 57, 62, 65] };   // [baixo, quinta, notas do arpejo]
   const NOTA = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const midi = (t) => { const m = /^([A-G])(b|#)?(-?\d)$/.exec(t); return m ? 12 * (+m[3] + 1) + NOTA[m[1]] + (m[2] === 'b' ? -1 : m[2] === '#' ? 1 : 0) : null; };
   function lerRua() {
@@ -31,11 +34,11 @@ const KofMusica = (() => {
       t += dur;
     }
     RUA.acordes.split(/\s+/).forEach((a, k) => {
-      const ac = ACORDE[a], ini = k * 2;
-      baixo.push([ini, 1.9, ac[0] - 12 < 36 ? ac[0] : ac[0] - 12]);
-      for (let i = 0; i < 4; i++) arpejo.push([ini + i * 0.5, 0.45, ac[1 + (i % 3)] + 12]);
+      const ac = ACORDE[a], ini = RUA.anacruse + k * 2;
+      baixo.push([ini, 0.9, ac[0]], [ini + 1, 0.9, ac[1]]);
+      for (let i = 0; i < 4; i++) arpejo.push([ini + i * 0.5, 0.45, ac[2 + (i % 3)] + 12]);
     });
-    return { bpm: RUA.bpm, tempos: Math.max(RUA.tempos, Math.ceil(t)), vozes: [mel, arpejo, baixo] };
+    return { bpm: RUA.bpm, tempos: Math.ceil(t), vozes: [mel, arpejo, baixo] };   // o fim emenda na anacruse do começo
   }
   const MUSICAS = {
     air: { titulo: 'Air (na corda Sol)', autor: 'J. S. Bach', dados: () => AIR },

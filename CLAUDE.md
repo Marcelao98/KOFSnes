@@ -185,8 +185,8 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > título -> frases -> 10 temas nostálgicos passando (`AB_TEMAS`, só experimenta) -> apresentação -> guia de 4 passos (jogos,
 > BIOS, tema, dicas). Música própria em 8 bits (`web/musica.js`, `KofMusica`: 2 pulsos + triângulo + ruído a 32 kHz, tocador
 > com a cara dos da jukebox): Air (Bach, notas do .ly de domínio público do Mutopia em `web/musicas/`, `air-midi.py` ->
-> `air.json`, o juntar.py embute) na abertura e "Se Essa Rua Fosse Minha" (escrita DE OUVIDO em `RUA.melodia`, o Marcelo
-> confere) no Início; toca como faixa interna da jukebox (`juke.interna`, loop, sem mini-player), para ao abrir jogo ou a
+> `air.json`, o juntar.py embute) na abertura e "Se Essa Rua Fosse Minha" (da partitura de domínio público que o Marcelo mandou, MuseScore,
+> arranjo Daniel Pynkus, em `RUA.melodia`) no Início; toca como faixa interna da jukebox (`juke.interna`, loop, sem mini-player), para ao abrir jogo ou a
 > jukebox; Som > "Música no Início". `.so-cel` agora some no PC pelo estilo.css. Teste: `testes/navegador/abertura.cjs`.
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
