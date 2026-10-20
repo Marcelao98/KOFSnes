@@ -49,6 +49,18 @@
 > e exe; o 7 baixa os núcleos na abertura seguinte). Testes: `testes/navegador/nucleos.cjs` e `testes/android/apk-simulado.cjs`
 > (agora serve `nucleos/` como a Activity). ROM de Mega Drive gerada: vetores + "SEGA" em 0x100 + VDP cor de fundo.
 > Engenharia toda explicada em `docs/arquitetura.md`.
+> **GBA (branch `gba`, saindo da `nucleos`, 20/10, não publicado):** núcleo **mGBA** (`construir.sh mgba`, MPL-2.0; é CMake:
+> as sondagens de função do CMake mentem no emscripten, então `HAVE_POPCOUNT32/PTHREAD_H/SNPRINTF_L=0` à mão, e o libretro
+> dele só compila com `M_CORE_GB` ligado). Sistema `gba` (.gba, 240x160, 3:2, 59,73 fps, áudio 65.536 Hz; botões A/B/L/R/
+> Start/Select; título = 12 letras em 0xA0). **BIOS**: loja `bios` no IndexedDB (banco v7), Arquivo > BIOS… (`escolherBios`,
+> reconhece pelo nome/tamanho via `SISTEMAS[x].bios`), `KofLibretro.bios(núcleo, arquivo, bytes)` grava em `/sistema/` pela
+> `lr_arquivo` da ponte antes do jogo; a do GBA é opcional (o mGBA imita a BIOS). A ponte também tem `lr_apagar` e aceita
+> `lr_load` com ROM nula (jogo já no disco virtual `/jogos`, pro Neo Geo). Save enxuto: a bateria vai pro localStorage sem
+> o fim de 0xFF (o do GBA tem 128 KB) e volta como 0xFF. Sonda: `nucleo-libretro/mgba-sonda.patch` (6 canais: 4 PSG + Direct
+> A/B, 32.768 Hz; mudo pelo `forceDisableCh` do mGBA). Controle virtual: `so-ab` esconde X/Y, mas o GBA mostra L/R. Suíte do
+> jsmolka: memory passa; arm 522 e thumb 230 falham (STM com o registrador base no meio da lista: caso raríssimo, jogo
+> comercial não usa). Testes: `testes/navegador/gba.cjs`, `nucleos.cjs` (6º argumento .gba) e `testes/libretro/jukebox.cjs`
+> com uma ROM de GBA com som (gerada: escreve nos registradores de som e trava num laço).
 > **Decisões de 19/10 (fim do dia):** (1) Sega testado pelo Marcelo (Sonic ok), branch `sega` AINDA NÃO publicada (perguntar).
 > (2) Próximo: branch `nucleos` (criada a partir da `sega`, sem mudanças ainda) = **núcleos em arquivos separados**:
 > `dist/web/nucleos/<núcleo>-<hash8>.js` (nome com hash do conteúdo, o html leva a lista exata; carrega com `<script src>`

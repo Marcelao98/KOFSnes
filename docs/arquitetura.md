@@ -59,7 +59,8 @@ Quem usa o núcleo (o "frontend") responde às perguntas dele pela função *env
 está a ROM, valor das opções...). No KOFstation o frontend é a nossa **ponte**.
 
 Núcleos usados hoje: **Snes9x** (SNES no celular, licença só não comercial), **Gambatte** (Game Boy/Color, GPL-2),
-**FCEUmm** (NES, GPL-2) e **Genesis Plus GX** (Mega Drive, Master System, Game Gear; só não comercial). Cada um é
+**FCEUmm** (NES, GPL-2), **Genesis Plus GX** (Mega Drive, Master System, Game Gear; só não comercial) e **mGBA**
+(Game Boy Advance, MPL-2.0; compilado com CMake, ver os comentários no `construir.sh`). Cada um é
 baixado do GitHub do libretro num commit fixo (`nucleo-libretro/construir.sh`).
 
 ## 4. WebAssembly e a ponte
@@ -80,6 +81,11 @@ vídeo já convertido pra RGBA, junta o áudio, guarda os botões, responde às 
 `lr_*` pro JavaScript: `lr_load`, `lr_run`, `lr_pad`, `lr_fb` (ponteiro do quadro), `lr_audio`, `lr_state_save`, `lr_var`
 (opção do núcleo), `lr_sonda`/`lr_onda` (osciloscópio) e outras. O JavaScript lê a imagem e o som direto da memória do
 wasm (`HEAPU8`), sem copiar à toa.
+
+**Disco virtual e BIOS**: a ponte também oferece `lr_arquivo(caminho, bytes)`, que grava um arquivo no sistema de
+arquivos de mentira do emscripten (na memória). O núcleo procura BIOS em `/sistema` (o GBA usa `/sistema/gba_bios.bin`,
+se o usuário escolheu a dele em Arquivo > BIOS…; a BIOS fica na loja `bios` do IndexedDB e é gravada lá antes de cada
+jogo). Jogos que o núcleo só abre por caminho (Neo Geo) vão pra `/jogos` e o `lr_load` recebe a ROM nula.
 
 Detalhe que custou caro: núcleos novos (FCEUmm) pedem a ROM pela memória (`GET_GAME_INFO_EXT`); sem responder isso,
 eles tentam abrir um arquivo que não existe e travam no primeiro quadro.
@@ -193,7 +199,8 @@ trocam o endereço.
 - **Sonda**: o modo Ondas mostra a forma de onda de cada canal do chip de som. O núcleo original só entrega o som já
   misturado, então cada núcleo ganhou um remendo (`nucleo-libretro/<núcleo>-sonda.patch`) que copia a saída de cada
   canal num buffer próprio (`kof_onda`) antes da mistura. A ponte lê esses buffers (`lr_onda`, `lr_onda_pos_c`).
-  Canais: SNES 8 vozes (na `Dsp.kf`, em Kof), Game Boy 4, NES 5, Mega Drive 10 (6 FM + 4 PSG), SMS/GG 4.
+  Canais: SNES 8 vozes (na `Dsp.kf`, em Kof), Game Boy 4, NES 5, Mega Drive 10 (6 FM + 4 PSG), SMS/GG 4,
+  GBA 6 (os 4 do Game Boy + Direct Sound A e B, a 32.768 Hz; o mudo usa o `forceDisableCh` do próprio mGBA).
 - **Mudo/Solo** por canal: o remendo zera o canal escolhido (`lr_mudas`); no Genesis Plus GX usa as opções de volume
   por canal do próprio núcleo. Vale só na instância da jukebox.
 
@@ -201,9 +208,10 @@ trocam o endereço.
 
 Nada do usuário mora na pasta do programa (por isso atualizar não apaga nada). Fica no perfil do navegador:
 
-- IndexedDB `kofnes` (versão 6): lojas `jogos` (biblioteca e prints), `roms`, `autos` (estado automático), `estados`
-  (savestates em gzip), `capas`, `stats`, `musicas`. Mudou o formato: sobe a versão e migra no `onupgradeneeded`.
-- `localStorage` com chaves `kofnes.*`: configurações (tema, volume, teclas, paletas...) e a bateria dos cartuchos.
+- IndexedDB `kofnes` (versão 7): lojas `jogos` (biblioteca e prints), `roms`, `autos` (estado automático), `estados`
+  (savestates em gzip), `capas`, `stats`, `musicas`, `bios` (arquivos de sistema do usuário). Mudou o formato: sobe a versão e migra no `onupgradeneeded`.
+- `localStorage` com chaves `kofnes.*`: configurações (tema, volume, teclas, paletas...) e a bateria dos cartuchos
+  (guardada sem o fim vazio: o save do GBA tem 128 KB, quase tudo 0xFF, que volta como 0xFF ao abrir).
 
 ## 11. Android
 
@@ -240,8 +248,8 @@ nome velho.
 
 ## 14. O que vem depois
 
-- **GBA** (mGBA) e **Neo Geo** (FBNeo): entram como mais um núcleo em `nucleos/`, uma entrada em `SISTEMAS` e um
-  remendo de sonda. O Neo Geo precisa de tela pra BIOS e de um "disco virtual" (MEMFS do emscripten) pro zip inteiro.
+- **Neo Geo** (FBNeo): mais um núcleo em `nucleos/`, uma entrada em `SISTEMAS` e um remendo de sonda, mais uma tela
+  pra BIOS (`neogeo.zip`) e o zip inteiro no disco virtual (`/jogos`).
 - **Kof aos poucos**: reescrever cada console em Kof usando o núcleo libretro como gabarito (rodar os dois lado a lado e
   comparar quadro a quadro, graças ao determinismo).
 - Limites: WebAssembly aguenta até GBA/Neo Geo com folga; PS1 no limite do celular; N64/Saturn pra cima precisariam de

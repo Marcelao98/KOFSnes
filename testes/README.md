@@ -21,7 +21,8 @@ node testes/navegador/rebob.cjs   $H rom saida/         # rebobinar + molduras
 node testes/navegador/juke.cjs    $H rom-com-musica arquivo.spc saida/
 node testes/navegador/home.cjs    $H rom saida/         # Início, Voltar, menu lateral, guia
 node testes/navegador/bib.cjs     $H x saida/           # biblioteca com 3.000 jogos de mentira
-node testes/navegador/nucleos.cjs dist/web rom.gb rom.nes rom.md rom.sfc   # núcleos em nucleos/, só sob demanda (PC e celular)
+node testes/navegador/nucleos.cjs dist/web rom.gb rom.nes rom.md rom.sfc [rom.gba]   # núcleos em nucleos/, só sob demanda (PC e celular)
+node testes/navegador/gba.cjs     dist/web rom.gba saida/   # GBA: tela 240x160, L/R no celular, BIOS, save enxuto
 ```
 
 Os outros: `auto` (salvar automático), `sofa`, `teclas`, `bug` (caçador de bugs),

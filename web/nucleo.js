@@ -31,6 +31,13 @@ const KofLibretro = (() => {
     sms: { nome: 'Master System', curto: 'SMS', ext: ['sms'], nucleo: 'genplus', largura: 256, altura: 192, dinamico: true, tv43: true,
       botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start'], musica: false, minimo: 0x2000,
       canais: ['PSG 1', 'PSG 2', 'PSG 3', 'Ruído'], papeis: ['quadrada', 'quadrada', 'quadrada', 'LFSR'], indices: [6, 7, 8, 9], escalas: [1 / 2100, 1 / 2100, 1 / 2100, 1 / 2100] },
+    // GBA (mGBA): BIOS opcional (o mGBA imita a BIOS sozinho); com a BIOS do usuário em /sistema aparece a abertura original.
+    // Botões no mesmo lugar do SNES: A, B, L, R. Áudio a 65.536 Hz
+    gba: { nome: 'Game Boy Advance', curto: 'GBA', ext: ['gba'], nucleo: 'mgba', largura: 240, altura: 160,
+      botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'L', 'R', 'Start', 'Select'], musica: false, minimo: 0xC0,
+      bios: [{ arquivo: 'gba_bios.bin', tamanho: 16384, opcional: true }],
+      canais: ['Pulso 1', 'Pulso 2', 'Onda', 'Ruído', 'Direct A', 'Direct B'], papeis: ['quadrada + sweep', 'quadrada', 'tabela 4 bits', 'LFSR', 'amostras PCM', 'amostras PCM'],
+      escalas: [1 / 16, 1 / 16, 1 / 16, 1 / 16, 1 / 128, 1 / 128] },
     gg: { nome: 'Game Gear', curto: 'GG', ext: ['gg'], nucleo: 'genplus', largura: 160, altura: 144, dinamico: true, proporcao: 10 / 9,   // a tela do aparelho, quase quadrada
       botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'Start'], musica: false, minimo: 0x2000,
       canais: ['PSG 1', 'PSG 2', 'PSG 3', 'Ruído'], papeis: ['quadrada', 'quadrada', 'quadrada', 'LFSR'], indices: [6, 7, 8, 9], escalas: [1 / 2100, 1 / 2100, 1 / 2100, 1 / 2100] },
@@ -66,6 +73,15 @@ const KofLibretro = (() => {
     return baixando[n];
   }
 
+  // BIOS do usuário (o app lê do banco e entrega aqui): núcleo -> {arquivo: bytes}; vai pro disco virtual /sistema antes do jogo
+  const BIOS = {};
+  function bios(nucleo, arquivo, bytes) { (BIOS[nucleo] = BIOS[nucleo] || {})[arquivo] = bytes; }
+  // de qual sistema é esse arquivo de BIOS (pelo nome e, se tiver, pelo tamanho)
+  function sistemaDaBios(nome, tamanho) {
+    const n = (nome || '').toLowerCase();
+    return Object.keys(SISTEMAS).find((k) => (SISTEMAS[k].bios || []).some((b) => b.arquivo === n && (!b.tamanho || b.tamanho === tamanho)))
+      || Object.keys(SISTEMAS).find((k) => (SISTEMAS[k].bios || []).some((b) => b.tamanho && b.tamanho === tamanho)) || null;
+  }
   const modulos = {};
   // opções dos núcleos (as do libretro, ex.: paleta do Game Boy): valem pra todas as instâncias, também as que nascerem depois
   const opcoes = {};
@@ -105,6 +121,10 @@ const KofLibretro = (() => {
     return ((crc ^ 0xFFFFFFFF) >>> 0).toString(16).toUpperCase().padStart(8, '0');
   }
   function titulo(rom, sis) {
+    if (sis === 'gba') {   // nome de 12 letras no cabeçalho (0xA0); sem nome, o CRC32
+      const t = texto(rom, 0xA0, 12).trim();
+      return /[A-Za-z0-9]{2}/.test(t) ? t : 'GBA ' + crc32(rom, 0);
+    }
     if (sis === 'nes') return 'NES ' + crc32(rom, rom[0] === 0x4E && rom[1] === 0x45 && rom[2] === 0x53 ? 16 : 0);
     if (sis === 'sms' || sis === 'gg') return SISTEMAS[sis].curto + ' ' + crc32(rom, rom.length % 1024 === 512 ? 512 : 0);
     if (sis === 'md') {   // nome "internacional" do cabeçalho; sem ele (ou ROM .smd embaralhada), o CRC32
@@ -141,6 +161,11 @@ const KofLibretro = (() => {
     carregar() {
       const mod = this.mod, n = this.nucleo;
       if (mod.kofAtual && mod.kofAtual !== this) mod._lr_unload();   // cada instância do módulo roda um jogo por vez
+      for (const [arq, dados] of Object.entries(BIOS[n] || {})) {
+        const c = '/sistema/' + arq + '\0', pc = mod._lr_alloc(c.length), pd = mod._lr_alloc(dados.length);
+        for (let i = 0; i < c.length; i++) mod.HEAPU8[pc + i] = c.charCodeAt(i);
+        mod.HEAPU8.set(dados, pd); mod._lr_arquivo(pc, pd, dados.length); mod._free(pc); mod._free(pd);
+      }
       const p = mod._lr_alloc(this.rom.length);
       mod.HEAPU8.set(this.rom, p);
       const nome = 'rom.' + (this.sistema === 'gb' && (this.rom[0x143] & 0x80) ? 'gbc' : SISTEMAS[this.sistema].ext[0]) + '\0';
@@ -308,6 +333,6 @@ const KofLibretro = (() => {
       fechar() { mod._lr_sonda(0); this.mudas(0); },
     };
   }
-  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, SISTEMAS, EXTENSOES, ARQUIVOS };
+  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, bios, sistemaDaBios, SISTEMAS, EXTENSOES, ARQUIVOS };
 })();
 if (typeof module !== 'undefined') module.exports = KofLibretro;

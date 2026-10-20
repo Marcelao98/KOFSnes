@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Compila um núcleo libretro pra WebAssembly e junta com a nossa ponte (ponte.cpp).
-# Uso: nucleo-libretro/construir.sh snes9x|gambatte|fceumm|genplus   (sem argumento: todos)
+# Uso: nucleo-libretro/construir.sh snes9x|gambatte|fceumm|genplus|mgba   (sem argumento: todos)
 # Resultado: nucleo-libretro/saida/<núcleo>.js (um arquivo só, com o .wasm embutido; não vai pro git).
 # O módulo se chama Nucleo_<núcleo> (ex.: Nucleo_snes9x) e as funções da ponte são lr_*.
 # Precisa: emscripten (no Ubuntu: apt install emscripten) e git. O Snes9x demora ~4 min na primeira vez.
@@ -20,7 +20,9 @@ construir() {
               dir="$T/fceumm"; lc="$dir/src/drivers/libretro/libretro-common"; bc="$dir/fceumm_libretro_emscripten.bc" ;;
     genplus)  repo=https://github.com/libretro/Genesis-Plus-GX.git; commit=aa74d79634cd230f65cce4180e92688e53883d2f
               dir="$T/genplus"; lc="$dir/libretro/libretro-common"; bc="$dir/genesis_plus_gx_libretro_emscripten.bc" ;;
-    *) echo "núcleo desconhecido: $nome (use snes9x, gambatte, fceumm ou genplus)"; exit 1 ;;
+    mgba)     repo=https://github.com/libretro/mgba.git; commit=7a12d6d4b9acb14c0ae62c9166b6a2f3d08007f6
+              dir="$T/mgba"; lc="$dir/src/platform/libretro"; bc="$dir/build/mgba_libretro.bc" ;;
+    *) echo "núcleo desconhecido: $nome (use snes9x, gambatte, fceumm, genplus ou mgba)"; exit 1 ;;
   esac
   if [ ! -d "$dir" ]; then git clone -q "$repo" "$dir"; fi
   git -C "$dir" fetch -q --depth 1 origin "$commit" 2>/dev/null || true
@@ -32,9 +34,16 @@ construir() {
     gambatte|fceumm) (cd "$dir" && emmake make -f Makefile.libretro -j"$(nproc)" platform=emscripten) ;;
     # Genesis Plus GX sem o leitor de imagem de CD (CHD): Sega CD fica pra depois e o núcleo fica ~1 MB menor
     genplus)  (cd "$dir" && emmake make -f Makefile.libretro -j"$(nproc)" platform=emscripten HAVE_CHD=0) ;;
+    # mGBA é CMake. As sondagens de função do CMake "acham" tudo no emscripten (popcount32, pthread, snprintf_l não existem
+    # lá): desliga essas à mão. O libretro dele não compila sem o núcleo de Game Boy (M_CORE_GB), mas o GB do app é o Gambatte
+    mgba)     rm -rf "$dir/build" && emcmake cmake -S "$dir" -B "$dir/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_LIBRETRO=ON \
+                -DLIBRETRO_STATIC=ON -DBUILD_QT=OFF -DBUILD_SDL=OFF -DSKIP_LIBRARY=ON -DDISABLE_DEPS=ON -DENABLE_DEBUGGERS=OFF \
+                -DENABLE_GDB_STUB=OFF -DENABLE_SCRIPTING=OFF -DBUILD_GL=OFF -DBUILD_GLES2=OFF -DBUILD_GLES3=OFF -DUSE_EPOXY=OFF \
+                -DBUILD_LTO=OFF -DHAVE_POPCOUNT32=0 -DHAVE_PTHREAD_H=0 -DHAVE_SNPRINTF_L=0 >/dev/null \
+              && cmake --build "$dir/build" --target mgba_libretro -j"$(nproc)" ;;
   esac
   local O="$T/obj-$nome"; rm -rf "$O"; mkdir -p "$O"
-  local INC="-I$(dirname "$bc") -I$lc/include -I$dir"
+  local INC="-I$(dirname "$bc") -I$lc/include -I$lc -I$dir"
   em++ -O3 -DNDEBUG -std=c++11 $INC -c "$AQUI/ponte.cpp" -o "$O/ponte.o"
   # o .bc do emscripten vem sem o libretro-common (STATIC_LINKING): compila aqui o que existir na cópia do núcleo
   local i=0 f
@@ -45,7 +54,7 @@ construir() {
     i=$((i+1)); emcc -O3 -DNDEBUG $INC -c "$lc/$f.c" -o "$O/c$i.o"
   done
   local F=_lr_alloc,_lr_init,_lr_load,_lr_info,_lr_unload,_lr_run,_lr_pad,_lr_fb,_lr_w,_lr_h,_lr_audio,_lr_audio_n,_lr_audio_total
-  F=$F,_lr_var,_lr_canais,_lr_sonda,_lr_mudas,_lr_onda,_lr_onda_pos,_lr_onda_pos_c,_lr_reset,_lr_state_size,_lr_state_save,_lr_state_load,_lr_mem_ptr,_lr_mem_size,_malloc,_free
+  F=$F,_lr_arquivo,_lr_apagar,_lr_var,_lr_canais,_lr_sonda,_lr_mudas,_lr_onda,_lr_onda_pos,_lr_onda_pos_c,_lr_reset,_lr_state_size,_lr_state_save,_lr_state_load,_lr_mem_ptr,_lr_mem_size,_malloc,_free
   em++ -O3 ${EXTRA_LD:-} "$O"/*.o "$bc" -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=67108864 \
     -s MODULARIZE=1 -s EXPORT_NAME="Nucleo_$nome" -s ENVIRONMENT=web,node -s SINGLE_FILE=1 \
     -s EXPORTED_RUNTIME_METHODS=ccall,HEAPU8,HEAPF64,stringToUTF8,lengthBytesUTF8 -s EXPORTED_FUNCTIONS=$F \
@@ -53,5 +62,5 @@ construir() {
   ls -l "$AQUI/saida/$nome.js"
 }
 
-if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus; fi
+if [ $# -eq 0 ]; then set -- snes9x gambatte fceumm genplus mgba; fi
 for n in "$@"; do construir "$n"; done

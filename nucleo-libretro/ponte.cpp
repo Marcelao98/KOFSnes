@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/stat.h>
 #include <emscripten.h>
 #include "libretro.h"
 
@@ -94,7 +95,8 @@ static bool ambiente(unsigned cmd, void* dado) {
         formato = f; return true;
     }
     case RETRO_ENVIRONMENT_GET_LOG_INTERFACE: ((struct retro_log_callback*)dado)->log = registro; return true;
-    case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
+    // BIOS e outros arquivos de sistema: o JS grava em /sistema (lr_arquivo) antes de carregar o jogo
+    case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY: *(const char**)dado = "/sistema"; return true;
     case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY: *(const char**)dado = "/"; return true;
     case RETRO_ENVIRONMENT_GET_CAN_DUPE: *(bool*)dado = true; return true;
 #ifdef RETRO_ENVIRONMENT_GET_GAME_INFO_EXT
@@ -157,10 +159,23 @@ EMSCRIPTEN_KEEPALIVE void lr_init() {
     retro_set_audio_sample_batch(amostras);
     retro_set_input_poll(sondar);
     retro_set_input_state(entrada);
+    mkdir("/sistema", 0777);
+    mkdir("/jogos", 0777);
     retro_init();
 }
 
+// disco virtual (na memória do wasm): BIOS em /sistema, e jogos que o núcleo só abre por caminho (Neo Geo) em /jogos
+EMSCRIPTEN_KEEPALIVE int lr_arquivo(const char* caminho, const uint8_t* dados, size_t n) {
+    FILE* f = fopen(caminho, "wb");
+    if (!f) return 0;
+    size_t ok = fwrite(dados, 1, n, f);
+    fclose(f);
+    return ok == n;
+}
+EMSCRIPTEN_KEEPALIVE void lr_apagar(const char* caminho) { remove(caminho); }
+
 // `nome` é só pro núcleo ver a extensão (rom.sfc, rom.gb, rom.gbc...); a ROM vai inteira na memória
+// rom = nullptr: o jogo já está no disco virtual em `nome` (núcleo com need_fullpath, ex.: FBNeo)
 EMSCRIPTEN_KEEPALIVE int lr_load(const uint8_t* rom, size_t n, const char* nome) {
     struct retro_game_info info = { nome, rom, n, nullptr };
 #ifdef RETRO_ENVIRONMENT_GET_GAME_INFO_EXT

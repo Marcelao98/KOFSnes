@@ -941,7 +941,7 @@ let bd = null;
 function abrirBanco() {
   if (bd) return bd;
   bd = new Promise((ok, falha) => {
-    const r = indexedDB.open('kofnes', 6);
+    const r = indexedDB.open('kofnes', 7);
     r.onupgradeneeded = (ev) => {
       const b = r.result;
       if (!b.objectStoreNames.contains('c')) b.createObjectStore('c');
@@ -952,6 +952,7 @@ function abrirBanco() {
       if (!b.objectStoreNames.contains('roms')) b.createObjectStore('roms');
       if (!b.objectStoreNames.contains('autos')) b.createObjectStore('autos');
       if (!b.objectStoreNames.contains('musicas')) b.createObjectStore('musicas', { keyPath: 'n', autoIncrement: true });   // jukebox
+      if (!b.objectStoreNames.contains('bios')) b.createObjectStore('bios');   // nome do arquivo (gba_bios.bin...) -> {sistema, dados}
       if (ev.oldVersion >= 1 && ev.oldVersion < 5) {   // versão antiga: tira ROM e estado automático de dentro de "jogos"
         const t = r.transaction, roms = t.objectStore('roms'), autos = t.objectStore('autos');
         t.objectStore('jogos').openCursor().onsuccess = (e) => {
@@ -1017,9 +1018,35 @@ async function abrirArquivo(arq) {
     await abrirBytes(nome, bytes, true);
   } catch (e) { avisar(e.message, 5000); }
 }
+// BIOS (arquivo de sistema que alguns consoles pedem, ex.: gba_bios.bin): o usuário escolhe a dele, fica no banco e vai pro
+// núcleo antes de cada jogo. O KOFstation nunca traz BIOS junto.
+async function escolherBios() {
+  const e = document.createElement('input'); e.type = 'file';
+  e.onchange = async () => {
+    const f = e.files[0]; if (!f) return;
+    const dados = new Uint8Array(await f.arrayBuffer()), sis = KofLibretro.sistemaDaBios(f.name, dados.length);
+    if (!sis) { avisar('não reconheci essa BIOS (' + f.name + ')', 4000); return; }
+    const arq = SIS[sis].bios.find((b) => b.arquivo === f.name.toLowerCase() || b.tamanho === dados.length).arquivo;
+    await bdPor('bios', arq, { sistema: sis, dados });
+    KofLibretro.bios(SIS[sis].nucleo, arq, dados);
+    avisar('BIOS do ' + SIS[sis].nome + ' guardada: vale no próximo jogo que abrir', 4000);
+  };
+  e.click();
+}
+async function carregarBios() {
+  if (typeof KofLibretro === 'undefined') return;
+  const b = await abrirBanco();
+  await new Promise((ok) => {
+    const c = b.transaction('bios', 'readonly').objectStore('bios').openCursor();
+    c.onsuccess = () => { const r = c.result; if (!r) return ok(); if (SIS[r.value.sistema]) KofLibretro.bios(SIS[r.value.sistema].nucleo, r.key, r.value.dados); r.continue(); };
+    c.onerror = () => ok();
+  });
+}
+const biosProntas = carregarBios().catch(() => {});
 // no celular os núcleos são libretro em WebAssembly (nucleo.js); no PC, SNES é o núcleo Kof e os outros sistemas, libretro
 async function novoNucleo(bytes, sis) {
   if (sis === 'snes' && !CELULAR && typeof KofNucleo !== 'undefined') return new KofNucleo.Snes(Int32Array.from(bytes));
+  await biosProntas;
   return KofLibretro.criar(bytes, sis);
 }
 async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
@@ -1036,7 +1063,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   const salvo = ler(chaveSram);
   if (salvo && s.cart.hasSram()) {
     const b = atob(salvo);
-    for (let i = 0; i < b.length && i < s.cart.sram.length; i++) s.cart.sram[i] = b.charCodeAt(i);
+    for (let i = 0; i < s.cart.sram.length; i++) s.cart.sram[i] = i < b.length ? b.charCodeAt(i) : 0xFF;
   }
   s.reset();
   tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
@@ -1077,7 +1104,8 @@ function textoSram() {
 function salvarSram() {
   if (!snes || !chaveSram) return;
   const t = textoSram();
-  if (t && t !== sramAntes) { guardar(chaveSram, btoa(t)); sramAntes = t; }
+  // o save do GBA tem 128 KB, quase tudo 0xFF (memória vazia): guarda sem o fim vazio, que volta como 0xFF ao abrir
+  if (t && t !== sramAntes) { guardar(chaveSram, btoa(t.replace(/\xFF+$/, ''))); sramAntes = t; }
 }
 addEventListener('pagehide', () => { registrarTempo(); salvarSram(); salvarAuto(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { registrarTempo(); salvarSram(); salvarAuto(); } });
@@ -1317,7 +1345,7 @@ function estadoBib(t) { const e = $('#bib-estado'); e.textContent = t || ''; e.h
 // da ROM. Baixa uma vez e guarda no banco: depois funciona sem internet.
 // um acervo por sistema; o app anota o sistema de cada nome de jogo que mostra (capaSis) pra buscar no acervo certo
 const ACERVO = { snes: 'Nintendo_-_Super_Nintendo_Entertainment_System', nes: 'Nintendo_-_Nintendo_Entertainment_System', gb: 'Nintendo_-_Game_Boy', gbc: 'Nintendo_-_Game_Boy_Color',
-  md: 'Sega_-_Mega_Drive_-_Genesis', sms: 'Sega_-_Master_System_-_Mark_III', gg: 'Sega_-_Game_Gear' };
+  md: 'Sega_-_Mega_Drive_-_Genesis', sms: 'Sega_-_Master_System_-_Mark_III', gg: 'Sega_-_Game_Gear', gba: 'Nintendo_-_Game_Boy_Advance' };
 const capaSis = new Map();
 const urlAcervo = (nome) => `https://raw.githubusercontent.com/libretro-thumbnails/${ACERVO[capaSis.get(nome)] || ACERVO.snes}/master/Named_Boxarts/`;
 let capasNet = ler('capas') !== '0';
@@ -2200,6 +2228,7 @@ async function acao(a) {
   fecharMenus();
   switch (a) {
     case 'abrir': $('#arquivo').click(); break;
+    case 'bios': escolherBios(); break;
     case 'pasta':
       if (!temPasta) { avisar('este navegador não deixa escolher pasta; use Adicionar arquivo', 4000); break; }
       try { pasta = await showDirectoryPicker({ id: 'kofnes-roms', mode: 'read' }); await bdPor('c', 'pasta', pasta); pastaCache = null; await mostrarBiblioteca(true, true); } catch (e) { /* cancelou */ }

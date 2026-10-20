@@ -1,11 +1,11 @@
 // Núcleos em arquivos separados (dist/web/nucleos/<núcleo>-<hash>.js): o html abre sem nenhum núcleo carregado, cada
 // núcleo só entra quando abre um jogo daquele console (e só ele), e se a pasta nucleos/ não estiver do lado do html o
 // app avisa "faltou baixar o núcleo..." sem quebrar. Roda no PC (KOFnes.html) e no celular (KOFnes-android.html).
-//   node testes/navegador/nucleos.cjs dist/web rom.gb rom.nes rom.md rom.sfc
+//   node testes/navegador/nucleos.cjs dist/web rom.gb rom.nes rom.md rom.sfc [rom.gba]
 // Use só ROM de teste LIVRE ou gerada (dmg-acid2, nes-test-roms, PeterLemon/SNES, uma de Mega Drive escrita à mão).
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'), os = require('os'), path = require('path');
-const [,, pasta, romGb, romNes, romMd, romSnes] = process.argv;
+const [,, pasta, romGb, romNes, romMd, romSnes, romGba] = process.argv;
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const falhas = [];
@@ -23,7 +23,7 @@ const [,, pasta, romGb, romNes, romMd, romSnes] = process.argv;
     const tamanho = fs.statSync(path.resolve(pasta, arq)).size;
     conferir(tamanho < 1.5e6, `${nome}: html sem núcleo dentro (${Math.round(tamanho / 1024)} KB)`);
     const esperado = [];
-    for (const [rom, nucleo] of [[romGb, 'gambatte'], [romNes, 'fceumm'], [romMd, 'genplus'], ...(cel ? [[romSnes, 'snes9x']] : [])]) {
+    for (const [rom, nucleo] of [[romGb, 'gambatte'], [romNes, 'fceumm'], [romMd, 'genplus'], ...(romGba ? [[romGba, 'mgba']] : []), ...(cel ? [[romSnes, 'snes9x']] : [])]) {
       await abrir(p, rom);
       esperado.push(nucleo);
       const s = await estado(p), sc = await scripts(p);

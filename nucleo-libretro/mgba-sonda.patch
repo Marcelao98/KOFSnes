@@ -1,0 +1,41 @@
+diff --git a/src/gba/audio.c b/src/gba/audio.c
+index 1e913554f..0f791deb6 100644
+--- a/src/gba/audio.c
++++ b/src/gba/audio.c
+@@ -350,6 +350,14 @@ static int _applyBias(struct GBAAudio* audio, int sample) {
+ 	return ((sample - GBARegisterSOUNDBIASGetBias(audio->soundbias)) * audio->masterVolume * 3) >> 4;
+ }
+ 
++// KOFstation: sonda do osciloscópio (jukebox) e mudo por canal. 6 canais: 4 do PSG (Pulso 1, Pulso 2, Onda, Ruído) e os
++// 2 de amostras (Direct Sound A e B), cada um no seu anel de 4096 amostras a 32.768 Hz (uma a cada 2^resolução amostras)
++int kof_sonda = 0;
++unsigned kof_mudas = 0;
++int16_t kof_onda[6 * 4096];
++unsigned kof_ondaPos = 0;
++int kof_canais = 6;
++
+ void GBAAudioSample(struct GBAAudio* audio, int32_t timestamp) {
+ 	timestamp -= audio->lastSample;
+ 	timestamp -= audio->sampleIndex * audio->sampleInterval; // TODO: This can break if the interval changes between samples
+@@ -360,6 +368,21 @@ void GBAAudioSample(struct GBAAudio* audio, int32_t timestamp) {
+ 		int16_t sampleLeft = 0;
+ 		int16_t sampleRight = 0;
+ 		int psgShift = 4 - audio->volume;
++		if (kof_mudas || kof_sonda) {
++			for (int k = 0; k < 4; ++k) audio->psg.forceDisableCh[k] = (kof_mudas >> k) & 1;
++			audio->forceDisableChA = (kof_mudas >> 4) & 1;
++			audio->forceDisableChB = (kof_mudas >> 5) & 1;
++		}
++		if (kof_sonda && !(sample & ((1 << GBARegisterSOUNDBIASGetResolution(audio->soundbias)) - 1))) {
++			unsigned p = kof_ondaPos & 4095;
++			kof_onda[p] = audio->psg.ch1.sample;
++			kof_onda[4096 + p] = audio->psg.ch2.sample;
++			kof_onda[2 * 4096 + p] = audio->psg.ch3.sample;
++			kof_onda[3 * 4096 + p] = audio->psg.ch4.sample;
++			kof_onda[4 * 4096 + p] = audio->chA.samples[sample];
++			kof_onda[5 * 4096 + p] = audio->chB.samples[sample];
++			kof_ondaPos = p + 1;
++		}
+ 		GBAudioRun(&audio->psg, sample * audio->sampleInterval + audio->lastSample, 0xF);
+ 		GBAudioSamplePSG(&audio->psg, &sampleLeft, &sampleRight);
+ 		sampleLeft >>= psgShift;
