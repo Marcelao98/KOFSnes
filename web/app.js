@@ -371,6 +371,10 @@ function semCombo(b) {
   return (b & 0x2000) && (b & 0x5030) ? b & ~0x7030 : b;
 }
 addEventListener('keydown', (e) => {
+  if (!$('#abertura').hidden) {   // abertura: Esc pula; o resto do teclado só navega nos botões dela
+    if (e.code === 'Escape') { e.preventDefault(); abPular(); }
+    return;
+  }
   ligarSom();
   if (capturando) { capturar(e); return; }
   if (showTimer && e.code === 'Escape') { e.preventDefault(); pararShowcase(false); return; }
@@ -498,7 +502,7 @@ function jukeEncher(precisa) {
   const tk = juke.apu, taxaJ = tk.taxa;
   while (((fim - ini) & (FILA - 1)) < precisa && voltas++ < 64) {
     const { b, n } = tk.encher();
-    const f = juke.lista[juke.atual] || {}, seg = juke.repetir ? 0 : (f.segundos || PADRAO_SEG), fade = f.fadeMs || PADRAO_FADE;
+    const f = juke.lista[juke.atual] || {}, seg = juke.repetir || juke.interna ? 0 : (f.segundos || PADRAO_SEG), fade = f.fadeMs || PADRAO_FADE;
     for (let i = 0; i + 1 < n; i += 2) {
       let k = 1;
       if (seg) {
@@ -535,6 +539,7 @@ async function jukeTocar(i) {
   if (!f) return;
   try {
     const tk = await tocadorDaFaixa(f);
+    juke.interna = null;
     if (juke.apu && juke.apu !== tk) juke.apu.fechar();
     if (!juke.apu || juke.apu.canais !== tk.canais) { juke.mudas = 0; juke.solo = -1; }   // mudou de sistema: canais novos
     juke.apu = tk; juke.atual = i; juke.amostras = 0;
@@ -629,12 +634,13 @@ async function exportarWav(f) {
 }
 const mmss = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 async function abrirJuke() {
+  pararMusica();
   fecharJanelas(); fecharMenus(); await jukeCarregar(); $('#jukebox').hidden = false; montarJuke(); requestAnimationFrame(desenharVozes);
 }
 function montarJuke() {
   const f = juke.lista[juke.atual];
   // mini-player na barra de baixo
-  $('#st-juke').hidden = !juke.apu || !$('#jukebox').hidden;
+  $('#st-juke').hidden = !juke.apu || juke.interna || !$('#jukebox').hidden;
   if (f) $('#st-juke-nome').textContent = `🎵 ${f.titulo} · ${f.jogo}`;
   $('#st-juke-tocar').textContent = juke.tocando ? '⏸' : '▶';
   if ($('#jukebox').hidden) return;
@@ -1049,6 +1055,122 @@ function foto(largura) {   // print do quadro (sem filtro); webp quando dá: bem
 }
 const quando = (t) => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
+// ---------------- música do KOFstation e abertura (primeira vez) ----------------
+// A música própria (musica.js, 8 bits) toca pela jukebox como uma faixa "interna": não entra na lista, não aparece no
+// mini-player, não acaba (loop) e para quando um jogo abre ou a jukebox toca outra faixa. Mudo e volume valem.
+let musicaInicio = ler('musicaInicio') !== '0';
+function marcarMusicaInicio() { const b = document.querySelector('[data-acao="musica-inicio"]'); if (b) b.textContent = 'Música no Início: ' + (musicaInicio ? 'ligada' : 'desligada'); }
+marcarMusicaInicio();
+function tocarMusica(qual, sempre) {
+  if (typeof KofMusica === 'undefined' || (!musicaInicio && !sempre)) return;
+  if (juke.tocando && !juke.interna) return;            // a pessoa está ouvindo a jukebox: não atrapalha
+  if (juke.interna === qual && juke.tocando) return;
+  try {
+    const tk = KofMusica.tocador(qual);
+    if (juke.apu && juke.apu !== tk) juke.apu.fechar();
+    juke.apu = tk; juke.atual = -1; juke.interna = qual; juke.amostras = 0; juke.mudas = 0; juke.solo = -1; aplicarMudas();
+    ini = fim = 0; juke.tocando = true; ligarSom();
+  } catch (e) { /* sem música: segue sem */ }
+}
+function pararMusica() { if (!juke.interna) return; juke.tocando = false; juke.apu = null; juke.interna = null; ini = fim = 0; }
+// o navegador só deixa tocar som depois do primeiro toque/tecla: aí a música que estava esperando começa
+['pointerdown', 'keydown'].forEach((ev) => addEventListener(ev, () => { if (juke.interna) ligarSom(); }, { capture: true }));
+
+// Abertura: tela de título -> frases -> temas nostálgicos passando -> apresentação -> guia em 4 passos.
+// Aparece sozinha só na primeira vez e só pra quem ainda não tem jogo na biblioteca; Ajuda > Boas-vindas reabre.
+const AB_FRASES = [
+  '<i>Shhh…</i>', 'Eu sei. As coisas andam difíceis.', 'Tá tudo bem.',
+  'Lembra do gosto do café de domingo?\nDo controle na mão, da TV de tubo,\ndo "só mais uma fase, mãe"?',
+];
+const AB_TEMAS = ['cafe', 'sessao', 'locadora', 'casavo', 'almoco', 'lanhouse', 'orkutmsn', 'chuva', 'caderno', 'brasil98'];
+const AB_ESCOLHA = ['cafe', 'escuro', 'casavo', 'sessao', 'locadora', 'lanhouse', 'boteco', 'chuva'];
+let abVez = 0, abPassoAtual = 0;
+const espera = (ms, vez) => new Promise((ok, nao) => setTimeout(() => (vez === abVez ? ok() : nao(new Error('pulou'))), ms));
+const abTela = (id) => ['ab-titulo', 'ab-texto', 'ab-guia'].forEach((k) => { $('#' + k).hidden = k !== id; });
+function abrirAbertura() {
+  fecharJanelas(); fecharMenus();
+  if (snes && !pausado) pausado = true;
+  abVez++; $('#abertura').hidden = false; abTela('ab-titulo'); $('.ab-pular').hidden = true;
+  const vez = abVez, comecar = (e) => {
+    if (vez !== abVez || $('#ab-titulo').hidden) return;
+    if (e) { e.preventDefault(); e.stopImmediatePropagation(); }
+    removeEventListener('keydown', comecar, true); $('#abertura').removeEventListener('pointerdown', comecar);
+    abFilme(vez).catch(() => {});
+  };
+  addEventListener('keydown', comecar, true); $('#abertura').addEventListener('pointerdown', comecar);
+  abComecar = comecar;
+  tocarMusica('air', true);
+}
+let abComecar = null;
+async function abFilme(vez) {
+  tocarMusica('air', true); ligarSom();
+  abTela('ab-texto'); $('.ab-pular').hidden = false;
+  const fr = $('#ab-frase'), tm = $('#ab-tema');
+  const frase = async (html, ms) => { fr.innerHTML = html; await espera(60, vez); fr.classList.add('vis'); await espera(ms, vez); fr.classList.remove('vis'); await espera(1500, vez); };
+  await espera(900, vez);
+  for (const f of AB_FRASES) await frase(f.replace(/\n/g, '<br>'), f.length > 40 ? 5200 : 2600);
+  // os temas mais nostálgicos passando, a janela inteira trocando de cor (só experimenta: o tema da pessoa não muda)
+  fr.innerHTML = 'Isso ainda mora em você.<br>E agora mora aqui também.'; fr.classList.add('vis');
+  for (const id of AB_TEMAS) {
+    document.documentElement.dataset.tema = id;
+    const t = TODOS_TEMAS.find(([k]) => k === id); tm.textContent = t ? t[1] : '';
+    await espera(2400, vez);
+  }
+  fr.classList.remove('vis'); tm.textContent = ''; document.documentElement.dataset.tema = temaSalvo;
+  await espera(1500, vez);
+  await frase('<b>KOFstation.</b><br>Super Nintendo, NES, Game Boy, GBA, Mega Drive,<br>Master System, Game Gear e Neo Geo.<br>Num lugar só. Feito no Brasil. 🇧🇷', 6000);
+  abGuia();
+}
+function abPular() {
+  if (!$('#ab-guia').hidden) { fecharAbertura(true); return; }   // no guia, "Pular" fecha
+  abVez++; document.documentElement.dataset.tema = temaSalvo; abGuia();
+}
+function abGuia() {
+  abVez++; abTela('ab-guia'); $('.ab-pular').textContent = 'Pular o guia ▸';
+  const box = document.querySelector('.ab-temas');
+  if (!box.children.length) {
+    for (const id of AB_ESCOLHA) {
+      const t = TODOS_TEMAS.find(([k]) => k === id); if (!t) continue;
+      const b = document.createElement('button'); b.dataset.tema = id; b.dataset.abTema = id; b.textContent = t[1];
+      b.onclick = () => { tema(id); box.querySelectorAll('button').forEach((x) => x.classList.toggle('ativo', x === b)); };
+      box.appendChild(b);
+    }
+  }
+  box.querySelectorAll('button').forEach((x) => x.classList.toggle('ativo', x.dataset.abTema === temaSalvo));
+  marcarAbBios(); abPasso(1);
+}
+function abPasso(n) {
+  if (n > 4) { fecharAbertura(true); return; }
+  abPassoAtual = Math.max(1, n);
+  document.querySelectorAll('.ab-passo').forEach((p) => { p.hidden = +p.dataset.passo !== abPassoAtual; });
+  document.querySelectorAll('.ab-pontos li').forEach((li, i) => li.classList.toggle('feito', i < abPassoAtual));
+  document.querySelector('[data-acao="ab-voltar"]').style.visibility = abPassoAtual > 1 ? 'visible' : 'hidden';
+  document.querySelector('[data-acao="ab-proximo"]').textContent = abPassoAtual === 4 ? 'Começar ▸' : 'Próximo ▸';
+  const foco = document.querySelector(`.ab-passo[data-passo="${abPassoAtual}"] button`) || document.querySelector('[data-acao="ab-proximo"]');
+  if (foco) foco.focus({ preventScroll: true });
+}
+function marcarAbBios() {
+  if (typeof KofLibretro === 'undefined') return;
+  document.querySelectorAll('.ab-bios li').forEach((li) => {
+    const sis = li.dataset.sis; if (!SIS[sis]) { li.hidden = true; return; }
+    li.textContent = sis === 'gba' ? '🟢 Game Boy Advance: roda sem BIOS'
+      : KofLibretro.temBios(sis) ? '✅ Neo Geo: neogeo.zip guardado' : '⚪ Neo Geo: falta o neogeo.zip (só precisa pra jogar Neo Geo)';
+  });
+}
+function fecharAbertura(fimDoGuia) {
+  if ($('#abertura').hidden) return;
+  abVez++; $('#abertura').hidden = true; document.documentElement.dataset.tema = temaSalvo; guardar('boasVindas', '1');
+  if (abComecar) { removeEventListener('keydown', abComecar, true); abComecar = null; }
+  if (fimDoGuia && !snes) { pararMusica(); abrirHome(); }
+}
+async function primeiraVez() {
+  if (ler('boasVindas')) return;
+  if (navigator.webdriver && !window.__kofAbertura) return;   // testes automáticos: só o teste da abertura quer ver ela
+
+  try { if ((await bdTodos('jogos')).length) { guardar('boasVindas', '1'); return; } } catch (e) { /* sem banco: mostra */ }
+  abrirAbertura();
+}
+
 // ---------------- abrir um jogo ----------------
 let jogoId = '', romArquivo = '';
 async function abrirArquivo(arq) {
@@ -1076,6 +1198,7 @@ async function escolherBios() {
     await bdPor('bios', arq, { sistema: sis, dados });
     KofLibretro.bios(SIS[sis].nucleo, arq, dados);
     avisar('BIOS do ' + SIS[sis].nome + ' guardada: vale no próximo jogo que abrir', 4000);
+    marcarAbBios();
     if (biosEsperando && !$('#bios-tela').hidden) { const f = biosEsperando; biosEsperando = null; $('#bios-tela').hidden = true; try { await f(); } catch (er) { avisar(er.message, 6000); } }
   };
   e.click();
@@ -1128,6 +1251,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
     if (!KofLibretro.temBios(sis)) { pedirBios(sis, () => abrirBytes(nome, bytes, guardarNaBiblioteca)); return; }
   }
   registrarTempo(); salvarSram(); await salvarAuto();
+  pararMusica(); fecharAbertura();
   const s = await novoNucleo(bytes, sis, nome);
   romNome = nome.replace(/\.[^.]+$/, ''); romArquivo = nome;
   capaSis.set(romNome, sis === 'gb' && /\.gbc$/i.test(nome) ? 'gbc' : sis);
@@ -1673,6 +1797,13 @@ function fecharJanelas() { fecharTemas(false); for (const id of ['home', 'biblio
 // controle também navega na biblioteca
 let padAntes = 0;
 setInterval(() => {
+  if (!$('#abertura').hidden) {           // abertura: qualquer botão do controle começa; no guia, A = próximo
+    const b = estado(), novo = b & ~padAntes; padAntes = b;
+    if (novo && abComecar && !$('#ab-titulo').hidden) abComecar();
+    else if (novo & (0x0080 | 0x1000) && !$('#ab-guia').hidden) acao('ab-proximo');
+    else if (novo & 0x8000 && !$('#ab-guia').hidden) acao('ab-voltar');
+    return;
+  }
   if (!$('#home').hidden) {               // no início: A/Start = ação principal, X = biblioteca
     const b = estado(), novo = b & ~padAntes; padAntes = b;
     if (novo & (0x0080 | 0x1000)) { const pr = $('#hm-destaque .grande'); if (pr) pr.click(); }
@@ -1953,7 +2084,7 @@ function novaDica() {
   let i; do { i = Math.floor(Math.random() * DICAS.length); } while (i === dicaAtual && DICAS.length > 1);
   dicaAtual = i; $('#hm-dica').innerHTML = DICAS[i];
 }
-function abrirHome() { fecharJanelas(); fecharMenus(); $('#home').hidden = false; montarHome(); }
+function abrirHome() { fecharJanelas(); fecharMenus(); $('#home').hidden = false; montarHome(); if (!snes) tocarMusica('rua'); }
 const elem = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 function botao(txt, acaoNome, cls) { const b = elem('button', cls || 'grande', txt); b.dataset.acao = acaoNome; return b; }
 async function montarHome() {
@@ -2310,6 +2441,15 @@ async function acao(a) {
   switch (a) {
     case 'abrir': $('#arquivo').click(); break;
     case 'bios': escolherBios(); break;
+    case 'boas-vindas': abrirAbertura(); break;
+    case 'ab-pular': abPular(); break;
+    case 'ab-proximo': abPasso(abPassoAtual + 1); break;
+    case 'ab-voltar': abPasso(abPassoAtual - 1); break;
+    case 'ab-todos-temas': fecharAbertura(); abrirTemas(); break;
+    case 'musica-inicio':
+      musicaInicio = !musicaInicio; guardar('musicaInicio', musicaInicio ? '1' : '0'); marcarMusicaInicio();
+      if (!musicaInicio) pararMusica(); else if (!snes && !$('#home').hidden) tocarMusica('rua');
+      avisar(musicaInicio ? '🎵 música no Início ligada' : 'música no Início desligada'); break;
     case 'bios-fechar': biosEsperando = null; $('#bios-tela').hidden = true; break;
     case 'pasta':
       if (!temPasta) { avisar('este navegador não deixa escolher pasta; use Adicionar arquivo', 4000); break; }
@@ -2422,10 +2562,11 @@ $('[data-acao="capas"]').textContent = capasNet ? '🖼 Capas oficiais: ligadas'
 ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
+primeiraVez();
 window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
-  volume: () => volume, juke: () => ({ faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, efetivas: mudasEfetivas(), solo: juke.solo, vista: jkVista, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, rebobEstado: () => ({ limite: rebobLimite, recarga: Math.round(rebobRecarga), fotos: rebob ? rebob.fotos : -1, ativo: !!rebobinou }), estat: () => estat, tema: () => document.documentElement.dataset.tema, mudarTema: (t) => tema(t), rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
+  volume: () => volume, juke: () => ({ interna: juke.interna, faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, efetivas: mudasEfetivas(), solo: juke.solo, vista: jkVista, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, rebobEstado: () => ({ limite: rebobLimite, recarga: Math.round(rebobRecarga), fotos: rebob ? rebob.fotos : -1, ativo: !!rebobinou }), estat: () => estat, tema: () => document.documentElement.dataset.tema, mudarTema: (t) => tema(t), rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
   assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < f.length; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
 })();

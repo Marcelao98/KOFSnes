@@ -70,6 +70,7 @@
     <button data-acao="mudo">Mudo<kbd>M</kbd></button>
     <hr>
     <button data-acao="pausa-auto">Pausar ao sair da janela: ligado</button>
+    <button data-acao="musica-inicio">Música no Início: ligada</button>
     <hr>
     <button data-acao="jukebox">🎵 Jukebox…</button>
     <button data-acao="guardar-musica">Guardar a música do jogo<kbd>F7</kbd></button>
@@ -77,6 +78,7 @@
   <div class="m"><button data-acao="temas" title="galeria de temas">Tema</button></div>
   <div class="m"><button>Ajuda</button><div class="sub">
     <button data-acao="guia">📖 Guia do KOFstation</button>
+    <button data-acao="boas-vindas">✨ Boas-vindas</button>
     <button data-acao="controles">Atalhos e controles</button>
     <hr>
     <button data-acao="bug">🐞 Reportar bug…<kbd>F9</kbd></button>
@@ -193,7 +195,7 @@
       <div class="gu-texto">
         <div data-pagina="comecar">
           <h3>Bem-vindo ao KOFstation 👋</h3>
-          <p>O KOFstation junta <b>Super Nintendo, NES, Game Boy, GBA, Mega Drive, Master System, Game Gear e Neo Geo</b> numa janela leve que se atualiza sozinha. O Super Nintendo do PC foi escrito em Kof, uma linguagem brasileira parceira do projeto; os outros consoles usam núcleos abertos da comunidade (libretro). A ideia é simples: abrir, escolher o jogo e jogar.</p>
+          <p>O KOFstation junta <b>Super Nintendo, NES, Game Boy, GBA, Mega Drive, Master System, Game Gear e Neo Geo</b> numa janela leve que se atualiza sozinha. O Super Nintendo do PC foi escrito em Kof, uma linguagem brasileira parceira do projeto; os outros consoles usam núcleos abertos da comunidade (libretro). A ideia é simples: abrir, escolher o jogo e jogar. <button class="hm-link" data-acao="boas-vindas">✨ ver as boas-vindas de novo</button></p>
           <ol>
             <li><b>Traga seus jogos.</b> Em <b>Biblioteca → Escolher pasta de ROMs</b> você aponta a pasta uma vez só. Também dá pra arrastar uma ROM (.sfc, .smc, .nes, .gb, .gbc, .gba, .md, .sms, .gg ou .zip) pra janela.</li>
             <li><b>Escolha e jogue.</b> Enter ou clique duplo. Na próxima vez, o jogo aparece no <b>Início</b> com <b>Continuar</b>.</li>
@@ -271,6 +273,42 @@
     <button class="grande sec" data-acao="teclas-padrao">Restaurar padrão</button>
   </section>
 
+  <section id="abertura" hidden aria-label="boas-vindas ao KOFstation">
+    <div class="ab-grao"></div>
+    <div class="ab-tela" id="ab-titulo">
+      <img class="ab-logo" src="{{ICONE}}" alt="">
+      <h1>KOFstation</h1>
+      <p class="ab-piscar"><span class="so-pc">pressione qualquer botão</span><span class="so-cel">toque pra começar</span></p>
+    </div>
+    <div class="ab-tela" id="ab-texto" hidden><p id="ab-frase"></p><small id="ab-tema"></small></div>
+    <div class="ab-tela" id="ab-guia" hidden>
+      <ol class="ab-pontos"><li></li><li></li><li></li><li></li></ol>
+      <div class="ab-passo" data-passo="1">
+        <h2>🎮 Seus jogos</h2>
+        <p>O KOFstation não vem com jogos: traga os seus. Super Nintendo, NES, Game Boy, GBA, Mega Drive, Master System, Game Gear e Neo Geo.</p>
+        <div class="ab-botoes"><button class="grande so-pc" data-acao="pasta">📁 Escolher a pasta dos jogos</button><button class="grande sec" data-acao="abrir">＋ Adicionar um arquivo</button></div>
+      </div>
+      <div class="ab-passo" data-passo="2" hidden>
+        <h2>🔑 BIOS <small>(opcional)</small></h2>
+        <p>Alguns consoles têm um programa interno, a BIOS. O GBA roda sem ela; o Neo Geo precisa do <b>neogeo.zip</b>. O KOFstation não traz BIOS: se tiver a sua, escolha uma vez e ela fica guardada.</p>
+        <ul class="ab-bios"><li data-sis="gba"></li><li data-sis="neogeo"></li></ul>
+        <div class="ab-botoes"><button class="grande sec" data-acao="bios">Escolher uma BIOS…</button></div>
+      </div>
+      <div class="ab-passo" data-passo="3" hidden>
+        <h2>🎨 Seu tema</h2>
+        <p>Escolha a cara do seu KOFstation. Dá pra trocar quando quiser.</p>
+        <div class="ab-temas"></div>
+        <div class="ab-botoes"><button class="grande sec" data-acao="ab-todos-temas">Ver todos os temas ▸</button></div>
+      </div>
+      <div class="ab-passo" data-passo="4" hidden>
+        <h2>Bem-vindo de volta. ☕</h2>
+        <ul class="ab-dicas so-pc"><li><kbd>F5</kbd> salva o momento, <kbd>F8</kbd> volta nele</li><li>Segure <kbd>Backspace</kbd> pra voltar no tempo</li><li><kbd>F7</kbd> guarda a música que está tocando na Jukebox</li><li>Controle USB funciona sozinho</li></ul>
+        <ul class="ab-dicas so-cel"><li>☰ abre o menu rápido: salvar, carregar, tema…</li><li>Toque longo na tela do jogo também abre o menu</li><li>A Jukebox guarda as músicas dos seus jogos</li><li>Controles: escolha o modelo do controle na tela</li></ul>
+      </div>
+      <div class="ab-nav"><button class="grande sec" data-acao="ab-voltar">◂ Voltar</button><button class="grande" data-acao="ab-proximo">Próximo ▸</button></div>
+    </div>
+    <button class="ab-pular" data-acao="ab-pular">Pular ▸</button>
+  </section>
   <section id="bios-tela" class="janela" hidden>
     <div class="titulo-j"><span>🔑 Falta a BIOS do <b id="bios-nome">Neo Geo</b></span><button class="x" data-acao="bios-fechar">×</button></div>
     <p>Esse console precisa do programa interno dele (a BIOS) pra ligar: o arquivo <b id="bios-arquivo">neogeo.zip</b>.

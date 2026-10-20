@@ -1485,3 +1485,37 @@ html.showcase-rapido *, html.showcase-rapido *::before, html.showcase-rapido *::
   --fundo-img: linear-gradient(transparent 78%, #9a4a2a40 78% 84%, #6a3a2440 84%), radial-gradient(ellipse 60% 35% at 50% 0%, #e8b04a24, transparent 70%), repeating-linear-gradient(0deg, #f3e3c807 0 1px, transparent 1px 4px);
 }
 [data-tema="clube"] .titulo-j { border-bottom: 2px solid #e8b04a; font-style: italic; }
+
+/* ---------------- abertura (primeira vez) ---------------- */
+#abertura { position: fixed; inset: 0; z-index: 900; background: var(--fundo); background-image: var(--fundo-img, none); color: var(--texto);
+  display: flex; align-items: center; justify-content: center; text-align: center; overflow: auto; transition: background .9s, color .9s; }
+#abertura[hidden] { display: none; }
+#abertura .ab-grao { position: absolute; inset: 0; pointer-events: none; opacity: .07;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.6) 0 1px, transparent 1px 3px); animation: ab-grao 6s linear infinite; }
+@keyframes ab-grao { to { background-position: 0 30px; } }
+#abertura .ab-tela { position: relative; max-width: 640px; padding: 24px 20px; }
+#abertura .ab-logo { width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 6px 18px rgba(0,0,0,.4)); }
+#abertura h1 { font-size: clamp(32px, 7vw, 56px); margin: 12px 0 28px; letter-spacing: 2px; color: var(--destaque); }
+#abertura .ab-piscar { animation: ab-piscar 1.6s ease-in-out infinite; color: var(--fraco); letter-spacing: 1px; }
+@keyframes ab-piscar { 50% { opacity: .25; } }
+#ab-frase { font-size: clamp(20px, 4.2vw, 30px); line-height: 1.5; white-space: pre-line; opacity: 0; transition: opacity 1.4s ease; margin: 0; }
+#ab-frase.vis { opacity: 1; }
+#ab-frase b { color: var(--destaque); font-size: 1.3em; }
+#ab-tema { display: block; margin-top: 22px; color: var(--fraco); min-height: 1.2em; transition: opacity .6s; }
+#ab-guia { max-width: 560px; width: 100%; text-align: left; }
+#ab-guia h2 { color: var(--destaque); margin: 6px 0 10px; }
+#ab-guia h2 small { color: var(--fraco); font-weight: normal; font-size: .6em; }
+#ab-guia p { line-height: 1.5; }
+.ab-pontos { display: flex; gap: 8px; justify-content: center; list-style: none; padding: 0; margin: 0 0 14px; }
+.ab-pontos li { width: 10px; height: 10px; border-radius: 50%; background: var(--borda); }
+.ab-pontos li.feito { background: var(--destaque); }
+.ab-botoes, .ab-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.ab-nav { justify-content: space-between; margin-top: 22px; }
+.ab-bios { list-style: none; padding: 0; } .ab-bios li { padding: 4px 0; }
+.ab-temas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ab-temas button { padding: 10px; border-radius: 8px; border: 2px solid var(--borda); cursor: pointer; text-align: left;
+  background: var(--fundo); background-image: var(--fundo-img, none); color: var(--texto); font: inherit; }   /* cada botão nas cores do próprio tema */
+html:not(.celular) .so-cel { display: none !important; }   /* texto só do celular (o android.css esconde os do PC no celular) */
+.ab-temas button.ativo { border-color: var(--destaque); }
+.ab-dicas { line-height: 1.9; }
+.ab-pular { position: absolute; right: 16px; bottom: 16px; background: transparent; color: var(--fraco); border: 1px solid var(--borda); border-radius: 20px; padding: 6px 14px; cursor: pointer; }
