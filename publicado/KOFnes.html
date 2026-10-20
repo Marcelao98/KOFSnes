@@ -11671,22 +11671,24 @@ function jukeEncher(precisa) {
 async function jukeCarregar() {
   try { juke.lista = (await bdTodos('musicas')).sort((a, b) => (a.jogo || '').localeCompare(b.jogo || '', 'pt-BR') || a.quando - b.quando); } catch (e) { juke.lista = []; }
 }
+// o "tocador" de uma faixa: SNES = chip de som do núcleo Kof; outros sistemas = o jogo parado numa instância separada do núcleo
+async function tocadorDaFaixa(f) {
+  if (f.sistema && f.sistema !== 'snes') {
+    if (typeof KofLibretro === 'undefined' || !KofLibretro.disponivel(f.sistema)) throw new Error('essa versão do KOFstation não toca música de ' + (SIS[f.sistema] ? SIS[f.sistema].nome : f.sistema));
+    const rom = await bdPegar('roms', f.jogoId);
+    if (!rom) throw new Error('a ROM de ' + f.jogo + ' não está mais na biblioteca: abra o jogo uma vez e tente de novo');
+    return KofLibretro.tocador(f.sistema, rom, f.lr, f.arquivo, f.sistema === 'neogeo' ? await zipsDoPai(f.arquivo) : []);
+  }
+  const apu = new KofNucleo.Apu(); apu.reset();
+  if (f.estado) KofEstado.restaurar(apu, JSON.parse(f.estado)); else KofSpc.ler(apu, f.spc);
+  apu.dsp.outCount = 0;
+  return tocadorSnes(apu);
+}
 async function jukeTocar(i) {
   const f = juke.lista[i];
   if (!f) return;
   try {
-    let tk;
-    if (f.sistema && f.sistema !== 'snes') {
-      if (typeof KofLibretro === 'undefined' || !KofLibretro.disponivel(f.sistema)) throw new Error('essa versão do KOFstation não toca música de ' + (SIS[f.sistema] ? SIS[f.sistema].nome : f.sistema));
-      const rom = await bdPegar('roms', f.jogoId);
-      if (!rom) throw new Error('a ROM de ' + f.jogo + ' não está mais na biblioteca: abra o jogo uma vez e tente de novo');
-      tk = await KofLibretro.tocador(f.sistema, rom, f.lr, f.arquivo, f.sistema === 'neogeo' ? await zipsDoPai(f.arquivo) : []);
-    } else {
-      const apu = new KofNucleo.Apu(); apu.reset();
-      if (f.estado) KofEstado.restaurar(apu, JSON.parse(f.estado)); else KofSpc.ler(apu, f.spc);
-      apu.dsp.outCount = 0;
-      tk = tocadorSnes(apu);
-    }
+    const tk = await tocadorDaFaixa(f);
     if (juke.apu && juke.apu !== tk) juke.apu.fechar();
     if (!juke.apu || juke.apu.canais !== tk.canais) { juke.mudas = 0; juke.solo = -1; }   // mudou de sistema: canais novos
     juke.apu = tk; juke.atual = i; juke.amostras = 0;
@@ -11744,6 +11746,41 @@ async function exportarSpc(f) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u8])); a.download = `${f.jogo} - ${f.titulo}.spc`.replace(/[\\/:*?"<>|]+/g, '_');
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
+// .wav da faixa: toca por trás, mais rápido que o tempo real, com o mesmo tempo e fade da jukebox. Se a faixa estiver
+// tocando com mudo/solo, sai do jeito que está tocando (dá pra exportar só a bateria). Taxa = a do chip do console
+let exportandoWav = false;
+async function exportarWav(f) {
+  if (exportandoWav) return;
+  exportandoWav = true;
+  const mudas = juke.lista[juke.atual] === f ? mudasEfetivas() : 0;
+  jukeFechar();   // a instância de música do núcleo é uma só: a faixa que tocava para
+  try {
+    avisar('🎵 gerando o .wav…', 2000);
+    const tk = await tocadorDaFaixa(f);
+    tk.mudas(mudas);
+    const taxa = Math.round(tk.taxa), seg = f.segundos || PADRAO_SEG, fade = (f.fadeMs || PADRAO_FADE) / 1000;
+    const total = Math.round(taxa * (seg + fade)), pcm = new Int16Array(total * 2);
+    let n = 0, pausa = performance.now();
+    while (n < total) {
+      const { b, n: q } = tk.encher();
+      for (let i = 0; i + 1 < q && n < total; i += 2, n++) {
+        const t = n / taxa, k = t > seg ? Math.max(0, 1 - (t - seg) / fade) : 1;
+        pcm[n * 2] = b[i] * k; pcm[n * 2 + 1] = b[i + 1] * k;
+      }
+      tk.limpar();
+      if (performance.now() - pausa > 40) { await new Promise((ok) => setTimeout(ok, 0)); pausa = performance.now(); }   // não trava a tela
+    }
+    tk.fechar();
+    const cab = new DataView(new ArrayBuffer(44)), txt = (o, t) => { for (let i = 0; i < 4; i++) cab.setUint8(o + i, t.charCodeAt(i)); };
+    txt(0, 'RIFF'); cab.setUint32(4, 36 + pcm.byteLength, true); txt(8, 'WAVE'); txt(12, 'fmt ');
+    cab.setUint32(16, 16, true); cab.setUint16(20, 1, true); cab.setUint16(22, 2, true); cab.setUint32(24, taxa, true);
+    cab.setUint32(28, taxa * 4, true); cab.setUint16(32, 4, true); cab.setUint16(34, 16, true); txt(36, 'data'); cab.setUint32(40, pcm.byteLength, true);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([cab.buffer, pcm.buffer], { type: 'audio/wav' }));
+    a.download = `${f.jogo} - ${f.titulo}.wav`.replace(/[\\/:*?"<>|]+/g, '_');
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    avisar('🎵 .wav pronto: ' + a.download, 3000);
+  } catch (e) { avisar('não consegui gerar o .wav: ' + e.message, 4000); } finally { exportandoWav = false; }
+}
 const mmss = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 async function abrirJuke() {
   fecharJanelas(); fecharMenus(); await jukeCarregar(); $('#jukebox').hidden = false; montarJuke(); requestAnimationFrame(desenharVozes);
@@ -11777,6 +11814,7 @@ function montarJuke() {
       m.titulo = t.trim(); await bdGuardar('musicas', m); montarJuke();
     });
     if (!m.sistema || m.sistema === 'snes') bt('⬇', 'exportar .spc', () => exportarSpc(m));
+    bt('🎧', 'exportar .wav (do jeito que está tocando: mudo e solo valem)', () => exportarWav(m));
     bt('🗑', 'apagar', async () => {
       if (!confirm(`Apagar "${m.titulo}" da jukebox?`)) return;
       if (i === juke.atual) jukeFechar();
@@ -11930,7 +11968,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610200139 · 1ac36eb', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610200555 · 2f0c1bf', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   const b = semCombo(estado());
@@ -12534,7 +12572,8 @@ function estadoBib(t) { const e = $('#bib-estado'); e.textContent = t || ''; e.h
 // da ROM. Baixa uma vez e guarda no banco: depois funciona sem internet.
 // um acervo por sistema; o app anota o sistema de cada nome de jogo que mostra (capaSis) pra buscar no acervo certo
 const ACERVO = { snes: 'Nintendo_-_Super_Nintendo_Entertainment_System', nes: 'Nintendo_-_Nintendo_Entertainment_System', gb: 'Nintendo_-_Game_Boy', gbc: 'Nintendo_-_Game_Boy_Color',
-  md: 'Sega_-_Mega_Drive_-_Genesis', sms: 'Sega_-_Master_System_-_Mark_III', gg: 'Sega_-_Game_Gear', gba: 'Nintendo_-_Game_Boy_Advance' };
+  md: 'Sega_-_Mega_Drive_-_Genesis', sms: 'Sega_-_Master_System_-_Mark_III', gg: 'Sega_-_Game_Gear', gba: 'Nintendo_-_Game_Boy_Advance',
+  neogeo: 'FBNeo_-_Arcade_Games' };   // Neo Geo: as capas do FBNeo, pelo nome completo do jogo (o do set vem da lista)
 const capaSis = new Map();
 const urlAcervo = (nome) => `https://raw.githubusercontent.com/libretro-thumbnails/${ACERVO[capaSis.get(nome)] || ACERVO.snes}/master/Named_Boxarts/`;
 let capasNet = ler('capas') !== '0';
@@ -12554,9 +12593,16 @@ function nomesCapa(nome) {
   const idiomas = ['(En,Fr)', '(En,Fr,De)', '(En,De)', '(En,Fr,De,Es,It)'].map((l) => base + ' ' + l);
   return [...new Set([n, semRev, base, ...idiomas, titulo + ' (USA)', titulo + ' (World)', titulo + ' (Europe)'])];
 }
+// Neo Geo: o nome na biblioteca é o do set (kof98); a capa tem o título completo do FBNeo ("/" vira "_"); clone tenta o do pai
+function nomesCapaNeoGeo(nome) {
+  const L = typeof KofLibretro !== 'undefined' ? KofLibretro.NEOGEO : {}, j = L[(nome || '').toLowerCase()];
+  if (!j) return nomesCapa(nome);
+  const limpa = (t) => t.replace(/[&*/:`<>?\\|"]/g, '_');
+  return [limpa(j[0]), ...(j[1] && L[j[1]] ? [limpa(L[j[1]][0])] : [])];
+}
 async function baixarCapa(nome) {
   const CAPAS = urlAcervo(nome);
-  for (const n of nomesCapa(nome)) {
+  for (const n of (capaSis.get(nome) === 'neogeo' ? nomesCapaNeoGeo(nome) : nomesCapa(nome))) {
     let r = await fetch(CAPAS + encodeURIComponent(n) + '.png').catch(() => null);
     if (!r || !r.ok) continue;
     if (!(r.headers.get('content-type') || '').startsWith('image/')) {   // atalho (symlink) do git
