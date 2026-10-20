@@ -63,17 +63,17 @@ const KofVisual = (() => {
     ['original', 'Original', 'pixel nítido sem tremer, do jeitinho que o console desenha', {}],
     ['nitido', 'Nítido e vivo', 'pixel quadradão com cor forte', { pixel: 0, contraste: 1.15, saturacao: 1.3 }],
     ['suave', 'Suave', 'borrado, cara de emulador antigo', { pixel: 2 }],
-    ['tv', 'TV de tubo da sala', 'linhas, fósforo, curva e o cabo composto', { linhas: 0.65, mascara: 0.55, mascaraTipo: 1, mascaraTam: 2, curva: 0.6, cantos: 0.6, vinheta: 0.6, glow: 0.35, composto: 0.6, converg: 0.4 }],
-    ['fliperama', 'Monitor de fliperama', 'linhas grossas, cor estourada e brilho', { linhas: 0.95, grossas: 1, mascara: 0.7, mascaraTam: 3, glow: 0.8, curva: 0.35, cantos: 0.4, vinheta: 0.4, saturacao: 1.35, contraste: 1.15 }],
-    ['pvm', 'Monitor de estúdio', 'linhas finas e retas, imagem reta e afiada', { linhas: 0.85, grossas: 0.2, mascara: 0.45, contraste: 1.15, saturacao: 1.1 }],
-    ['locadora', 'Locadora 1996', 'fita gasta, chiado e cor borrada', { pixel: 2, vhs: 1, chiado: 0.6, composto: 1, saturacao: 0.7, linhas: 0.3, vinheta: 0.45, tremor: 0.5, temperatura: 0.2 }],
-    ['vo', 'TV da vó', 'tubo bem curvo, amarelado, antena de bombril', { pixel: 2, curva: 1, cantos: 1, vinheta: 1, sepia: 0.55, tremor: 0.5, chiado: 0.3, linhas: 0.45, composto: 0.6, brilho: -0.05 }],
-    ['gameboy', 'Game Boy tijolão', 'tela verde, grade e rastro', { pixel: 0, lcd: 0.9, rastro: 0.6, verde: 1 }],
+    ['tv', 'TV de tubo da sala', 'linhas, fósforo, curva e o cabo composto', { linhas: 0.6, grossas: 0.6, mascara: 0.6, mascaraTipo: 1, mascaraTam: 2, curva: 0.55, cantos: 0.6, vinheta: 0.35, glow: 0.3, composto: 0.55, converg: 0.35, saturacao: 1.1 }],
+    ['fliperama', 'Monitor de fliperama', 'linhas grossas, cor estourada e brilho', { linhas: 1, grossas: 1, mascara: 0.8, mascaraTam: 3, glow: 0.7, curva: 0.3, cantos: 0.4, vinheta: 0.25, saturacao: 1.3, contraste: 1.1 }],
+    ['pvm', 'Monitor de estúdio', 'linhas finas e retas, imagem reta e afiada', { linhas: 0.9, grossas: 0.4, mascara: 0.5, contraste: 1.1, saturacao: 1.1 }],
+    ['locadora', 'Locadora 1996', 'fita gasta, chiado e cor borrada', { pixel: 2, vhs: 1, chiado: 0.45, composto: 1, saturacao: 0.8, linhas: 0.3, vinheta: 0.25, tremor: 0.5, temperatura: 0.2, brilho: 0.04 }],
+    ['vo', 'TV da vó', 'tubo bem curvo, amarelado, antena de bombril', { pixel: 2, curva: 1, cantos: 1, vinheta: 0.6, sepia: 0.5, tremor: 0.5, chiado: 0.25, linhas: 0.45, composto: 0.6, brilho: 0.04 }],
+    ['gameboy', 'Game Boy tijolão', 'tela verde, grade e rastro', { pixel: 0, lcd: 0.8, rastro: 0.6, verde: 1, brilho: 0.04 }],
     ['gbc', 'Portátil colorido', 'grade e as cores lavadas da tela', { pixel: 0, lcd: 0.75, rastro: 0.35, portatil: 1 }],
     ['hd', 'HD de mentirinha', 'contorno arredondado, parece desenho vetorial', { pixel: 3, saturacao: 1.1 }],
-    ['pintura', 'Pintura', 'pinceladas, tipo quadro a óleo', { pixel: 4, saturacao: 1.3 }],
+    ['pintura', 'Pintura', 'pinceladas, tipo quadro a óleo', { pixel: 4, saturacao: 1.25, contraste: 1.05 }],
     ['cartoon', 'Desenho animado', 'contorno preto e cor chapada', { pixel: 5, saturacao: 1.2 }],
-    ['sonho', 'Sonho', 'borrado brilhando, cor de sonho', { pixel: 2, glow: 1, saturacao: 1.6, brilho: 0.1, vinheta: 0.5 }],
+    ['sonho', 'Sonho', 'borrado brilhando, cor de sonho', { pixel: 2, glow: 1, saturacao: 1.5, brilho: 0.05, vinheta: 0.3 }],
     ['cafe', 'Café (sépia)', 'foto antiga', { pixel: 2, sepia: 1, vinheta: 0.7, contraste: 0.9, chiado: 0.15 }],
     ['polaroid95', 'Polaroid de 1995', 'foto desbotada com luz vazando', { polaroid: 1, vazamento: 0.6, filme: 0.3 }],
     ['filmadora', 'Fita da filmadora', 'PLAY, data e a fita gasta', { vhs: 0.7, chiado: 0.3, composto: 0.7, filmadora: 1, linhas: 0.2, saturacao: 0.85 }],
@@ -121,41 +121,59 @@ vec3 nitidoSuave(vec2 c) {
   vec2 q = c * tam, esc = max(saida / tam, vec2(1.)), f = fract(q) - .5, faixa = .5 - .5 / esc;
   return tx((floor(q) + .5 + (f - clamp(f, -faixa, faixa)) * esc) / tam);
 }
-bool parece(vec3 a, vec3 b) { return distance(a, b) < .12; }
-// arredondado: a regra do Scale2x (EPX) na hora, por quadrante do pixel, com a borda suavizada
-vec3 epx(vec2 c) {
-  vec2 q = c * tam, f = fract(q), b = (floor(q) + .5) / tam, d = 1. / tam;
-  vec3 E = tx(b), B = tx(b - vec2(0., d.y)), D = tx(b - vec2(d.x, 0.)), F = tx(b + vec2(d.x, 0.)), H = tx(b + vec2(0., d.y));
-  bool cima = f.y < .5, esq = f.x < .5;
-  vec3 v = cima ? B : H, h = esq ? D : F, ov = cima ? H : B, oh = esq ? F : D;
-  vec3 r = E;
-  if (parece(v, h) && !parece(v, oh) && !parece(h, ov)) {
-    vec2 g = abs(f - .5) * 2.;                       // perto do canto: pega a cor do vizinho; no meio: a do pixel
-    r = mix(E, h, smoothstep(.4, .9, g.x + g.y));
-  }
-  return r;
+// distância entre duas cores do jeito que o olho sente (o brilho pesa mais que a cor), como no xBR
+float dif(vec3 a, vec3 b) { vec3 d = abs(a - b); return dot(d, vec3(.299, .587, .114)) * 3. + (abs(d.r - d.g) + abs(d.g - d.b)) * .5; }
+// HD de mentirinha: a ideia do xBR (nível 1), feita aqui pra qualquer escala num passo só. Cada pixel de saída só pode ser
+// mudado pelo canto do pixel de origem mais perto dele: compara as duas diagonais desse canto (somas ponderadas de
+// diferenças dos vizinhos) e, se a borda corre na diagonal, pinta o "triângulo" do canto com a cor do vizinho, com a
+// borda suavizada na largura de um pixel da tela
+vec3 hd(vec2 c) {
+  vec2 q = c * tam, fp = fract(q), s = sign(fp - .5), base = (floor(q) + .5) / tam;
+  vec2 dx = vec2(s.x / tam.x, 0.), dy = vec2(0., s.y / tam.y);
+  vec2 f = mix(1. - fp, fp, step(0., s));                         // posição dentro do pixel com o canto em (1, 1)
+  vec3 E = tx(base), F = tx(base + dx), H = tx(base + dy), I = tx(base + dx + dy);
+  vec3 B = tx(base - dy), D = tx(base - dx), C = tx(base + dx - dy), G = tx(base - dx + dy);
+  vec3 F4 = tx(base + 2. * dx), H5 = tx(base + 2. * dy), I4 = tx(base + 2. * dx + dy), I5 = tx(base + dx + 2. * dy);
+  float ao = dif(E, C) + dif(E, G) + dif(I, F4) + dif(I, H5) + 4. * dif(H, F);   // a borda cruza F-H?
+  float ad = dif(H, D) + dif(H, I5) + dif(F, I4) + dif(F, B) + 4. * dif(E, I);   // ou E-I?
+  if (ad >= ao || dif(E, F) < .02 && dif(E, H) < .02) return E;
+  vec3 novo = dif(E, F) <= dif(E, H) ? F : H;
+  float larg = max(tam.x / saida.x, .02) * 1.2;                   // um pixel da tela, em unidades do pixel de origem
+  return mix(E, novo, smoothstep(1.5 - larg, 1.5 + larg, f.x + f.y));
 }
 vec3 suave(vec2 c) { vec2 d = .8 / tam; return tx(c) * .36 + (tx(c + vec2(d.x, 0.)) + tx(c - vec2(d.x, 0.)) + tx(c + vec2(0., d.y)) + tx(c - vec2(0., d.y))) * .16; }
-vec3 hd(vec2 c) { vec2 d = .22 / tam; return (epx(c + d) + epx(c - d) + epx(c + vec2(d.x, -d.y)) + epx(c - vec2(d.x, -d.y))) * .25; }
-// pintura: média de uma área (a pincelada) em poucos tons, com o contorno do arredondado por cima
-vec3 pintura(vec2 c) {
-  vec2 d = 1. / tam; vec3 m = vec3(0.);
-  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) m += tx(c + vec2(float(i), float(j)) * d * .9);
-  m /= 9.;
-  vec3 e = hd(c);
-  return mix(floor(m * 7. + .5) / 7., e, .35);
+// Kuwahara: as 4 regiões 3x3 em volta (cada uma num canto); fica a média da região mais uniforme (menor variação de brilho).
+// Alisa o que é parecido e mantém as bordas: vira pincelada
+vec3 kuwahara(vec2 c) {
+  vec2 d = 1. / tam; vec3 m0 = vec3(0.), m1 = vec3(0.), m2 = vec3(0.), m3 = vec3(0.); float v0 = 0., v1 = 0., v2 = 0., v3 = 0., l;
+  for (int j = 0; j <= 2; j++) for (int i = 0; i <= 2; i++) {
+    vec2 o = vec2(float(i), float(j)) * d;
+    vec3 a = tx(c + vec2(-o.x, -o.y)); l = luz(a); m0 += a; v0 += l * l;
+    a = tx(c + vec2(o.x, -o.y)); l = luz(a); m1 += a; v1 += l * l;
+    a = tx(c + vec2(-o.x, o.y)); l = luz(a); m2 += a; v2 += l * l;
+    a = tx(c + vec2(o.x, o.y)); l = luz(a); m3 += a; v3 += l * l;
+  }
+  m0 /= 9.; m1 /= 9.; m2 /= 9.; m3 /= 9.;
+  v0 = v0 / 9. - luz(m0) * luz(m0); v1 = v1 / 9. - luz(m1) * luz(m1); v2 = v2 / 9. - luz(m2) * luz(m2); v3 = v3 / 9. - luz(m3) * luz(m3);
+  vec3 r = m0; float v = v0;
+  if (v1 < v) { v = v1; r = m1; } if (v2 < v) { v = v2; r = m2; } if (v3 < v) { r = m3; }
+  return r;
 }
 vec3 amostra(vec2 c) {
   if (PIXEL < .5) return perto(c);
   if (PIXEL < 1.5) return nitidoSuave(c);
   if (PIXEL < 2.5) return suave(c);
   if (PIXEL < 3.5) return hd(c);
-  if (PIXEL < 4.5) return pintura(c);
-  // desenho animado: cores em degraus e contorno preto onde a luz muda de repente
-  vec2 d = 1. / tam; vec3 c0 = tx(c);
-  float g = abs(luz(tx(c + vec2(d.x, 0.))) - luz(tx(c - vec2(d.x, 0.)))) + abs(luz(tx(c + vec2(0., d.y))) - luz(tx(c - vec2(0., d.y))));
-  vec3 deg = floor(c0 * 5. + .5) / 5.;
-  return deg * (1. - smoothstep(.18, .4, g));
+  if (PIXEL < 4.5) return kuwahara(c);
+  // desenho animado: a pincelada do Kuwahara (áreas lisas), o brilho em 4 degraus mantendo a cor, e contorno preto só onde
+  // a borda é forte (detecção de Sobel sobre o brilho)
+  vec3 k = kuwahara(c); float lk = max(luz(k), .001);
+  vec3 deg = k * (floor(lk * 6. + .5) / 6. + .04) / lk;
+  vec2 d = 1. / tam;
+  float tl = luz(tx(c - d)), t = luz(tx(c - vec2(0., d.y))), tr = luz(tx(c + vec2(d.x, -d.y))), l0 = luz(tx(c - vec2(d.x, 0.)));
+  float r0 = luz(tx(c + vec2(d.x, 0.))), bl = luz(tx(c + vec2(-d.x, d.y))), b0 = luz(tx(c + vec2(0., d.y))), br = luz(tx(c + d));
+  float gx = tr + 2. * r0 + br - tl - 2. * l0 - bl, gy = bl + 2. * b0 + br - tl - 2. * t - tr;
+  return clamp(deg, 0., 1.) * (1. - .9 * smoothstep(.9, 1.3, length(vec2(gx, gy))));
 }
 vec3 yiq(vec3 c) { return mat3(.299, .596, .211, .587, -.274, -.523, .114, -.322, .312) * c; }
 vec3 rgb(vec3 y) { return mat3(1., 1., 1., .956, -.272, -1.106, .621, -.647, 1.703) * y; }
@@ -226,13 +244,6 @@ void main() {
   } else col = amostra(c);
   if (COMPOSTO > 0.) col = mix(col, composto(c, col), COMPOSTO);
   if (VHS > 0.) { col = mix(col, vec3(luz(col)), .25 * VHS); col += (sorte(c * tam + tempo) - .5) * .12 * VHS * smoothstep(.06, 0., abs(c.y - fract(tempo * .09))) * 4.; }
-  if (GLOW > 0.) {
-    vec2 d = 1.6 / tam; vec3 b = vec3(0.);
-    b += tx(c + vec2(d.x, 0.)) + tx(c - vec2(d.x, 0.)) + tx(c + vec2(0., d.y)) + tx(c - vec2(0., d.y));
-    b += tx(c + d) + tx(c - d) + tx(c + vec2(d.x, -d.y)) + tx(c - vec2(d.x, -d.y));
-    b /= 8.;
-    col += b * b * GLOW * 1.3;
-  }
   if (RASTRO > 0.) col = mix(col, texture2D(tp, c).rgb, RASTRO * .55);
   // cor
   if (PORTATIL > 0.) {
@@ -316,22 +327,36 @@ void main() {
   if (banda > 0.) col += banda * (.25 + (sorte(gl_FragCoord.xy + tempo) - .5) * .5);
   if (FORADOAR > 0.) { float n = sorte(floor(gl_FragCoord.xy / 1.5) + fract(tempo * 13.) * 77.); n = n * .8 + sorte(vec2(floor(gl_FragCoord.y / 3.), tempo)) * .2; col = mix(col, vec3(n), FORADOAR); }
   col *= barraV;
-  // a tela: linhas, grade do LCD, máscara
+  // a tela, em luz linear (como o fósforo soma luz de verdade): brilho que espalha, linhas, grade do LCD, máscara
+  vec3 lin = pow(clamp(col, 0., 1.), vec3(2.2));
+  if (GLOW > 0.) {
+    vec2 d = 1.8 / tam; vec3 b = vec3(0.);
+    b += tx(c + vec2(d.x, 0.)) + tx(c - vec2(d.x, 0.)) + tx(c + vec2(0., d.y)) + tx(c - vec2(0., d.y));
+    b += tx(c + d) + tx(c - d) + tx(c + vec2(d.x, -d.y)) + tx(c - vec2(d.x, -d.y));
+    lin += pow(b / 8., vec3(2.2)) * GLOW * .7;
+  }
   if (LINHAS > 0.) {
-    float y = c.y * tam.y, s = .5 + .5 * cos(6.28318 * (fract(y) - .5));
-    s = pow(s, mix(1.2, .35, luz(col) * GROSSAS));
-    col *= mix(1., s, LINHAS * .85) * (1. + LINHAS * .32);
+    // linha de varredura como no crt-lottes: o feixe é uma gaussiana em volta do centro da linha; onde é claro o feixe
+    // engorda (a linha escura some). O brilho perdido volta dividindo pela média do feixe
+    float dd = fract(c.y * tam.y) - .5, duro = -3. - 11. * LINHAS;
+    float largura = mix(1., .55, sqrt(clamp(luz(lin), 0., 1.)) * GROSSAS);
+    float w = exp2(duro * dd * dd * largura * largura * 4.);
+    float med = (exp2(duro * .0156 * largura * largura) + exp2(duro * .1406 * largura * largura) + exp2(duro * .3906 * largura * largura) + exp2(duro * .7656 * largura * largura)) * .25;
+    lin *= mix(1., w / med, min(1., LINHAS * 1.4));
   }
-  if (LCD > 0.) { vec2 f = fract(c * tam); float g = smoothstep(0., .14, f.x) * smoothstep(0., .14, f.y) * smoothstep(1., .9, f.x) * smoothstep(1., .9, f.y); col *= mix(1., .2 + .8 * g, LCD) * (1. + LCD * .2); }
+  if (LCD > 0.) { vec2 f = fract(c * tam); float g = smoothstep(0., .14, f.x) * smoothstep(0., .14, f.y) * smoothstep(1., .9, f.x) * smoothstep(1., .9, f.y); lin *= mix(1., .15 + .85 * g, LCD) * (1. + LCD * .35); }
   if (MASCARA > 0.) {
+    // máscara de fósforo como no crt-lottes: um fósforo claro e dois escuros por grupo, com média 1 (não escurece)
     vec2 fc = floor(gl_FragCoord.xy / MTAM);
-    float col3 = mod(fc.x, 3.);
-    if (MTIPO > 1.5) col3 = mod(fc.x + mod(fc.y, 2.) * 1.5, 3.);                      // pontinhos: fileiras desencontradas
-    vec3 m = col3 < 1. ? vec3(1., .3, .3) : col3 < 2. ? vec3(.3, 1., .3) : vec3(.3, .3, 1.);
-    if (MTIPO > .5 && MTIPO < 1.5 && mod(fc.y + floor(fc.x / 3.) * 2., 4.) < 1.) m *= .5;   // fenda: a TV comum
-    col *= mix(vec3(1.), m * 1.55, MASCARA * .7);
+    float c3 = mod(fc.x, 3.);
+    if (MTIPO > 1.5) c3 = mod(fc.x + mod(fc.y, 2.) * 1.5, 3.);
+    float esc = 1. - .5 * MASCARA, cla = 1. + MASCARA;
+    vec3 m = c3 < 1. ? vec3(cla, esc, esc) : c3 < 2. ? vec3(esc, cla, esc) : vec3(esc, esc, cla);
+    if (MTIPO > .5 && MTIPO < 1.5 && mod(fc.y + floor(fc.x / 3.) * 2., 4.) < 1.) m *= esc;
+    lin *= m;
   }
-  if (VINHETA > 0.) { vec2 v = c * (1. - c.yx); col *= pow(clamp(v.x * v.y * 15., 0., 1.), VINHETA * 1.1); }
+  col = pow(lin, vec3(1. / 2.2));
+  if (VINHETA > 0.) { vec2 v = c * (1. - c.yx); col *= pow(clamp(v.x * v.y * 15., 0., 1.), VINHETA * .7); }
   if (CANTOS > 0.) { vec2 q = abs(c - .5) * 2.; vec2 k = max(q - (1. - CANTOS * .12), 0.) / (CANTOS * .12 + .0001); col *= smoothstep(1., .85, length(k)); }
   if (CHIADO > 0.) col += (sorte(gl_FragCoord.xy + fract(tempo) * 100.) - .5) * CHIADO * .4;
   if (liga < 1.) {   // ponto que vira linha e depois abre (como a TV de tubo ligando)
