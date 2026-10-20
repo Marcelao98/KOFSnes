@@ -32,6 +32,30 @@ const KofVisual = (() => {
     ['sepia', 'Cor', 'Sépia', 0, 1, 0.05, 0],
     ['pb', 'Cor', 'Preto e branco', 0, 1, 0.05, 0],
     ['dalton', 'Cor', 'Corrigir daltonismo', 0, 3, 1, 0, ['Desligado', 'Protanopia (vermelho)', 'Deuteranopia (verde)', 'Tritanopia (azul)']],
+    ['polaroid', 'Foto', 'Polaroid (com a moldura de papel)', 0, 1, 0.05, 0],
+    ['lomo', 'Foto', 'Lomo (cantos escuros, cor forte)', 0, 1, 0.05, 0],
+    ['filme', 'Foto', 'Filme antigo (grão e arranhões)', 0, 1, 0.05, 0],
+    ['vazamento', 'Foto', 'Vazamento de luz', 0, 1, 0.05, 0],
+    ['duotone', 'Foto', 'Duas cores (duotone)', 0, 1, 0.05, 0],
+    ['duotoneCor', 'Foto', 'Cores do duotone', 0, 3, 1, 0, ['Rosa e azul', 'Amarelo e roxo', 'Ciano e vinho', 'Laranja e verde-escuro']],
+    ['cinema', 'Foto', 'Azul e laranja (filme de Hollywood)', 0, 1, 0.05, 0],
+    ['desfoque', 'Foto', 'Fundo desfocado (retrato)', 0, 1, 0.05, 0],
+    ['pontilhado', 'Retrô', 'Pontilhado de 1 bit', 0, 1, 0.05, 0],
+    ['cga', 'Retrô', 'Paleta de 4 cores (CGA)', 0, 1, 0.05, 0],
+    ['fosforo', 'Retrô', 'Monitor de fósforo', 0, 1, 0.05, 0],
+    ['fosforoCor', 'Retrô', 'Cor do fósforo', 0, 2, 1, 0, ['Verde', 'Âmbar', 'Branco azulado']],
+    ['pixelao', 'Retrô', 'Pixelão (estilo Atari)', 0, 1, 0.05, 0],
+    ['gibi', 'Retrô', 'Revista em quadrinhos', 0, 1, 0.05, 0],
+    ['neon', 'Retrô', 'Neon (synthwave)', 0, 1, 0.05, 0],
+    ['foraDoAr', 'Efeitos', 'Fora do ar (chuvisco)', 0, 1, 0.05, 0],
+    ['rolagem', 'Efeitos', 'Imagem rolando (vertical solto)', 0, 1, 0.05, 0],
+    ['interferencia', 'Efeitos', 'Barra de interferência', 0, 1, 0.05, 0],
+    ['glitch', 'Efeitos', 'Glitch', 0, 1, 0.05, 0],
+    ['onda', 'Efeitos', 'Ondulação', 0, 1, 0.05, 0],
+    ['ondaTipo', 'Efeitos', 'Tipo de ondulação', 0, 1, 1, 0, ['Onda de calor', 'Debaixo d\'água']],
+    ['filmadora', 'Efeitos', 'Filmadora (PLAY e data na tela)', 0, 1, 1, 0, ['Desligada', 'Ligada']],
+    ['ligarTv', 'Efeitos', 'TV ligando ao abrir o jogo', 0, 1, 1, 0, ['Não', 'Sim']],
+    ['teste', 'Efeitos', 'Barras de teste quando pausa', 0, 1, 1, 0, ['Não', 'Sim']],
   ];
   const PADRAO = Object.fromEntries(AJUSTES.map((a) => [a[0], a[6]]));
   // predefinições: só o que muda do padrão
@@ -51,46 +75,43 @@ const KofVisual = (() => {
     ['cartoon', 'Desenho animado', 'contorno preto e cor chapada', { pixel: 5, saturacao: 1.2 }],
     ['sonho', 'Sonho', 'borrado brilhando, cor de sonho', { pixel: 2, glow: 1, saturacao: 1.6, brilho: 0.1, vinheta: 0.5 }],
     ['cafe', 'Café (sépia)', 'foto antiga', { pixel: 2, sepia: 1, vinheta: 0.7, contraste: 0.9, chiado: 0.15 }],
+    ['polaroid95', 'Polaroid de 1995', 'foto desbotada com luz vazando', { polaroid: 1, vazamento: 0.6, filme: 0.3 }],
+    ['filmadora', 'Fita da filmadora', 'PLAY, data e a fita gasta', { vhs: 0.7, chiado: 0.3, composto: 0.7, filmadora: 1, linhas: 0.2, saturacao: 0.85 }],
+    ['terminal', 'Terminal anos 80', 'monitor de fósforo verde', { fosforo: 1, linhas: 0.7, curva: 0.4, cantos: 0.5, vinheta: 0.5, glow: 0.5 }],
+    ['ambar', 'Monitor âmbar', 'o laranja dos computadores antigos', { fosforo: 1, fosforoCor: 1, linhas: 0.6, curva: 0.3, cantos: 0.4, glow: 0.4 }],
+    ['synthwave', 'Synthwave', 'só os contornos em neon', { neon: 1, glow: 0.8, linhas: 0.3 }],
+    ['gibi', 'Gibi', 'retícula, contorno e cor chapada', { gibi: 1, saturacao: 1.3 }],
+    ['cinemamudo', 'Cinema mudo', 'preto e branco, grão e arranhões', { pb: 1, filme: 1, vinheta: 0.7, contraste: 1.2, tremor: 0.3 }],
+    ['lomo', 'Lomo', 'cantos escuros e cor estourada', { lomo: 1, vazamento: 0.3 }],
+    ['duotone', 'Capa de disco', 'duas cores, rosa e azul', { duotone: 1 }],
+    ['hollywood', 'Hollywood', 'azul e laranja com fundo desfocado', { cinema: 1, desfoque: 0.6, vinheta: 0.3 }],
+    ['mac', 'Macintosh 1984', 'pontilhado preto e branco', { pontilhado: 1, pixel: 0 }],
+    ['cgapc', 'PC CGA', 'quatro cores: ciano, magenta, branco e preto', { cga: 1, pixel: 0 }],
+    ['atari', 'Pixelão', 'pixel enorme, estilo Atari', { pixelao: 0.45, saturacao: 1.3, contraste: 1.1 }],
+    ['glitch', 'Glitch', 'imagem quebrando de vez em quando', { glitch: 0.8, chiado: 0.15 }],
+    ['foradoar', 'Fora do ar', 'chuvisco por cima do jogo', { foraDoAr: 0.45, rolagem: 0.15, interferencia: 0.6 }],
   ];
   const valores = (id) => { const p = PREDEF.find((x) => x[0] === id); return { ...PADRAO, ...(p ? p[3] : {}) }; };
   // filtros do menu antigo -> predefinição nova (quem já tinha escolhido continua com o parecido)
   const ANTIGO = { crt: 'tv', lcd: 'gbc' };
 
-  const FRAG = `
+  const FRAG0 = `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
 #else
 precision mediump float;
 #endif
-uniform sampler2D t, tp; uniform vec2 tam, saida; uniform float tempo, divisao; uniform vec4 p[7];
+uniform sampler2D t, tp; uniform vec4 tela, u, p[13];
 varying vec2 uv;
-#define PIXEL p[0].x
-#define LINHAS p[0].y
-#define GROSSAS p[0].z
-#define MASCARA p[0].w
-#define MTIPO p[1].x
-#define MTAM p[1].y
-#define CURVA p[1].z
-#define CANTOS p[1].w
-#define VINHETA p[2].x
-#define GLOW p[2].y
-#define CONVERG p[2].z
-#define COMPOSTO p[2].w
-#define VHS p[3].x
-#define CHIADO p[3].y
-#define TREMOR p[3].z
-#define RASTRO p[3].w
-#define LCD p[4].x
-#define VERDE p[4].y
-#define PORTATIL p[4].z
-#define BRILHO p[4].w
-#define CONTRASTE p[5].x
-#define SATURACAO p[5].y
-#define GAMA p[5].z
-#define TEMPERATURA p[5].w
-#define SEPIA p[6].x
-#define PB p[6].y
-#define DALTON p[6].z
+#define tam tela.xy
+#define saida tela.zw
+#define tempo u.x
+#define divisao u.y
+#define liga u.z
+#define pausa u.w
+/*{{DEFINES}}*/
+#define MTIPO MASCARATIPO
+#define MTAM MASCARATAM
 float luz(vec3 c) { return dot(c, vec3(.299, .587, .114)); }
 float sorte(vec2 q) { return fract(sin(dot(q, vec2(12.9898, 78.233))) * 43758.5453); }
 vec3 tx(vec2 c) { return texture2D(t, c).rgb; }
@@ -146,8 +167,20 @@ vec3 composto(vec2 c, vec3 base) {
   float faixa = sin((c.x * tam.x + c.y * tam.y) * 3.14159 + tempo * 30.) * length(y.yz) * .3;   // a "listrinha" do composto
   return rgb(y + vec3(faixa, 0., 0.));
 }
+float bayer2(vec2 a) { a = floor(a); return fract(dot(a, vec2(.5, a.y * .75))); }
+float bayer4(vec2 a) { return bayer2(.5 * a) * .25 + bayer2(a); }
+float borda(vec2 c) {   // quanto a luz muda em volta (contorno)
+  vec2 d = 1. / tam;
+  return abs(luz(tx(c + vec2(d.x, 0.))) - luz(tx(c - vec2(d.x, 0.)))) + abs(luz(tx(c + vec2(0., d.y))) - luz(tx(c - vec2(0., d.y))));
+}
+vec3 barrasTeste(vec2 c) {   // barras coloridas de teste (com a faixa de baixo)
+  if (c.y < .67) { float b = floor(c.x * 7.); return b < 1. ? vec3(.75) : b < 2. ? vec3(.75, .75, 0.) : b < 3. ? vec3(0., .75, .75) : b < 4. ? vec3(0., .75, 0.) : b < 5. ? vec3(.75, 0., .75) : b < 6. ? vec3(.75, 0., 0.) : vec3(0., 0., .75); }
+  if (c.y < .75) { float b = floor(c.x * 7.); return b < 1. ? vec3(0., 0., .75) : b < 2. ? vec3(.07) : b < 3. ? vec3(.75, 0., .75) : b < 4. ? vec3(.07) : b < 5. ? vec3(0., .75, .75) : b < 6. ? vec3(.07) : vec3(.75); }
+  float b = floor(c.x * 6.); return b < 1. ? vec3(0., .13, .3) : b < 2. ? vec3(1.) : b < 3. ? vec3(.2, 0., .42) : b < 5. ? vec3(.07) : vec3(0.);
+}
 void main() {
   vec2 c = uv;
+  if (TESTE > .5 && pausa > .5) { gl_FragColor = vec4(barrasTeste(c), 1.); return; }
   if (divisao > 0. && gl_FragCoord.x < divisao * saida.x) {   // antes | depois: do lado esquerdo, a imagem crua
     vec3 o = nitidoSuave(c);
     if (abs(gl_FragCoord.x - divisao * saida.x) < 1.5) o = vec3(1.);
@@ -162,14 +195,33 @@ void main() {
     fx = ((sorte(vec2(lin, floor(tempo * 20.))) - .5) * .0025 + dentro * (sorte(vec2(lin, tempo)) - .5) * .03) * VHS;
     c.x += fx;
   }
+  if (ONDA > 0.) {
+    if (ONDATIPO < .5) c.x += sin(c.y * 70. + tempo * 7.) * .004 * ONDA + sin(c.y * 23. - tempo * 3.) * .003 * ONDA;
+    else c += vec2(sin(c.y * 22. + tempo * 2.1), cos(c.x * 18. + tempo * 1.7)) * .008 * ONDA;
+  }
+  float gl0 = 0.;
+  if (GLITCH > 0.) {   // de vez em quando: faixas deslocadas e cor separando
+    float vez = floor(tempo * 9.), faixa = floor(c.y * 18. + sorte(vec2(vez, 3.)) * 6.);
+    if (sorte(vec2(vez, 7.)) < GLITCH * .7 && sorte(vec2(faixa, vez)) < .35) { gl0 = (sorte(vec2(faixa, vez + 1.)) - .5) * .12 * GLITCH; c.x += gl0; }
+  }
+  float barraV = 1.;
+  if (ROLAGEM > 0.) { c.y = fract(c.y + tempo * .18 * ROLAGEM); barraV = smoothstep(0., .035, c.y) * smoothstep(1., .985, c.y); }
+  float banda = 0.;
+  if (INTERFERENCIA > 0.) { banda = smoothstep(.1, 0., abs(c.y - fract(tempo * .23))) * INTERFERENCIA; c.x += banda * sin(c.y * 400. + tempo * 60.) * .006; }
+  if (PIXELAO > 0.) { float n = 1. + floor(PIXELAO * 7.); c = (floor(c * tam / n) + .5) * n / tam; }
+  if (POLAROID > 0.) {   // a moldura de papel: o jogo encolhe pra dentro dela
+    vec2 m0 = vec2(.05, .05), m1 = vec2(.95, .8);
+    if (c.x < m0.x || c.x > m1.x || c.y < m0.y || c.y > m1.y) { gl_FragColor = vec4(vec3(.96, .95, .9) - sorte(floor(gl_FragCoord.xy / 2.)) * .04, 1.); return; }
+    c = (c - m0) / (m1 - m0);
+  }
   if (CURVA > 0.) {
     vec2 q = c * 2. - 1.; vec2 o = abs(q.yx) * CURVA * vec2(.34, .45); q += q * o * o; c = q * .5 + .5;
     if (c.x < 0. || c.x > 1. || c.y < 0. || c.y > 1.) { gl_FragColor = vec4(0., 0., 0., 1.); return; }
   }
   // a cor do pixel
   vec3 col;
-  if (CONVERG > 0. || VHS > 0.) {
-    vec2 o = vec2((CONVERG * 1.8 + VHS * 2.) / tam.x, 0.);
+  if (CONVERG > 0. || VHS > 0. || gl0 != 0.) {
+    vec2 o = vec2((CONVERG * 1.8 + VHS * 2. + abs(gl0) * 60.) / tam.x, 0.);
     col = vec3(amostra(c + o).r, amostra(c).g, amostra(c - o).b);
   } else col = amostra(c);
   if (COMPOSTO > 0.) col = mix(col, composto(c, col), COMPOSTO);
@@ -202,6 +254,68 @@ void main() {
     vec3 e = col - m * col;
     col += vec3(0., .7 * e.r + e.g, .7 * e.r + e.b);
   }
+  // foto
+  float l = luz(col);
+  if (DESFOQUE > 0.) {
+    float r = smoothstep(.12, .55, distance(c, vec2(.5))) * DESFOQUE;
+    if (r > 0.) { vec2 d = r * 3.5 / tam; vec3 b = vec3(0.);
+      for (int i = 0; i < 8; i++) { float a = float(i) * .785; b += tx(c + vec2(cos(a), sin(a)) * d) + tx(c + vec2(cos(a), sin(a)) * d * .5); }
+      col = mix(col, b / 16., min(1., r * 1.6)); }
+  }
+  if (CINEMA > 0.) { vec3 tom = mix(vec3(.72, 1., 1.12), vec3(1.18, .95, .72), smoothstep(.15, .8, l)); col = mix(col, clamp(col * tom * 1.05, 0., 1.), CINEMA); }
+  if (LOMO > 0.) {
+    vec3 s3 = col * col * (3. - 2. * col); s3 = mix(vec3(luz(s3)), s3, 1.4); s3.b *= .88;
+    vec2 v = c * (1. - c.yx); col = mix(col, s3 * pow(clamp(v.x * v.y * 12., 0., 1.), .9), LOMO);
+  }
+  if (POLAROID > 0.) { vec3 f = mix(vec3(luz(col)), col, .7) * .82 + vec3(.1, .08, .05); col = mix(col, f * vec3(1.04, 1., .9), POLAROID); }
+  if (DUOTONE > 0.) {
+    vec3 a = DUOTONECOR < .5 ? vec3(.12, .1, .42) : DUOTONECOR < 1.5 ? vec3(.3, .05, .4) : DUOTONECOR < 2.5 ? vec3(.38, .04, .14) : vec3(.04, .22, .16);
+    vec3 b = DUOTONECOR < .5 ? vec3(1., .35, .65) : DUOTONECOR < 1.5 ? vec3(1., .88, .22) : DUOTONECOR < 2.5 ? vec3(.3, 1., .95) : vec3(1., .55, .15);
+    col = mix(col, mix(a, b, smoothstep(.05, .95, luz(col))), DUOTONE);
+  }
+  if (VAZAMENTO > 0.) {
+    vec3 v1 = vec3(1., .45, .1) * smoothstep(.95, 0., distance(c, vec2(1.05 + sin(tempo * .3) * .08, -.08)));
+    vec3 v2 = vec3(1., .2, .55) * smoothstep(.75, 0., distance(c, vec2(-.1, 1.05 + cos(tempo * .23) * .08)));
+    col = 1. - (1. - col) * (1. - (v1 + v2) * VAZAMENTO * .9);
+  }
+  if (FILME > 0.) {
+    col += (sorte(gl_FragCoord.xy * .5 + fract(tempo * 7.) * 91.) - .5) * .3 * FILME * (1. - l * .5);
+    float xs = sorte(vec2(floor(tempo * 12.), 5.)), ys = sorte(vec2(floor(tempo * 12.), 9.));
+    if (abs(c.x - xs) < .0018 && ys < .7) col = mix(col, vec3(.9, .88, .8), .6 * FILME);
+    col *= 1. + (sorte(vec2(floor(tempo * 24.), 1.)) - .5) * .12 * FILME;
+  }
+  // retrô
+  if (PONTILHADO > 0.) { float th = bayer4(c * tam); vec3 bw = luz(col) > th ? vec3(.93, .93, .86) : vec3(.08, .08, .1); col = mix(col, bw, PONTILHADO); }
+  if (CGA > 0.) {
+    vec3 q = col + (bayer4(c * tam) - .5) * .35, best = vec3(0.); float dm = 9.;
+    vec3 pal0 = vec3(0.), pal1 = vec3(.33, 1., 1.), pal2 = vec3(1., .33, 1.), pal3 = vec3(1.);
+    if (distance(q, pal0) < dm) { dm = distance(q, pal0); best = pal0; }
+    if (distance(q, pal1) < dm) { dm = distance(q, pal1); best = pal1; }
+    if (distance(q, pal2) < dm) { dm = distance(q, pal2); best = pal2; }
+    if (distance(q, pal3) < dm) { best = pal3; }
+    col = mix(col, best, CGA);
+  }
+  if (FOSFORO > 0.) {
+    vec3 f = FOSFOROCOR < .5 ? vec3(.25, 1., .35) : FOSFOROCOR < 1.5 ? vec3(1., .68, .12) : vec3(.78, .9, 1.);
+    col = mix(col, f * pow(luz(col), 1.2) * 1.15 + f * .03, FOSFORO);
+  }
+  if (GIBI > 0.) {
+    vec3 base = floor(col * 4. + .5) / 4.;
+    vec2 q = mat2(.707, -.707, .707, .707) * gl_FragCoord.xy / max(4., saida.y / 140.);
+    float d = length(fract(q) - .5), tinta = smoothstep(.04, 0., d - sqrt(1. - luz(col)) * .5);
+    base *= 1. - tinta * .55;
+    base *= 1. - smoothstep(.2, .45, borda(c));
+    col = mix(col, base, GIBI);
+  }
+  if (NEON > 0.) {
+    float g = smoothstep(.06, .35, borda(c));
+    vec3 n = mix(vec3(1., .2, .75), vec3(.15, .9, 1.), .5 + .5 * sin(c.x * 4. + c.y * 3. + tempo * .8));
+    col = mix(col, col * .12 + n * g * 1.4, NEON);
+  }
+  // efeitos de TV
+  if (banda > 0.) col += banda * (.25 + (sorte(gl_FragCoord.xy + tempo) - .5) * .5);
+  if (FORADOAR > 0.) { float n = sorte(floor(gl_FragCoord.xy / 1.5) + fract(tempo * 13.) * 77.); n = n * .8 + sorte(vec2(floor(gl_FragCoord.y / 3.), tempo)) * .2; col = mix(col, vec3(n), FORADOAR); }
+  col *= barraV;
   // a tela: linhas, grade do LCD, máscara
   if (LINHAS > 0.) {
     float y = c.y * tam.y, s = .5 + .5 * cos(6.28318 * (fract(y) - .5));
@@ -220,14 +334,19 @@ void main() {
   if (VINHETA > 0.) { vec2 v = c * (1. - c.yx); col *= pow(clamp(v.x * v.y * 15., 0., 1.), VINHETA * 1.1); }
   if (CANTOS > 0.) { vec2 q = abs(c - .5) * 2.; vec2 k = max(q - (1. - CANTOS * .12), 0.) / (CANTOS * .12 + .0001); col *= smoothstep(1., .85, length(k)); }
   if (CHIADO > 0.) col += (sorte(gl_FragCoord.xy + fract(tempo) * 100.) - .5) * CHIADO * .4;
+  if (liga < 1.) {   // ponto que vira linha e depois abre (como a TV de tubo ligando)
+    vec2 q = abs(uv - .5) * 2.;
+    float w = smoothstep(0., .35, liga), h = smoothstep(.3, 1., liga) * .98 + .02;
+    float dentro = step(q.x, w) * step(q.y, h * (.02 + w * .98));
+    col = mix(vec3(1.), col, smoothstep(.3, .8, liga)) * dentro * (1. + (1. - liga) * 1.5);
+  }
   gl_FragColor = vec4(clamp(col, 0., 1.), 1.);
 }`;
-  // os valores na ordem do shader (vec4 p[7])
-  const ORDEM = ['pixel', 'linhas', 'grossas', 'mascara', 'mascaraTipo', 'mascaraTam', 'curva', 'cantos', 'vinheta', 'glow', 'converg',
-    'composto', 'vhs', 'chiado', 'tremor', 'rastro', 'lcd', 'verde', 'portatil', 'brilho', 'contraste', 'saturacao', 'gama', 'temperatura',
-    'sepia', 'pb', 'dalton'];
-  const vetor = (v) => { const a = new Float32Array(28); ORDEM.forEach((k, i) => { a[i] = v[k] !== undefined ? +v[k] : PADRAO[k]; }); return a; };
-  const animado = (v) => v.vhs > 0 || v.chiado > 0 || v.tremor > 0 || v.composto > 0;
+  // os valores na ordem dos ajustes (vec4 p[13]); cada ajuste vira um #define com o nome em maiúsculas
+  const ORDEM = AJUSTES.map((a) => a[0]);
+  const FRAG = FRAG0.replace('/*{{DEFINES}}*/', ORDEM.map((k, i) => `#define ${k.toUpperCase()} p[${i >> 2}].${'xyzw'[i & 3]}`).join('\n'));
+  const vetor = (v) => { const a = new Float32Array(52); ORDEM.forEach((k, i) => { a[i] = v[k] !== undefined ? +v[k] : PADRAO[k]; }); return a; };
+  const animado = (v) => ['vhs', 'chiado', 'tremor', 'composto', 'filme', 'vazamento', 'neon', 'foraDoAr', 'rolagem', 'interferencia', 'glitch', 'onda'].some((k) => v[k] > 0);
   return { AJUSTES, PADRAO, PREDEF, ANTIGO, FRAG, valores, vetor, animado };
 })();
 if (typeof module !== 'undefined') module.exports = KofVisual;

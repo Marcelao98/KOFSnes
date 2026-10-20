@@ -26,7 +26,7 @@ let filtro = visual.pre;
 let telaL = 256, telaA = 224, img = new ImageData(telaL, telaA), px = new Uint32Array(img.data.buffer), bytesTela = new Uint8Array(img.data.buffer);
 const gl = tela.getContext('webgl', { alpha: false, antialias: false });
 const ctx = gl ? null : tela.getContext('2d', { alpha: false });
-let glTex = [], glVez = 0, glU = {}, divisao = 0;
+let glTex = [], glVez = 0, glU = {}, divisao = 0, ligaIni = -1e9;
 if (gl) {
   const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s)); return s; };
   const prog = gl.createProgram();
@@ -43,16 +43,16 @@ if (gl) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);   // o shader faz o nítido sozinho
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, telaL, telaA, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   }
-  for (const n of ['t', 'tp', 'tam', 'saida', 'tempo', 'divisao', 'p']) glU[n] = gl.getUniformLocation(prog, n);
+  for (const n of ['t', 'tp', 'tela', 'u', 'p']) glU[n] = gl.getUniformLocation(prog, n);
   gl.uniform1i(glU.t, 0); gl.uniform1i(glU.tp, 1);
-  gl.uniform2f(glU.tam, telaL, telaA);
+  gl.uniform4f(glU.tela, telaL, telaA, tela.width, tela.height);
 }
 // jogo de outro sistema: imagem, textura e canvas mudam de tamanho
 function tamanhoTela(l, a) {
   if (l === telaL && a === telaA) return;
   telaL = l; telaA = a;
   img = new ImageData(l, a); px = new Uint32Array(img.data.buffer); bytesTela = new Uint8Array(img.data.buffer);
-  if (gl) { for (const t of glTex) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, l, a, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); } gl.uniform2f(glU.tam, l, a); }
+  if (gl) { for (const t of glTex) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, l, a, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); } gl.uniform4f(glU.tela, l, a, tela.width, tela.height); }
 }
 // novo = chegou um quadro novo (troca de textura: a outra vira o "quadro anterior"); sem isso, só redesenha
 function pintar(novo) {
@@ -61,9 +61,19 @@ function pintar(novo) {
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glTex[glVez ^ 1]);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glTex[glVez]);
   if (novo !== false) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, telaL, telaA, gl.RGBA, gl.UNSIGNED_BYTE, bytesTela);
-  gl.uniform1f(glU.tempo, (performance.now() / 1000) % 1000);
+  const agora = performance.now(), liga = visual.v.ligarTv > 0.5 ? Math.min(1, (agora - ligaIni) / 650) : 1;
+  gl.uniform4f(glU.u, (agora / 1000) % 1000, divisao, liga, pausado && snes && !rapidoAberto && telaAtual() === 'jogo' ? 1 : 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
+// filmadora: "▶ PLAY" e a data no canto, por cima do jogo (texto da página, não do shader)
+function marcarFilmadora() {
+  const f = $('#filmadora'), on = visual.v.filmadora > 0.5;
+  f.hidden = !on; if (!on) return;
+  Object.assign(f.style, { left: tela.offsetLeft + 'px', top: tela.offsetTop + 'px', width: tela.offsetWidth + 'px', height: tela.offsetHeight + 'px', fontSize: Math.max(12, tela.offsetHeight / 16) + 'px' });
+  const d = new Date(), M = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'][d.getMonth()];
+  f.querySelector('.fd-data').textContent = `${M} ${String(d.getDate()).padStart(2, '0')} 1996\n${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+setInterval(() => { if (visual.v.filmadora > 0.5) marcarFilmadora(); }, 20000);
 // aplica os ajustes (do painel ou de uma predefinição) e guarda
 function aplicarVisual(v, pre) {
   visual = { pre: pre || 'meu', v: { ...KofVisual.PADRAO, ...v } }; filtro = visual.pre;
@@ -71,7 +81,7 @@ function aplicarVisual(v, pre) {
   document.querySelectorAll('[data-filtro]').forEach((b) => b.classList.toggle('ativo', b.dataset.filtro === filtro));
   if (!gl) return;
   gl.uniform4fv(glU.p, KofVisual.vetor(visual.v));
-  gl.uniform1f(glU.divisao, divisao);
+  marcarFilmadora();
   pintar(false);
 }
 function aplicarFiltro(nome) {
@@ -156,7 +166,7 @@ function abrirVisual() {
 function fecharVisual() {
   if ($('#visual').hidden) return;
   $('#visual').hidden = true; document.body.classList.remove('com-visual');
-  divisao = 0; $('#vis-comparar').checked = false; if (gl) { gl.uniform1f(glU.divisao, 0); }
+  divisao = 0; $('#vis-comparar').checked = false; if (gl) pintar(false);
   if (visVazio && !snes) document.body.classList.add('vazio');
   ajustarEscala();
   if (visVoltar) $('#' + visVoltar).hidden = false; else if (!snes) abrirHome();
@@ -179,12 +189,12 @@ $('#vis-pre').addEventListener('contextmenu', (e) => {
   const l = visMeus(), m = l[+b.dataset.visMeu];
   if (m && confirm('Apagar "' + m.nome + '"?')) { l.splice(+b.dataset.visMeu, 1); guardar('visualMeus', JSON.stringify(l)); montarVisual(); }
 });
-$('#vis-comparar').addEventListener('change', (e) => { divisao = e.target.checked ? 0.5 : 0; if (gl) { gl.uniform1f(glU.divisao, divisao); pintar(false); } });
+$('#vis-comparar').addEventListener('change', (e) => { divisao = e.target.checked ? 0.5 : 0; if (gl) pintar(false); });
 $('#vis-porsis').addEventListener('change', (e) => { guardar('visualPorSis', e.target.checked ? '1' : '0'); guardarPorSis(); });
 tela.addEventListener('pointermove', (e) => {   // comparar: a divisória segue o mouse/dedo
   if (!divisao || $('#visual').hidden || !(e.buttons & 1)) return;
   const r = tela.getBoundingClientRect(); divisao = Math.min(0.98, Math.max(0.02, (e.clientX - r.left) / r.width));
-  gl.uniform1f(glU.divisao, divisao); pintar(false);
+  pintar(false);
 });
 // por console: ao abrir um jogo, volta o jeito guardado daquele console
 function visualDoSistema(sis) {
@@ -240,8 +250,9 @@ function ajustarEscala() {
   if (gl) {   // o canvas WebGL desenha na resolução da tela, pros filtros terem detalhe
     const dpr = window.devicePixelRatio || 1;
     tela.width = Math.round(w * dpr); tela.height = Math.round(h * dpr);
-    gl.viewport(0, 0, tela.width, tela.height); gl.uniform2f(glU.saida, tela.width, tela.height); pintar(false);
+    gl.viewport(0, 0, tela.width, tela.height); gl.uniform4f(glU.tela, telaL, telaA, tela.width, tela.height); pintar(false);
   } else { tela.width = telaL; tela.height = telaA; }
+  marcarFilmadora();
   document.querySelectorAll('[data-escala]').forEach((b) => b.classList.toggle('ativo', +b.dataset.escala === escala));
   document.querySelectorAll('[data-prop]').forEach((b) => b.classList.toggle('ativo', b.dataset.prop === proporcao));
   document.querySelectorAll('[data-moldura]').forEach((b) => { if (b.tagName === 'BUTTON') b.classList.toggle('ativo', b.dataset.moldura === moldura); });
@@ -524,7 +535,7 @@ addEventListener('blur', () => { teclado = 0; turbo = false; voltandoTecla = fal
 let ultimo = 0, sobra = 0, contados = 0, marco = 0;
 function laco(t) {
   requestAnimationFrame(laco);
-  if (gl && !$('#visual').hidden && (!snes || pausado) && KofVisual.animado(visual.v)) pintar(false);   // chiado/fita mexendo mesmo parado
+  if (gl && (!snes || pausado) && (performance.now() - ligaIni < 700 || (KofVisual.animado(visual.v) && (!$('#visual').hidden || (snes && telaAtual() === 'jogo'))))) pintar(false);   // chiado/fita mexendo mesmo parado
   const querVoltar = snes && voltando() && !pausado && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden && $('#home').hidden;
   if (querVoltar && rebob && (rebobinou || rebobPronto())) { rebobinarPasso(); ultimo = marco = t; contados = 0; return; }
   if (rebobinou) terminarRebobinar();
@@ -1453,7 +1464,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   }
   s.reset();
   tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
-  visualDoSistema(sis);
+  visualDoSistema(sis); ligaIni = performance.now();
   document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy e NES: só A, B, Start e Select)
   document.body.classList.toggle('so-ab', !!(SIS[sis] && SIS[sis].botoes && !SIS[sis].botoes.includes('X')));
   if (typeof rotularControle === 'function') rotularControle(sis);   // celular: nomes dos botões do console (Mega Drive A/B/C...)
@@ -2675,7 +2686,7 @@ async function acao(a) {
     case 'salvar-estado': await salvarEstado(); break;
     case 'carregar-ultimo': await carregarUltimo(); break;
     case 'reiniciar': if (snes) { snes.reset(); novoRebob(); avisar('reiniciado'); } break;
-    case 'pausar': if (snes) { if (juke.tocando) jukePausar(); pausado = !pausado; avisar(pausado ? 'pausado' : 'continuando'); } break;
+    case 'pausar': if (snes) { if (juke.tocando) jukePausar(); pausado = !pausado; pintar(false); avisar(pausado ? 'pausado' : 'continuando'); } break;
     case 'mudo': mudo = !mudo; guardar('mudo', mudo ? '1' : '0'); marcarSom(); avisar(mudo ? 'som desligado' : 'som ligado'); break;
     case 'bug': abrirBug(); break;
     case 'atualizacao': await procurarAtualizacao(true); break;
@@ -2774,7 +2785,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); }, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },

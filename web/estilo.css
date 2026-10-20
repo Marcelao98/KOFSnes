@@ -1547,3 +1547,10 @@ body.com-visual #palco { padding-right: min(390px, 92vw); }
 .vis-botoes .grande { width: 100%; }
 html.celular #visual { top: auto; height: 58%; width: 100%; border-left: 0; border-top: 1px solid var(--borda); }
 html.celular body.com-visual #palco { padding-right: 0; padding-bottom: 58vh; }
+
+/* filmadora: PLAY e data por cima do jogo */
+#filmadora { position: absolute; pointer-events: none; line-height: 1.25; font-family: "Courier New", monospace; font-weight: 700; color: #fff;
+  text-shadow: 2px 2px 0 #000, 0 0 6px rgba(255,255,255,.6); padding: 4% 5%; box-sizing: border-box; }
+#filmadora .fd-play { position: absolute; top: 5%; left: 5%; animation: fd-pisca 1.6s steps(1) infinite; }
+#filmadora .fd-data { position: absolute; bottom: 6%; right: 5%; text-align: right; white-space: pre; }
+@keyframes fd-pisca { 50% { opacity: .15; } }
