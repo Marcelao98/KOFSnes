@@ -180,7 +180,15 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
   troca, e anota tudo em `atualizacao.log` ao lado do exe. `LANCADOR` no `lancador_win.c`
   (hoje 5) controla a troca do próprio exe; `lancador_linux=` e `tamanho_linux=` fazem o mesmo pro kofnes.sh.
 
-## Pendências (atualizado 17/10)
+## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
+
+> **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso
+> de mudo, rebobinar Príncipe da Pérsia, lançador 5) JÁ ESTÃO na `main` e publicadas; os "não publicado" abaixo sobre elas
+> estão velhos. Fora da `main` só o Perfil (`ccr-ff223c92-a1bil9`, 2 commits), por escolha do Marcelo.
+> Plano do lançamento combinado (fazer quando ele pedir, uma etapa por vez): (2) primeira abertura guiada + capas de GBA e
+> Neo Geo + pasta inteira de ROMs no APK; (3) clipe dos últimos 30 s em MP4 (savestate de 30 s atrás + botões, rejogados
+> por trás e gravados com WebCodecs) + jukebox exportando .wav; (4) site no GitHub Pages (prints com ROMs livres, GIFs que
+> ele grava com o clipe, botões de baixar, PWA em /jogar) + release no GitHub.
 
 - ~~Atualizador no Windows~~ **Resolvido.** Lançador 2 (WinHTTP, log, troca do próprio exe) publicado
   na versão 202610171459; troca do exe confirmada no Wine e o Marcelo já testou no Windows dele e em
