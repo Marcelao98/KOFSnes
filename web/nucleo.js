@@ -411,7 +411,8 @@ const KofLibretro = (() => {
     const mod = await modulos[chave];
     const c = novoConsolinho(rom, sis, nome, mod, extras);
     c.carregar();
-    if (!c.desserializar(deB64(estadoB64))) throw new Error('não consegui restaurar a música');
+    // sem estado: a ROM é a própria música (a trilha do KOFstation no som do Mega Drive) e toca desde o começo
+    if (estadoB64 && !c.desserializar(deB64(estadoB64))) throw new Error('não consegui restaurar a música');
     mod._lr_pad(0); mod._lr_sonda(1);
     const total = mod._lr_canais(), tam = 4096, idx = S.indices || [...Array(total).keys()], n = total ? Math.min(idx.length, S.canais.length) : 0;
     const varNucleo = (k, v) => {

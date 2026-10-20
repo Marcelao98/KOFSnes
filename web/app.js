@@ -520,9 +520,13 @@ function jukeEncher(precisa) {
 }
 async function jukeCarregar() {
   try { juke.lista = (await bdTodos('musicas')).sort((a, b) => (a.jogo || '').localeCompare(b.jogo || '', 'pt-BR') || a.quando - b.quando); } catch (e) { juke.lista = []; }
+  // a trilha do KOFstation vem junto, no começo (não fica no banco: não renomeia nem apaga)
+  juke.lista = TRILHA.map((m) => ({ n: 'trilha-' + m.id, origem: 'trilha', trilha: m.id, titulo: m.titulo, jogo: '🎵 Trilha do KOFstation', autor: m.autor,
+    segundos: m.segundos < 45 ? m.segundos * 2 : m.segundos, fadeMs: 4000 })).concat(juke.lista);
 }
 // o "tocador" de uma faixa: SNES = chip de som do núcleo Kof; outros sistemas = o jogo parado numa instância separada do núcleo
 async function tocadorDaFaixa(f) {
+  if (f.trilha) { const tk = await tocadorMusica(f.trilha); if (!tk) throw new Error('essa versão não tem essa música'); return tk; }
   if (f.sistema && f.sistema !== 'snes') {
     if (typeof KofLibretro === 'undefined' || !KofLibretro.disponivel(f.sistema)) throw new Error('essa versão do KOFstation não toca música de ' + (SIS[f.sistema] ? SIS[f.sistema].nome : f.sistema));
     const rom = await bdPegar('roms', f.jogoId);
@@ -658,16 +662,16 @@ function montarJuke() {
     if (m.jogo !== grupo) { grupo = m.jogo; const h = document.createElement('li'); h.className = 'jk-grupo'; h.textContent = grupo; ul.appendChild(h); }
     const li = document.createElement('li'); li.className = 'jk-faixa' + (i === juke.atual ? ' sel' : '');
     const nm = document.createElement('span'); nm.textContent = (i === juke.atual && juke.tocando ? '♪ ' : '') + m.titulo;
-    const dur = document.createElement('small'); dur.textContent = m.origem === 'spc' ? (m.segundos ? mmss(m.segundos) : '.spc') : 'do jogo' + (m.sistema && m.sistema !== 'snes' && SIS[m.sistema] ? ' · ' + SIS[m.sistema].curto : '');
+    const dur = document.createElement('small'); dur.textContent = m.trilha ? m.autor : m.origem === 'spc' ? (m.segundos ? mmss(m.segundos) : '.spc') : 'do jogo' + (m.sistema && m.sistema !== 'snes' && SIS[m.sistema] ? ' · ' + SIS[m.sistema].curto : '');
     const bts = document.createElement('span'); bts.className = 'jk-acoes';
     const bt = (txt, tit, fn) => { const b = document.createElement('button'); b.className = 'x'; b.textContent = txt; b.title = tit; b.onclick = (e) => { e.stopPropagation(); fn(); }; bts.appendChild(b); };
-    bt('✎', 'renomear', async () => {
+    if (!m.trilha) bt('✎', 'renomear', async () => {
       const t = prompt('Nome da música:', m.titulo); if (!t) return;
       m.titulo = t.trim(); await bdGuardar('musicas', m); montarJuke();
     });
-    if (!m.sistema || m.sistema === 'snes') bt('⬇', 'exportar .spc', () => exportarSpc(m));
+    if (!m.trilha && (!m.sistema || m.sistema === 'snes')) bt('⬇', 'exportar .spc', () => exportarSpc(m));
     bt('🎧', 'exportar .wav (do jeito que está tocando: mudo e solo valem)', () => exportarWav(m));
-    bt('🗑', 'apagar', async () => {
+    if (!m.trilha) bt('🗑', 'apagar', async () => {
       if (!confirm(`Apagar "${m.titulo}" da jukebox?`)) return;
       if (i === juke.atual) jukeFechar();
       await bdApagar('musicas', m.n); await jukeCarregar(); montarJuke();
@@ -1058,23 +1062,50 @@ const quando = (t) => new Date(t).toLocaleString('pt-BR', { day: '2-digit', mont
 // ---------------- música do KOFstation e abertura (primeira vez) ----------------
 // A música própria (musica.js, 8 bits) toca pela jukebox como uma faixa "interna": não entra na lista, não aparece no
 // mini-player, não acaba (loop) e para quando um jogo abre ou a jukebox toca outra faixa. Mudo e volume valem.
-let musicaInicio = ler('musicaInicio') !== '0';
-function marcarMusicaInicio() { const b = document.querySelector('[data-acao="musica-inicio"]'); if (b) b.textContent = 'Música no Início: ' + (musicaInicio ? 'ligada' : 'desligada'); }
+// A trilha toca no som do Mega Drive (ROMs da musicas/trilha.js no Genesis Plus GX); sem esse núcleo, a versão 8 bits
+// (musica.js) quando existe. No Início a pessoa escolhe a música (ou sortear, ou desligada): kofnes.musicaInicio
+const TRILHA = typeof KofTrilha !== 'undefined' ? KofTrilha.musicas : [];
+const INICIO = [['rua', 'Se Essa Rua'], ['guarani', 'O Guarani'], ['ticotico', 'Tico-Tico no Fubá'], ['abrealas', 'Ó Abre-Alas'], ['balao', 'Cai, Cai, Balão'], ['sortear', 'sortear'], ['0', 'desligada']];
+let escolhaInicio = (() => { const v = ler('musicaInicio'); return v === '1' || !INICIO.some(([k]) => k === v) ? 'rua' : v; })();
+let musicaInicio = escolhaInicio !== '0';
+const sorteada = INICIO[Math.floor(Math.random() * 5)][0];
+const qualInicio = () => (escolhaInicio === 'sortear' ? sorteada : escolhaInicio);
+function marcarMusicaInicio() {
+  const nome = INICIO.find(([k]) => k === escolhaInicio)[1];
+  document.querySelectorAll('[data-acao="musica-inicio"]').forEach((b) => { b.textContent = (b.classList.contains('hm-link') ? '🎵 ' : 'Música no Início: ') + nome; });
+}
 marcarMusicaInicio();
-function tocarMusica(qual, sempre) {
-  if (typeof KofMusica === 'undefined' || (!musicaInicio && !sempre)) return;
+const deB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+async function tocadorMusica(qual) {
+  const m = TRILHA.find((x) => x.id === qual);
+  if (m && typeof KofLibretro !== 'undefined' && KofLibretro.disponivel('md')) {
+    try { return await KofLibretro.tocador('md', deB64(m.rom), null, 'trilha.md', []); } catch (e) { /* sem o núcleo: tenta o 8 bits */ }
+  }
+  return typeof KofMusica !== 'undefined' && KofMusica.MUSICAS[qual] ? KofMusica.tocador(qual) : null;
+}
+let musicaVez = 0, houveGesto = false, musicaEsperando = null;
+async function tocarMusica(qual, sempre) {
+  if (!musicaInicio && !sempre) return;
+  // o navegador só toca som depois do primeiro toque/tecla: até lá nem carrega o núcleo do Mega Drive (o app abre leve)
+  if (!houveGesto && !sempre) { musicaEsperando = qual; return; }
   if (juke.tocando && !juke.interna) return;            // a pessoa está ouvindo a jukebox: não atrapalha
   if (juke.interna === qual && juke.tocando) return;
-  try {
-    const tk = KofMusica.tocador(qual);
-    if (juke.apu && juke.apu !== tk) juke.apu.fechar();
-    juke.apu = tk; juke.atual = -1; juke.interna = qual; juke.amostras = 0; juke.mudas = 0; juke.solo = -1; aplicarMudas();
-    ini = fim = 0; juke.tocando = true; ligarSom();
-  } catch (e) { /* sem música: segue sem */ }
+  const vez = ++musicaVez;
+  juke.interna = qual;
+  const tk = await tocadorMusica(qual).catch(() => null);
+  if (vez !== musicaVez || juke.interna !== qual || (juke.tocando && juke.apu && !juke.interna)) return;   // outra coisa começou nesse meio tempo
+  if (!tk) { juke.interna = null; return; }
+  if (juke.apu && juke.apu !== tk) juke.apu.fechar();
+  juke.apu = tk; juke.atual = -1; juke.interna = qual; juke.amostras = 0; juke.mudas = 0; juke.solo = -1; aplicarMudas();
+  ini = fim = 0; juke.tocando = true; ligarSom();
 }
-function pararMusica() { if (!juke.interna) return; juke.tocando = false; juke.apu = null; juke.interna = null; ini = fim = 0; }
+function pararMusica() { musicaVez++; musicaEsperando = null; if (!juke.interna) return; juke.tocando = false; if (juke.apu) juke.apu.fechar(); juke.apu = null; juke.interna = null; ini = fim = 0; }
 // o navegador só deixa tocar som depois do primeiro toque/tecla: aí a música que estava esperando começa
-['pointerdown', 'keydown'].forEach((ev) => addEventListener(ev, () => { if (juke.interna) ligarSom(); }, { capture: true }));
+['pointerdown', 'keydown'].forEach((ev) => addEventListener(ev, () => {
+  houveGesto = true;
+  if (musicaEsperando) { const q = musicaEsperando; musicaEsperando = null; if (!snes && !$('#home').hidden) tocarMusica(q); }
+  if (juke.interna) ligarSom();
+}, { capture: true }));
 
 // Abertura: tela de título -> frases -> temas nostálgicos passando -> apresentação -> guia em 4 passos.
 // Aparece sozinha só na primeira vez e só pra quem ainda não tem jogo na biblioteca; Ajuda > Boas-vindas reabre.
@@ -2084,7 +2115,7 @@ function novaDica() {
   let i; do { i = Math.floor(Math.random() * DICAS.length); } while (i === dicaAtual && DICAS.length > 1);
   dicaAtual = i; $('#hm-dica').innerHTML = DICAS[i];
 }
-function abrirHome() { fecharJanelas(); fecharMenus(); $('#home').hidden = false; montarHome(); if (!snes) tocarMusica('rua'); }
+function abrirHome() { fecharJanelas(); fecharMenus(); $('#home').hidden = false; montarHome(); if (!snes) tocarMusica(qualInicio()); }
 const elem = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 function botao(txt, acaoNome, cls) { const b = elem('button', cls || 'grande', txt); b.dataset.acao = acaoNome; return b; }
 async function montarHome() {
@@ -2446,10 +2477,13 @@ async function acao(a) {
     case 'ab-proximo': abPasso(abPassoAtual + 1); break;
     case 'ab-voltar': abPasso(abPassoAtual - 1); break;
     case 'ab-todos-temas': fecharAbertura(); abrirTemas(); break;
-    case 'musica-inicio':
-      musicaInicio = !musicaInicio; guardar('musicaInicio', musicaInicio ? '1' : '0'); marcarMusicaInicio();
-      if (!musicaInicio) pararMusica(); else if (!snes && !$('#home').hidden) tocarMusica('rua');
-      avisar(musicaInicio ? '🎵 música no Início ligada' : 'música no Início desligada'); break;
+    case 'musica-inicio': {   // cada clique passa pra próxima: as músicas, sortear, desligada
+      const k = INICIO.findIndex(([x]) => x === escolhaInicio);
+      escolhaInicio = INICIO[(k + 1) % INICIO.length][0]; musicaInicio = escolhaInicio !== '0';
+      guardar('musicaInicio', escolhaInicio); marcarMusicaInicio(); pararMusica();
+      if (musicaInicio && !snes) tocarMusica(qualInicio());
+      avisar(musicaInicio ? '🎵 música no Início: ' + INICIO.find(([x]) => x === escolhaInicio)[1] : 'música no Início desligada'); break;
+    }
     case 'bios-fechar': biosEsperando = null; $('#bios-tela').hidden = true; break;
     case 'pasta':
       if (!temPasta) { avisar('este navegador não deixa escolher pasta; use Adicionar arquivo', 4000); break; }
@@ -2567,6 +2601,6 @@ window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
-  volume: () => volume, juke: () => ({ interna: juke.interna, faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, efetivas: mudasEfetivas(), solo: juke.solo, vista: jkVista, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, rebobEstado: () => ({ limite: rebobLimite, recarga: Math.round(rebobRecarga), fotos: rebob ? rebob.fotos : -1, ativo: !!rebobinou }), estat: () => estat, tema: () => document.documentElement.dataset.tema, mudarTema: (t) => tema(t), rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
+  volume: () => volume, juke: () => ({ interna: juke.interna, canais: juke.apu ? juke.apu.canais : 0, sisMusica: juke.apu ? juke.apu.sis : null, faixas: juke.lista.length, atual: juke.atual, tocando: juke.tocando, amostras: juke.amostras, mudas: juke.mudas, efetivas: mudasEfetivas(), solo: juke.solo, vista: jkVista, fila: (fim - ini) & (FILA - 1) }), marcos: () => [!!marcoBugAnt, marcoBug ? marcoBug.entradas.length : -1], versao: VERSAO, rebob: () => rebob && { fotos: rebob.fotos, bytes: rebob.bytes }, moldura: () => moldura, rebobEstado: () => ({ limite: rebobLimite, recarga: Math.round(rebobRecarga), fotos: rebob ? rebob.fotos : -1, ativo: !!rebobinou }), estat: () => estat, tema: () => document.documentElement.dataset.tema, mudarTema: (t) => tema(t), rapido: () => rapidoAberto, pausado: () => pausado, tamTela: () => [tela.clientWidth, tela.clientHeight],
   assinatura: () => { let t = 0; const f = snes.ppu.frame; for (let p = 0; p < f.length; p++) t = (Math.imul(t, 31) + (f[p] & 0xFFFFFF)) & 0x7FFFFFFF; return t + ':' + snes.cpu.pc; } }; // pros testes
 })();

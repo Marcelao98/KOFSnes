@@ -98,6 +98,8 @@ partes = {
         (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
         # música própria em 8 bits (abertura e Início): o Air vem da partitura de domínio público já convertida (musicas/air.json)
         + (web / "musica.js").read_text().replace("/*{{AIR}}*/ null", (web / "musicas" / "air.json").read_text().strip()) + "\n"
+        # a trilha no som do Mega Drive (ROMs pequenas geradas por musicas/fm/trilha.py; tocam no Genesis Plus GX)
+        + (web / "musicas" / "trilha.js").read_text() + "\n"
         + ((web / "neogeo-jogos.js").read_text() + "\n" if nucleos else "")   # lista dos jogos de Neo Geo (reconhecer o zip)
         + ((web / "nucleo.js").read_text().replace("/*{{NUCLEOS}}*/ {}", separar_nucleos()) + "\n" if nucleos else "")   # depois do estado.js: ele troca o savestate pelo do núcleo libretro
         + app_js

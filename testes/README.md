@@ -24,6 +24,7 @@ node testes/navegador/bib.cjs     $H x saida/           # biblioteca com 3.000 j
 node testes/navegador/nucleos.cjs dist/web rom.gb rom.nes rom.md rom.sfc [rom.gba]   # núcleos em nucleos/, só sob demanda (PC e celular)
 node testes/navegador/gba.cjs     dist/web rom.gba saida/   # GBA: tela 240x160, L/R no celular, BIOS, save enxuto
 node testes/navegador/abertura.cjs  dist/web rom.gb saida/   # abertura da primeira vez + guia + música (Air e Se Essa Rua)
+node testes/navegador/trilha.cjs    dist/web   # trilha no som do Mega Drive: Início (depois do 1º toque), escolha da música, jukebox
 node testes/navegador/capas-wav.cjs dist/web som.gba neogeo.zip mslug.zip   # capas de GBA e Neo Geo + exportar .wav
 node testes/navegador/neogeo.cjs  dist/web neogeo.zip mslug.zip 2020bb.zip 2020bba-split.zip saida/   # Neo Geo com zips FALSOS (testes/neogeo/zip-falso.py)
 ```

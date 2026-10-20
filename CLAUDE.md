@@ -188,6 +188,16 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > `air.json`, o juntar.py embute) na abertura e "Se Essa Rua Fosse Minha" (da partitura de domínio público que o Marcelo mandou, MuseScore,
 > arranjo Daniel Pynkus, em `RUA.melodia`) no Início; toca como faixa interna da jukebox (`juke.interna`, loop, sem mini-player), para ao abrir jogo ou a
 > jukebox; Som > "Música no Início". `.so-cel` agora some no PC pelo estilo.css. Teste: `testes/navegador/abertura.cjs`.
+> **Trilha no som do Mega Drive (mesma branch):** `web/musicas/fm/trilha.py` transforma partituras (texto `nota:duração`) +
+> acordes + instrumentos FM desenhados lá numa ROM de Mega Drive por música: tocador em 68000 (`fm/tocador.s` -> `tocador.bin`,
+> 166 bytes, montado com `binutils-m68k-linux-gnu`) em 0x200 lê comandos em 0x800 (YM parte I/II, PSG, espera N quadros,
+> marca/volta loop). Saída `web/musicas/trilha.js` (`KofTrilha`, base64), embutida pelo juntar.py. Toca no Genesis Plus GX
+> pelo `KofLibretro.tocador('md', rom, null)` (sem estado = desde o reset); sem o núcleo, cai pro 8 bits (`musica.js`, só
+> air/rua). Músicas: air, rua, guarani (8 compassos do tema), ticotico (partes A e B), abrealas, balao — partituras que o
+> Marcelo mandou (prints); Air com violino de verdade (Wikimedia, USAF, domínio público) ficou pra quando liberar o domínio.
+> Início: escolha em Som e no rodapé do Início (`INICIO`, `kofnes.musicaInicio`: id, 'sortear' ou '0'); só carrega o núcleo
+> depois do 1º toque/tecla (`houveGesto`). Jukebox: as 6 aparecem como "🎵 Trilha do KOFstation" (`juke.lista` com `trilha`,
+> sem renomear/apagar), com Ondas dos 10 canais e exportar .wav. Teste: `testes/navegador/trilha.cjs`.
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
 > **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso
