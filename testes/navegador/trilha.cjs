@@ -18,11 +18,11 @@ const [,, pasta] = process.argv;
   let j = await juke();
   conferir(j.tocando && j.interna === 'rua' && j.sisMusica === 'md' && j.canais === 10, `depois do toque: "Se Essa Rua" no FM do Mega Drive ${JSON.stringify(j)}`);
   const nomes = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 7; i++) {
     await p.evaluate(() => document.querySelector('.hm-rodape [data-acao="musica-inicio"]').click()); await p.waitForTimeout(1500);
     j = await juke(); nomes.push((await p.textContent('.hm-rodape [data-acao="musica-inicio"]')) + '=' + (j.tocando ? j.interna : 'nada'));
   }
-  conferir(nomes.join(' | ').includes('O Guarani=guarani') && nomes.join(' | ').includes('desligada=nada') && /sortear=(rua|guarani|ticotico|abrealas|balao)/.test(nomes.join(' | ')), 'o botão troca a música do Início: ' + nomes.join(' | '));
+  conferir(nomes.join(' | ').includes('O Guarani=guarani') && nomes.join(' | ').includes('desligada=nada') && /sortear=(rua|guarani|ticotico|abrealas|balao|air)/.test(nomes.join(' | ')), 'o botão troca a música do Início: ' + nomes.join(' | '));
   await p.evaluate(() => document.querySelector('[data-acao="jukebox"]').click()); await p.waitForTimeout(800);
   const faixas = await p.evaluate(() => [...document.querySelectorAll('#jk-lista li.jk-faixa')].map((li) => li.textContent).filter((t) => /Tico|Guarani|Air|Abre|Balão|Rua/.test(t)).length);
   conferir(faixas >= 6, `a jukebox mostra as ${faixas} músicas da trilha`);

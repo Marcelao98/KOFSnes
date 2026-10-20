@@ -1065,10 +1065,10 @@ const quando = (t) => new Date(t).toLocaleString('pt-BR', { day: '2-digit', mont
 // A trilha toca no som do Mega Drive (ROMs da musicas/trilha.js no Genesis Plus GX); sem esse núcleo, a versão 8 bits
 // (musica.js) quando existe. No Início a pessoa escolhe a música (ou sortear, ou desligada): kofnes.musicaInicio
 const TRILHA = typeof KofTrilha !== 'undefined' ? KofTrilha.musicas : [];
-const INICIO = [['rua', 'Se Essa Rua'], ['guarani', 'O Guarani'], ['ticotico', 'Tico-Tico no Fubá'], ['abrealas', 'Ó Abre-Alas'], ['balao', 'Cai, Cai, Balão'], ['sortear', 'sortear'], ['0', 'desligada']];
+const INICIO = [['rua', 'Se Essa Rua'], ['guarani', 'O Guarani'], ['ticotico', 'Tico-Tico no Fubá'], ['abrealas', 'Ó Abre-Alas'], ['balao', 'Cai, Cai, Balão'], ['air', 'Air (Bach)'], ['sortear', 'sortear'], ['0', 'desligada']];
 let escolhaInicio = (() => { const v = ler('musicaInicio'); return v === '1' || !INICIO.some(([k]) => k === v) ? 'rua' : v; })();
 let musicaInicio = escolhaInicio !== '0';
-const sorteada = INICIO[Math.floor(Math.random() * 5)][0];
+const sorteada = INICIO[Math.floor(Math.random() * (INICIO.length - 2))][0];   // qualquer uma menos "sortear" e "desligada"
 const qualInicio = () => (escolhaInicio === 'sortear' ? sorteada : escolhaInicio);
 function marcarMusicaInicio() {
   const nome = INICIO.find(([k]) => k === escolhaInicio)[1];
