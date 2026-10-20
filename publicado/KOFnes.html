@@ -12220,7 +12220,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610201711 · 08f5948', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610201720 · 4ae5451', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   const b = semCombo(estado());
@@ -12628,15 +12628,15 @@ function marcarAbBios() {
 }
 function fecharAbertura(fimDoGuia) {
   if ($('#abertura').hidden) return;
-  abVez++; $('#abertura').hidden = true; document.documentElement.dataset.tema = temaSalvo; guardar('boasVindas', '1');
+  abVez++; $('#abertura').hidden = true; document.documentElement.dataset.tema = temaSalvo; guardar('boasVindas', '2');
   if (abComecar) { removeEventListener('keydown', abComecar, true); abComecar = null; }
   if (fimDoGuia && !snes) { pararMusica(); abrirHome(); }
 }
 async function primeiraVez() {
-  if (ler('boasVindas')) return;
+  // aparece uma vez pra todo mundo, inclusive quem já tinha jogos ('1' = marca antiga, de quando ela só aparecia com a
+  // biblioteca vazia: essas pessoas veem agora)
+  if (ler('boasVindas') === '2') return;
   if (navigator.webdriver && !window.__kofAbertura) return;   // testes automáticos: só o teste da abertura quer ver ela
-
-  try { if ((await bdTodos('jogos')).length) { guardar('boasVindas', '1'); return; } } catch (e) { /* sem banco: mostra */ }
   abrirAbertura();
 }
 

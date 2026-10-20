@@ -1232,15 +1232,15 @@ function marcarAbBios() {
 }
 function fecharAbertura(fimDoGuia) {
   if ($('#abertura').hidden) return;
-  abVez++; $('#abertura').hidden = true; document.documentElement.dataset.tema = temaSalvo; guardar('boasVindas', '1');
+  abVez++; $('#abertura').hidden = true; document.documentElement.dataset.tema = temaSalvo; guardar('boasVindas', '2');
   if (abComecar) { removeEventListener('keydown', abComecar, true); abComecar = null; }
   if (fimDoGuia && !snes) { pararMusica(); abrirHome(); }
 }
 async function primeiraVez() {
-  if (ler('boasVindas')) return;
+  // aparece uma vez pra todo mundo, inclusive quem já tinha jogos ('1' = marca antiga, de quando ela só aparecia com a
+  // biblioteca vazia: essas pessoas veem agora)
+  if (ler('boasVindas') === '2') return;
   if (navigator.webdriver && !window.__kofAbertura) return;   // testes automáticos: só o teste da abertura quer ver ela
-
-  try { if ((await bdTodos('jogos')).length) { guardar('boasVindas', '1'); return; } } catch (e) { /* sem banco: mostra */ }
   abrirAbertura();
 }
 

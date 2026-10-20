@@ -68,13 +68,18 @@ const [,, pasta, rom, saida = '/tmp'] = process.argv;
     conferir(erros.length === 0, `${nome}: sem erro na página ${erros.join(' | ')}`);
     await ctx.close();
   }
-  // quem já tem jogo na biblioteca não vê a abertura
+  // quem já usava (jogo na biblioteca e a marca antiga '1') vê a abertura uma vez; fechou, não vê mais
   const ctx = await b.newContext(); await ctx.addInitScript(() => { window.__kofAbertura = true; });
   const p = await ctx.newPage();
   await p.goto('file://' + path.resolve(pasta, 'KOFnes.html')); await p.waitForTimeout(1000);
+  await p.evaluate(() => localStorage.setItem('kofnes.boasVindas', '2')); await p.reload(); await p.waitForTimeout(1000);
   await p.setInputFiles('#arquivo', rom); await p.waitForTimeout(2500);
-  await p.evaluate(() => localStorage.removeItem('kofnes.boasVindas')); await p.reload(); await p.waitForTimeout(1500);
-  conferir(await p.isHidden('#abertura'), 'quem já tem jogo na biblioteca não vê a abertura');
+  await p.evaluate(() => localStorage.setItem('kofnes.boasVindas', '1')); await p.reload(); await p.waitForTimeout(1500);
+  conferir(await p.isVisible('#abertura'), 'quem já tinha jogos (marca antiga) vê a abertura uma vez');
+  await p.evaluate(() => document.querySelector('#abertura [data-acao="ab-pular"]').click()); await p.waitForTimeout(500);
+  for (let i = 0; i < 6 && await p.isVisible('#abertura'); i++) { await p.evaluate(() => document.querySelector('[data-acao="ab-proximo"]').click()); await p.waitForTimeout(400); }
+  await p.reload(); await p.waitForTimeout(1500);
+  conferir(await p.isHidden('#abertura'), 'depois de fechar, não aparece de novo');
   await b.close();
   console.log(falhas.length ? `${falhas.length} falha(s)` : 'tudo certo');
   process.exit(falhas.length ? 1 : 0);
