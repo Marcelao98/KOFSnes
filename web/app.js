@@ -16,6 +16,16 @@ let escala = +(ler('escala') || 0), chaveSram = '', sramAntes = '';
 // desenha com os ajustes do painel de imagem (web/visual.js: um shader só, com todos os efeitos). Sem WebGL, canvas 2D (só nítido).
 // Duas texturas se revezando: a do quadro anterior serve pro "rastro" das telas de portátil.
 const FILTROS = KofVisual.PREDEF.map(([k, n]) => [k, n]);
+const tela = $('#tela');
+// sistemas que esta versão roda (nucleo.js diz quais núcleos vieram no html); sem ele, só SNES
+const SIS = typeof KofLibretro !== 'undefined' ? KofLibretro.SISTEMAS : { snes: { nome: 'Super Nintendo', curto: 'SNES', ext: ['sfc', 'smc', 'fig', 'swc'], minimo: 0x8000 } };
+const SIS_ATIVOS = Object.keys(SIS).filter((k) => k === 'snes' || (typeof KofLibretro !== 'undefined' && KofLibretro.disponivel(k)));
+const EXT_ROM = new RegExp('\\.(' + [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).join('|') + ')$', 'i');
+// zip de Neo Geo (mslug.zip...) é o jogo inteiro: reconhecido pelo nome na lista do FBNeo
+const neoGeo = (n) => SIS_ATIVOS.includes('neogeo') && !!KofLibretro.setNeoGeo(n);
+const sistemaDoNome = (n) => (neoGeo(n) ? 'neogeo' : SIS_ATIVOS.find((k) => SIS[k].ext.some((e) => (n || '').toLowerCase().endsWith('.' + e))) || null);
+const sistemaDoItem = (r) => (r.jogo && (r.jogo.sistema || sistemaDoNome(r.jogo.arquivo))) || sistemaDoNome(r.arquivo) || sistemaDoNome(r.nome) || 'snes';
+$('#arquivo').accept = [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).map((e) => '.' + e).join(',') + ',.zip,.ips,.bps,.ups';
 // ajustes da imagem: a predefinição escolhida (ou "meu": mexeu nos controles) + os valores de cada efeito
 let visual = (() => {
   try { const v = JSON.parse(ler('visual')); if (v && v.v) return { pre: v.pre, v: { ...KofVisual.PADRAO, ...v.v } }; } catch (e) { /* sem ajuste salvo */ }
@@ -27,25 +37,39 @@ let telaL = 256, telaA = 224, img = new ImageData(telaL, telaA), px = new Uint32
 const gl = tela.getContext('webgl', { alpha: false, antialias: false });
 const ctx = gl ? null : tela.getContext('2d', { alpha: false });
 let glTex = [], glVez = 0, glU = {}, divisao = 0, ligaIni = -1e9;
+const glProgs = {};   // um programa por combinação de efeitos ligados (chave do KofVisual), compilado na primeira vez
+let glVert = null;
+function glPrograma(v) {
+  const k = KofVisual.chave(v);
+  if (!glProgs[k]) {
+    const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s)); return s; };
+    if (!glVert) glVert = sombra(gl.VERTEX_SHADER, `attribute vec2 p; varying vec2 uv;
+    void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`);
+    const prog = gl.createProgram();
+    gl.attachShader(prog, glVert); gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, KofVisual.fonte(v)));
+    gl.bindAttribLocation(prog, 0, 'p'); gl.linkProgram(prog);
+    const u = { prog };
+    for (const n of ['t', 'tp', 'tela', 'u', 'p']) u[n] = gl.getUniformLocation(prog, n);
+    glProgs[k] = u;
+  }
+  const u = glProgs[k];
+  if (glU.prog !== u.prog) {
+    gl.useProgram(u.prog); glU = u;
+    gl.uniform1i(glU.t, 0); gl.uniform1i(glU.tp, 1);
+    gl.uniform4f(glU.tela, telaL, telaA, tela.width, tela.height);
+  }
+}
 if (gl) {
-  const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s)); return s; };
-  const prog = gl.createProgram();
-  gl.attachShader(prog, sombra(gl.VERTEX_SHADER, `attribute vec2 p; varying vec2 uv;
-    void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`));
-  gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, KofVisual.FRAG));
-  gl.linkProgram(prog); gl.useProgram(prog);
   const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-  const ap = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
   for (let i = 0; i < 2; i++) {
     glTex[i] = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex[i]);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);   // o shader faz o nítido sozinho
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, telaL, telaA, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   }
-  for (const n of ['t', 'tp', 'tela', 'u', 'p']) glU[n] = gl.getUniformLocation(prog, n);
-  gl.uniform1i(glU.t, 0); gl.uniform1i(glU.tp, 1);
-  gl.uniform4f(glU.tela, telaL, telaA, tela.width, tela.height);
+  glPrograma(visual.v);
 }
 // jogo de outro sistema: imagem, textura e canvas mudam de tamanho
 function tamanhoTela(l, a) {
@@ -80,6 +104,7 @@ function aplicarVisual(v, pre) {
   guardar('visual', JSON.stringify(visual));
   document.querySelectorAll('[data-filtro]').forEach((b) => b.classList.toggle('ativo', b.dataset.filtro === filtro));
   if (!gl) return;
+  glPrograma(visual.v);
   gl.uniform4fv(glU.p, KofVisual.vetor(visual.v));
   marcarFilmadora();
   pintar(false);
@@ -190,6 +215,8 @@ $('#vis-pre').addEventListener('contextmenu', (e) => {
   if (m && confirm('Apagar "' + m.nome + '"?')) { l.splice(+b.dataset.visMeu, 1); guardar('visualMeus', JSON.stringify(l)); montarVisual(); }
 });
 $('#vis-comparar').addEventListener('change', (e) => { divisao = e.target.checked ? 0.5 : 0; if (gl) pintar(false); });
+$('#mold-anim').addEventListener('change', (e) => { moldAnim = e.target.checked; guardar('moldAnim', moldAnim ? '1' : '0'); ajustarEscala(); });
+$('#mold-porsis').addEventListener('change', (e) => { guardar('moldPorSis', e.target.checked ? '1' : '0'); if (snes && e.target.checked) guardar('moldura.' + (snes.sistema || 'snes'), moldura); });
 $('#vis-porsis').addEventListener('change', (e) => { guardar('visualPorSis', e.target.checked ? '1' : '0'); guardarPorSis(); });
 tela.addEventListener('pointermove', (e) => {   // comparar: a divisória segue o mouse/dedo
   if (!divisao || $('#visual').hidden || !(e.buttons & 1)) return;
@@ -201,6 +228,70 @@ function visualDoSistema(sis) {
   if (ler('visualPorSis') !== '1') return;
   try { const v = JSON.parse(ler('visual.' + sis)); if (v && v.v) aplicarVisual(v.v, v.pre); } catch (e) { /* nada guardado pra esse console */ }
 }
+// ---------------- galeria de molduras ----------------
+let moldVoltar = null, moldCat = 'Todas', imagemTeste = false;
+function montarMolduras() {
+  const cats = ['Todas', ...new Set(KofMolduras.LISTA.map((m) => m.cat)), 'Sua'];
+  $('#mold-cats').innerHTML = cats.map((c) => `<button data-mold-cat="${c}" class="${c === moldCat ? 'ativo' : ''}">${c}</button>`).join('');
+  const r = naTv() ? 4 / 3 : (snes && snes.proporcao) || telaL / telaA, h = 96, w = Math.round(h * r);
+  const print = snes || imagemTeste ? foto(256) : (cartelaTeste(), foto(256));
+  const g = $('#grade-molduras'); g.textContent = '';
+  const itens = [['nenhuma', 'Sem moldura', 'só o jogo', 'Todas'], ...KofMolduras.LISTA.map((m) => [m.id, m.nome, m.desc, m.cat]), ['propria', 'Moldura sua (PNG)', propria ? 'a que você escolheu' : 'escolha um PNG com o meio transparente', 'Sua']];
+  for (const [id, nome, desc, cat] of itens) {
+    if (moldCat !== 'Todas' && cat !== moldCat && id !== 'nenhuma') continue;
+    const b = document.createElement('button'); b.className = 'mold-card' + (id === moldura ? ' ativo' : ''); b.dataset.moldEscolher = id; b.title = desc;
+    const sv = id === 'nenhuma' || id === 'propria' ? null : svgMoldura(id, w, h, false);
+    const W = sv ? sv.W : w, H = sv ? sv.H : h, esc = Math.min(1, 200 / W, 150 / H);
+    const quadro = document.createElement('div'); quadro.className = 'mold-quadro';
+    quadro.style.cssText = `width:${Math.round(W * esc)}px;height:${Math.round(H * esc)}px;` + (sv ? `background-image:${sv.url};background-size:100% 100%` : id === 'propria' && propria ? `background-image:url("${propria.url}");background-size:100% 100%` : '');
+    const im = document.createElement('img'); im.src = print; im.alt = '';
+    const S = sv ? sv.S : id === 'propria' && propria ? null : { x: 0, y: 0, w, h };
+    if (S) im.style.cssText = `left:${S.x * esc}px;top:${S.y * esc}px;width:${S.w * esc}px;height:${S.h * esc}px;border-radius:${sv ? sv.raio * h * esc : 2}px`;
+    else { const [x, y, ww, hh] = propria.buraco; im.style.cssText = `left:${x / propria.larg * 100}%;top:${y / propria.alt * 100}%;width:${ww / propria.larg * 100}%;height:${hh / propria.alt * 100}%`; }
+    if (id === 'propria' && !propria) im.hidden = true;
+    quadro.appendChild(im); b.appendChild(quadro);
+    const t = document.createElement('span'); t.innerHTML = `<b>${nome}</b><small>${desc}</small>`; b.appendChild(t);
+    g.appendChild(b);
+  }
+  $('#mold-anim').checked = moldAnim; $('#mold-porsis').checked = ler('moldPorSis') === '1';
+  if (!snes && !imagemTeste) document.body.classList.add('vazio');
+}
+function abrirMolduras() {
+  fecharMenus(); if (rapidoAberto) fecharRapido();
+  moldVoltar = telaAtual() !== 'jogo' ? telaAtual() : null;
+  montarMolduras(); $('#molduras').hidden = false; $('#veu').hidden = false;
+}
+function fecharMolduras() {
+  if ($('#molduras').hidden) return;
+  $('#molduras').hidden = true; $('#veu').hidden = true;
+  if (moldVoltar) $('#' + moldVoltar).hidden = false;
+  moldVoltar = null;
+}
+// moldura sua: um PNG; o buraco transparente do meio (onde o alfa é baixo, crescendo a partir do centro) vira a tela
+async function escolherMolduraPropria() {
+  const e = document.createElement('input'); e.type = 'file'; e.accept = 'image/png,image/webp';
+  e.onchange = async () => {
+    const f = e.files[0]; if (!f) return;
+    try {
+      const bmp = await createImageBitmap(f), c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+      const g = c.getContext('2d'); g.drawImage(bmp, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height).data, a = (x, y) => d[(y * c.width + x) * 4 + 3];
+      const cx = c.width >> 1, cy = c.height >> 1;
+      if (a(cx, cy) > 40) throw new Error('o meio dessa imagem não é transparente: a moldura precisa de um buraco pra tela');
+      let x0 = cx, x1 = cx, y0 = cy, y1 = cy;
+      while (x0 > 0 && a(x0 - 1, cy) <= 40) x0--; while (x1 < c.width - 1 && a(x1 + 1, cy) <= 40) x1++;
+      while (y0 > 0 && a(cx, y0 - 1) <= 40) y0--; while (y1 < c.height - 1 && a(cx, y1 + 1) <= 40) y1++;
+      const blob = new Blob([await f.arrayBuffer()], { type: f.type || 'image/png' });
+      propria = { url: URL.createObjectURL(blob), buraco: [x0, y0, x1 - x0 + 1, y1 - y0 + 1], larg: c.width, alt: c.height };
+      await bdPor('c', 'molduraPropria', { blob, buraco: propria.buraco, larg: c.width, alt: c.height });
+      mudarMoldura('propria'); montarMolduras(); avisar('🖼 moldura sua guardada (tela de ' + propria.buraco[2] + '×' + propria.buraco[3] + ' px)');
+    } catch (er) { avisar(er.message, 5000); }
+  };
+  e.click();
+}
+(async () => {   // a moldura própria guardada volta quando o app abre
+  try { const p = await bdPegar('c', 'molduraPropria'); if (p) { propria = { url: URL.createObjectURL(p.blob), buraco: p.buraco, larg: p.larg, alt: p.alt }; if (ler('moldura') === 'propria') mudarMoldura('propria', true); } } catch (e) { /* sem banco */ }
+})();
 function desenhar() {
   if (snes.rgba) {   // núcleo libretro: já vem no formato da textura
     if (snes.largura !== telaL || snes.altura !== telaA) { tamanhoTela(snes.largura, snes.altura); ajustarEscala(); }   // o jogo trocou de resolução (Mega Drive)
@@ -221,16 +312,40 @@ const naTv = () => !snes || !snes.lr || snes.sistema === 'snes' || !!(SIS[snes.s
 const RAZAO = { 43: () => (naTv() ? 4 / 3 : snes.proporcao || telaL / telaA), 87: () => telaL / telaA };
 const nomeProporcao = (k) => (naTv() ? null : { 43: 'Original (como no aparelho)', 87: 'Pixel perfeito' }[k]) || PROPORCOES.find(([c]) => c === k)[1];
 let proporcao = PROPORCOES.some(([k]) => k === ler('proporcao')) ? ler('proporcao') : '43';
-// moldura em volta do jogo; as bordas são frações da altura da tela (cima, direita, baixo, esquerda)
-const MOLDURAS = [['nenhuma', 'Sem moldura'], ['tv80', 'TV de madeira (anos 80)'], ['tv90', 'TV de tubo (anos 90)'], ['fliperama', 'Fliperama']];
-const BORDAS = { nenhuma: [0, 0, 0, 0], tv80: [0.1, 0.44, 0.1, 0.1], tv90: [0.08, 0.08, 0.2, 0.08], fliperama: [0.3, 0.12, 0.34, 0.12] };
-let moldura = BORDAS[ler('moldura')] ? ler('moldura') : 'nenhuma';
-function mudarMoldura(v) { moldura = BORDAS[v] ? v : 'nenhuma'; guardar('moldura', moldura); ajustarEscala(); }
+// moldura em volta do jogo (web/molduras.js: desenhos em SVG feitos no tamanho exato da tela); as bordas são frações da
+// altura da tela (cima, direita, baixo, esquerda). "propria" = um PNG com fundo transparente que a pessoa escolheu
+const MOLDURAS = [['nenhuma', 'Sem moldura'], ...KofMolduras.LISTA.map((m) => [m.id, m.nome]), ['propria', 'Moldura sua (PNG)']];
+let moldura = MOLDURAS.some(([k]) => k === ler('moldura')) ? ler('moldura') : 'nenhuma';
+let moldAnim = ler('moldAnim') !== '0', propria = null;   // propria = { url, buraco: [x, y, w, h], larg, alt }
+function bordasDe(id, r) {
+  if (id === 'propria' && propria) {   // o buraco transparente do PNG vira a tela: o resto é borda
+    const [x, y, w, h] = propria.buraco, k = r / (w / h);   // a largura do PNG estica pro jogo caber no buraco
+    return [y / h, (propria.larg - x - w) / h * k, (propria.alt - y - h) / h, x / h * k];
+  }
+  const m = KofMolduras.LISTA.find((l) => l.id === id);
+  return m ? m.b : [0, 0, 0, 0];
+}
+function mudarMoldura(v, semGuardar) {
+  moldura = MOLDURAS.some(([k]) => k === v) && (v !== 'propria' || propria) ? v : 'nenhuma';
+  if (!semGuardar) { guardar('moldura', moldura); if (snes && ler('moldPorSis') === '1') guardar('moldura.' + (snes.sistema || 'snes'), moldura); }
+  ajustarEscala();
+}
+function coresTema() {
+  const c = getComputedStyle(document.documentElement), v = (n, p) => (c.getPropertyValue(n).trim() || p);
+  return { fundo: v('--fundo', '#222'), painel: v('--painel', '#333'), destaque: v('--destaque', '#e2b85c'), texto: v('--texto', '#eee'), borda: v('--borda', '#555') };
+}
+// desenha a moldura escolhida em volta de uma tela w x h (px); devolve o fundo (CSS) e onde fica a tela
+function svgMoldura(id, w, h, anim) {
+  const m = KofMolduras.LISTA.find((l) => l.id === id); if (!m) return null;
+  const [bc, bd, bb, be] = m.b, W = Math.round(w + (bd + be) * h), H = Math.round(h * (1 + bc + bb)), S = { x: be * h, y: bc * h, w, h };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${m.d(W, H, S, anim, coresTema())}</svg>`;
+  return { url: 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")', raio: m.raio, S, W, H };
+}
 function ajustarEscala() {
   const p = $('#palco'), cheia = document.body.classList.contains('cheia') || document.documentElement.classList.contains('celular'), folga = cheia ? 0 : 16;   // celular: sempre o maior que couber (sem múltiplo inteiro)
   const pc = getComputedStyle(p), miolo = (l, r) => (parseFloat(pc[l]) || 0) + (parseFloat(pc[r]) || 0);   // celular na horizontal: o palco tem folga dos lados pros botões
   const W = Math.max(telaL, p.clientWidth - folga - miolo('paddingLeft', 'paddingRight')), H = Math.max(telaA, p.clientHeight - folga - miolo('paddingTop', 'paddingBottom'));
-  const [bc, bd, bb, be] = BORDAS[moldura], comMoldura = moldura !== 'nenhuma';
+  const [bc, bd, bb, be] = bordasDe(moldura, proporcao === 'esticar' ? RAZAO['43']() : RAZAO[proporcao]()), comMoldura = moldura !== 'nenhuma';
   let w, h;
   if (proporcao === 'esticar') { h = H / (1 + bc + bb); w = W - (bd + be) * h; } else {
     const r = RAZAO[proporcao](), hMax = Math.min(H / (1 + bc + bb), W / (r + bd + be));
@@ -247,6 +362,10 @@ function ajustarEscala() {
   document.body.dataset.moldura = moldura;
   m.style.padding = [bc, bd, bb, be].map((f) => Math.round(f * h) + 'px').join(' ');
   m.style.setProperty('--h', h + 'px');
+  const sv = moldura === 'propria' ? null : svgMoldura(moldura, w, h, moldAnim);
+  m.style.backgroundImage = sv ? sv.url : moldura === 'propria' && propria ? `url("${propria.url}")` : '';
+  m.style.backgroundSize = '100% 100%';
+  tela.style.borderRadius = sv ? Math.round(sv.raio * h) + 'px' : '';
   if (gl) {   // o canvas WebGL desenha na resolução da tela, pros filtros terem detalhe
     const dpr = window.devicePixelRatio || 1;
     tela.width = Math.round(w * dpr); tela.height = Math.round(h * dpr);
@@ -502,6 +621,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'F2') { e.preventDefault(); acao('rapido'); return; }
   if (e.code === 'F4') { e.preventDefault(); acao('visual'); return; }
   if (e.code === 'Escape' && !$('#visual').hidden) { e.preventDefault(); fecharVisual(); return; }
+  if (e.code === 'Escape' && !$('#molduras').hidden) { e.preventDefault(); fecharMolduras(); return; }
   if (e.code === 'Minus' || e.code === 'NumpadSubtract') { e.preventDefault(); mudarVolume(-10); return; }
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { e.preventDefault(); mudarVolume(10); return; }
   if (e.ctrlKey && e.code === 'KeyO') { e.preventDefault(); acao('abrir'); return; }
@@ -1465,6 +1585,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   s.reset();
   tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
   visualDoSistema(sis); ligaIni = performance.now();
+  if (ler('moldPorSis') === '1') mudarMoldura(ler('moldura.' + sis) || KofMolduras.PADRAO_SIS[sis] || moldura, true);
   document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy e NES: só A, B, Start e Select)
   document.body.classList.toggle('so-ab', !!(SIS[sis] && SIS[sis].botoes && !SIS[sis].botoes.includes('X')));
   if (typeof rotularControle === 'function') rotularControle(sis);   // celular: nomes dos botões do console (Mega Drive A/B/C...)
@@ -2045,7 +2166,7 @@ const ITENS_RAPIDO = [
   { t: 'Cores do Game Boy', so: () => !!(snes && snes.sistema === 'gb'), v: () => PALETAS_GB.find(([k]) => k === paletaGb)[1], aj: (d) => mudarPaletaGb(ciclar(PALETAS_GB, paletaGb, d)) },
   { t: 'Cores do NES', so: () => !!(snes && snes.sistema === 'nes'), v: () => PALETAS_NES.find(([k]) => k === paletaNes)[1], aj: (d) => mudarPaletaNes(ciclar(PALETAS_NES, paletaNes, d)) },
   { t: 'Proporção', v: () => nomeProporcao(proporcao), aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
-  { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS, moldura, d)) },
+  { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS.filter(([k]) => k !== 'propria' || propria), moldura, d)) },
   { t: 'Volume', v: () => (mudo ? 'mudo' : volume + '%'), aj: (d) => mudarVolume(d * 10) },
   { t: '⛶ Tela cheia', f: () => acao('cheia') },
   { t: '↺ Reiniciar', f: () => { fecharRapido(); acao('reiniciar'); } },
@@ -2640,6 +2761,7 @@ function tema(nome) {
   document.documentElement.dataset.tema = nome; guardar('tema', nome);
   document.querySelectorAll('[data-tema]').forEach((b) => { if (b.tagName === 'BUTTON') b.classList.toggle('ativo', b.dataset.tema === nome); });
   coresOndas();   // o osciloscópio da jukebox segue o tema
+  if (moldura === 'tema') ajustarEscala();
 }
 async function acao(a) {
   fecharMenus();
@@ -2716,6 +2838,9 @@ async function acao(a) {
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
     case 'temas': if ($('#temas').hidden) abrirTemas(); else fecharTemas(); break;
     case 'visual': if ($('#visual').hidden) abrirVisual(); else fecharVisual(); break;
+    case 'molduras': if ($('#molduras').hidden) abrirMolduras(); else fecharMolduras(); break;
+    case 'fechar-molduras': fecharMolduras(); break;
+    case 'mold-propria': escolherMolduraPropria(); break;
     case 'fechar-visual': fecharVisual(); break;
     case 'vis-zerar': aplicarFiltro('original'); guardarPorSis(); montarVisual(); break;
     case 'vis-salvar': {
@@ -2765,6 +2890,8 @@ addEventListener('click', (e) => {
   else if (b.dataset.filtro) { aplicarFiltro(b.dataset.filtro); fecharMenus(); }
   else if (b.dataset.prop) { mudarProporcao(b.dataset.prop); fecharMenus(); }
   else if (b.dataset.moldura) { mudarMoldura(b.dataset.moldura); fecharMenus(); }
+  else if (b.dataset.moldEscolher) { if (b.dataset.moldEscolher === 'propria' && !propria) escolherMolduraPropria(); else { mudarMoldura(b.dataset.moldEscolher); montarMolduras(); } }
+  else if (b.dataset.moldCat) { moldCat = b.dataset.moldCat; montarMolduras(); }
   else if (b.dataset.paletaGb) { mudarPaletaGb(b.dataset.paletaGb); fecharMenus(); }
   else if (b.dataset.paletaNes) { mudarPaletaNes(b.dataset.paletaNes); fecharMenus(); }
 });
@@ -2785,7 +2912,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { imagemTeste: (rgba, l, a) => { tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); }, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },

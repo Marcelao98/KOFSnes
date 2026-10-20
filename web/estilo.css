@@ -462,78 +462,9 @@ body { background-image: var(--fundo-img); background-size: cover; }
    o JS põe o padding (as bordas) e --h = altura da tela do jogo */
 #moldura { position: relative; line-height: 0; }
 body.vazio #moldura { visibility: hidden; }
-.mold-extra { display: none; position: absolute; inset: 0; pointer-events: none; }
-body:not([data-moldura="nenhuma"]) .mold-extra { display: block; }
-body:not([data-moldura="nenhuma"]) #tela { box-shadow: none; }
+.mold-extra { display: none; }
+body:not([data-moldura="nenhuma"]) #tela { box-shadow: none; border: 0; }
 .mold-extra::before, .mold-extra::after { content: ""; position: absolute; line-height: 1; }
-
-/* TV de madeira, anos 80: gabinete de madeira, tela à esquerda, painel com botões à direita */
-body[data-moldura="tv80"] #moldura {
-  background: repeating-linear-gradient(92deg, #5c3519 0 3px, #6e4220 3px 8px, #4f2c13 8px 10px, #643a1b 10px 15px);
-  border-radius: calc(var(--h) * .07);
-  box-shadow: 0 calc(var(--h) * .04) calc(var(--h) * .1) #000b, inset 0 0 0 calc(var(--h) * .014) #2c180a, inset 0 calc(var(--h) * .02) calc(var(--h) * .04) #ffffff18;
-}
-body[data-moldura="tv80"] #tela { border: calc(var(--h) * .035) solid #141210; border-radius: calc(var(--h) * .09); outline: calc(var(--h) * .012) solid #8c7b5e; }
-body[data-moldura="tv80"] .mold-extra::before {        /* painel: dois botões giratórios e o alto-falante */
-  top: calc(var(--h) * .1); bottom: calc(var(--h) * .1); right: calc(var(--h) * .07); width: calc(var(--h) * .3);
-  border-radius: calc(var(--h) * .03); border: calc(var(--h) * .008) solid #1a140e;
-  background:
-    radial-gradient(circle at 50% 16%, #d8d0c0 0 calc(var(--h) * .05), #6d6455 calc(var(--h) * .052) calc(var(--h) * .062), transparent calc(var(--h) * .064)),
-    radial-gradient(circle at 50% 38%, #d8d0c0 0 calc(var(--h) * .04), #6d6455 calc(var(--h) * .042) calc(var(--h) * .05), transparent calc(var(--h) * .052)),
-    repeating-linear-gradient(0deg, #15110c 0 calc(var(--h) * .008), #3a3127 calc(var(--h) * .008) calc(var(--h) * .016)) 50% 92% / 80% 36% no-repeat,
-    linear-gradient(#2f2820, #211b15);
-}
-body[data-moldura="tv80"] .mold-extra::after {         /* plaquinha com o nome */
-  content: "KOFnes"; right: calc(var(--h) * .07); width: calc(var(--h) * .3); top: calc(var(--h) * .6); text-align: center;
-  font: italic 700 calc(var(--h) * .045) Georgia, serif; color: #e2b85c; text-shadow: 0 1px 0 #000;
-}
-
-/* TV de tubo, anos 90: plástico preto, alto-falantes embaixo, luz de ligada */
-body[data-moldura="tv90"] #moldura {
-  background: linear-gradient(#3c3c40, #1b1b1e); border-radius: calc(var(--h) * .06) calc(var(--h) * .06) calc(var(--h) * .09) calc(var(--h) * .09);
-  box-shadow: 0 calc(var(--h) * .04) calc(var(--h) * .1) #000b, inset 0 calc(var(--h) * .01) 0 #ffffff14;
-}
-body[data-moldura="tv90"] #tela { border: calc(var(--h) * .03) solid #0a0a0b; border-radius: calc(var(--h) * .08); }
-body[data-moldura="tv90"] .mold-extra::before {        /* duas grades de alto-falante e a luz vermelha */
-  left: calc(var(--h) * .1); right: calc(var(--h) * .1); bottom: calc(var(--h) * .05); height: calc(var(--h) * .09);
-  background:
-    radial-gradient(circle at 50% 50%, #ff3b30 0 calc(var(--h) * .008), #ff3b3055 calc(var(--h) * .012), transparent calc(var(--h) * .02)) 96% 50% / calc(var(--h) * .05) 100% no-repeat,
-    repeating-linear-gradient(90deg, #0c0c0d 0 calc(var(--h) * .007), transparent calc(var(--h) * .007) calc(var(--h) * .016)) 0 50% / 28% 80% no-repeat,
-    repeating-linear-gradient(90deg, #0c0c0d 0 calc(var(--h) * .007), transparent calc(var(--h) * .007) calc(var(--h) * .016)) 82% 50% / 28% 80% no-repeat;
-}
-body[data-moldura="tv90"] .mold-extra::after {
-  content: "KOFnes"; left: 0; right: 0; bottom: calc(var(--h) * .075); text-align: center;
-  font: 700 calc(var(--h) * .04) "Segoe UI", system-ui, sans-serif; letter-spacing: .15em; color: #b8b8c0;
-}
-
-/* Fliperama: letreiro em neon em cima, painel com alavanca e botões embaixo */
-body[data-moldura="fliperama"] #moldura {
-  background: linear-gradient(90deg, #4a1470, #16061f 14%, #16061f 86%, #4a1470);
-  border-radius: calc(var(--h) * .03); box-shadow: 0 0 calc(var(--h) * .08) #ff3ec855, 0 calc(var(--h) * .04) calc(var(--h) * .1) #000b;
-}
-body[data-moldura="fliperama"] #tela { border: calc(var(--h) * .025) solid #000; border-radius: calc(var(--h) * .02); }
-body[data-moldura="fliperama"] .mold-extra::before {   /* letreiro */
-  content: "KOFnes"; top: calc(var(--h) * .04); left: calc(var(--h) * .12); right: calc(var(--h) * .12); height: calc(var(--h) * .21);
-  display: grid; place-items: center; border-radius: calc(var(--h) * .015);
-  background: linear-gradient(#ff3ec8, #7a1fd6 60%, #3a0d6b); box-shadow: inset 0 0 calc(var(--h) * .03) #fff6, 0 0 calc(var(--h) * .05) #ff3ec8aa;
-  font: 900 calc(var(--h) * .12) Impact, "Arial Black", sans-serif; letter-spacing: .06em; color: #fff;
-  text-shadow: 0 0 calc(var(--h) * .02) #fff, 0 0 calc(var(--h) * .05) #26e0ff;
-}
-body[data-moldura="fliperama"] .mold-extra::after {    /* painel: alavanca + 6 botões */
-  left: calc(var(--h) * .06); right: calc(var(--h) * .06); bottom: calc(var(--h) * .04); height: calc(var(--h) * .24);
-  border-radius: calc(var(--h) * .02) calc(var(--h) * .02) calc(var(--h) * .04) calc(var(--h) * .04);
-  background:
-    radial-gradient(circle, #ff2a2a 0 calc(var(--h) * .035), #7a0000 calc(var(--h) * .037) calc(var(--h) * .045), transparent calc(var(--h) * .047)) 18% 45% / calc(var(--h) * .12) calc(var(--h) * .12) no-repeat,
-    radial-gradient(circle, #222 0 calc(var(--h) * .012), transparent calc(var(--h) * .014)) 18% 62% / calc(var(--h) * .12) calc(var(--h) * .12) no-repeat,
-    radial-gradient(circle, #26e0ff 0 calc(var(--h) * .025), #0a6070 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 58% 35% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #ffe14d 0 calc(var(--h) * .025), #806a10 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 70% 35% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #7dff4f 0 calc(var(--h) * .025), #2f7a10 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 82% 35% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #ff3ec8 0 calc(var(--h) * .025), #7a1060 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 58% 72% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #ffffff 0 calc(var(--h) * .025), #777 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 70% 72% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #ff8c1a 0 calc(var(--h) * .025), #7a3a00 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 82% 72% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    linear-gradient(#2a0f3d, #12051c);
-  box-shadow: inset 0 calc(var(--h) * .008) 0 #ff3ec866;
-}
 
 /* Caçador de bugs */
 #bug { width: min(560px, 94vw); text-align: left; z-index: 11; }
@@ -1554,3 +1485,19 @@ html.celular body.com-visual #palco { padding-right: 0; padding-bottom: 58vh; }
 #filmadora .fd-play { position: absolute; top: 5%; left: 5%; animation: fd-pisca 1.6s steps(1) infinite; }
 #filmadora .fd-data { position: absolute; bottom: 6%; right: 5%; text-align: right; white-space: pre; }
 @keyframes fd-pisca { 50% { opacity: .15; } }
+
+/* galeria de molduras */
+#molduras { width: min(980px, 94vw); max-height: 88vh; overflow-y: auto; z-index: 9; }
+#mold-cats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 4px 0 12px; }
+#mold-cats button { padding: 5px 12px; border-radius: 99px; border: 1px solid var(--borda); background: var(--painel); }
+#mold-cats button.ativo { background: var(--destaque); color: var(--painel); border-color: var(--destaque); }
+#grade-molduras { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.mold-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; border-radius: var(--raio); border: 1px solid var(--borda); background: var(--painel); }
+.mold-card:hover { background: var(--sel); }
+.mold-card.ativo { border-color: var(--destaque); box-shadow: inset 0 0 0 2px var(--destaque); }
+.mold-quadro { position: relative; display: grid; place-items: center; min-height: 110px; }
+.mold-quadro img { position: absolute; image-rendering: pixelated; object-fit: fill; }
+.mold-card span { display: flex; flex-direction: column; gap: 2px; text-align: center; }
+.mold-card small { color: var(--fraco); font-size: 12px; }
+.mold-opcoes { margin-top: 12px; text-align: left; }
+.mold-opcoes .grande { width: auto; }

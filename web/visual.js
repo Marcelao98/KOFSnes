@@ -369,9 +369,16 @@ void main() {
 }`;
   // os valores na ordem dos ajustes (vec4 p[13]); cada ajuste vira um #define com o nome em maiúsculas
   const ORDEM = AJUSTES.map((a) => a[0]);
-  const FRAG = FRAG0.replace('/*{{DEFINES}}*/', ORDEM.map((k, i) => `#define ${k.toUpperCase()} p[${i >> 2}].${'xyzw'[i & 3]}`).join('\n'));
+  // shader sob medida: ajuste desligado (no valor padrão) e escolhas (tipo de pixel, de máscara...) viram constantes, e o
+  // compilador do driver apaga o código deles; só o que está ligado lê o valor do controle (mexer no controle não recompila)
+  const ESCOLHA = new Set(AJUSTES.filter((a) => a[7]).map((a) => a[0]));
+  const num = (x) => (Number.isInteger(+x) ? (+x).toFixed(1) : String(+x));
+  const chave = (v) => ORDEM.map((k) => (ESCOLHA.has(k) ? 'e' + (+v[k]) : +v[k] === PADRAO[k] ? '-' : '+')).join('');
+  const fonte = (v) => FRAG0.replace('/*{{DEFINES}}*/', ORDEM.map((k, i) => `#define ${k.toUpperCase()} `
+    + (ESCOLHA.has(k) ? num(v[k]) : +v[k] === PADRAO[k] ? num(PADRAO[k]) : `p[${i >> 2}].${'xyzw'[i & 3]}`)).join('\n'));
+  const FRAG = fonte(PADRAO);
   const vetor = (v) => { const a = new Float32Array(52); ORDEM.forEach((k, i) => { a[i] = v[k] !== undefined ? +v[k] : PADRAO[k]; }); return a; };
   const animado = (v) => ['vhs', 'chiado', 'tremor', 'composto', 'filme', 'vazamento', 'neon', 'foraDoAr', 'rolagem', 'interferencia', 'glitch', 'onda'].some((k) => v[k] > 0);
-  return { AJUSTES, PADRAO, PREDEF, ANTIGO, FRAG, valores, vetor, animado };
+  return { AJUSTES, PADRAO, PREDEF, ANTIGO, FRAG, fonte, chave, valores, vetor, animado };
 })();
 if (typeof module !== 'undefined') module.exports = KofVisual;

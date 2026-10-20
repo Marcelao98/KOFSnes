@@ -43,10 +43,8 @@
     <button data-prop="87">Pixel perfeito (8:7)</button>
     <button data-prop="esticar">Esticar</button>
     <hr>
+    <button data-acao="molduras">🖼 Galeria de molduras…</button>
     <button data-moldura="nenhuma">Sem moldura</button>
-    <button data-moldura="tv80">Moldura: TV de madeira (anos 80)</button>
-    <button data-moldura="tv90">Moldura: TV de tubo (anos 90)</button>
-    <button data-moldura="fliperama">Moldura: Fliperama</button>
     <hr>
     <button data-paleta-gb="auto">Game Boy: cores do Game Boy Color</button>
     <button data-paleta-gb="verde">Game Boy: verde (o original)</button>
@@ -378,6 +376,18 @@
     <button class="grande sec" data-acao="showcase">▶ Showcase lento: um tema a cada 3,5 s</button>
     <button class="grande sec" data-acao="showcase-rapido">⚡ Showcase rápido: meio segundo por tema</button>
     <p class="dica so-pc">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p><p class="dica so-cel">toque num tema pra escolher</p>
+  </section>
+
+  <section id="molduras" class="janela" hidden>
+    <div class="titulo-j"><span>🖼 Molduras</span><button class="x" data-acao="fechar-molduras">×</button></div>
+    <div id="mold-cats"></div>
+    <div id="grade-molduras"></div>
+    <div class="mold-opcoes">
+      <label class="vis-linha"><input type="checkbox" id="mold-anim"> Animações (LED piscando, neon, bandeirinha)</label>
+      <label class="vis-linha"><input type="checkbox" id="mold-porsis"> Cada console com a sua (Game Boy no tijolão, Neo Geo no fliperama…)</label>
+      <button class="grande sec" data-acao="mold-propria">📂 Usar uma moldura minha (PNG com o meio transparente)…</button>
+    </div>
+    <p class="dica so-pc">clique pra escolher · Esc fecha</p>
   </section>
 
   <section id="visual" hidden>

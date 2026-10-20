@@ -206,6 +206,23 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > Início: escolha em Som e no rodapé do Início (`INICIO`, `kofnes.musicaInicio`: id, 'sortear' ou '0'); só toca depois do
 > 1º toque/tecla (`houveGesto`). Jukebox: as 6 aparecem como "🎵 Trilha do KOFstation" (`juke.lista` com `trilha`,
 > sem renomear/apagar), com Ondas dos 10 canais e exportar .wav. Teste: `testes/navegador/trilha.cjs`.
+> **Visual (branch `visual`, 20/10, não publicada):** (1) **Patches de tradução** `web/patch.js` (`KofPatch.aplicar`: IPS, BPS,
+> UPS; BPS/UPS conferem CRC; ROM de SNES com cabeçalho de 512 funciona; conferido byte a byte contra o Flips): abrir/arrastar
+> o patch (ou zip com ele) aplica no jogo aberto ou pede a ROM (`aplicarPatch`, `escolherRom`); ROM + patch soltos juntos;
+> Arquivo > Aplicar tradução. O traduzido vira outro jogo "<nome> (tradução)" com save próprio e selo 🇧🇷 (`traducao` no
+> registro). (2) **Painel de imagem** (F4, gaveta `#visual`; o jogo continua rodando; sem jogo, `cartelaTeste()`):
+> `web/visual.js` (`KofVisual`): 51 ajustes em grupos (Pixels, TV, Sinal, Portátil, Cor, Foto, Retrô, Efeitos) e 30
+> predefinições (15 filtros + 15 efeitos), "Salvar como meu jeito" (`kofnes.visualMeus`), comparar antes|depois, por
+> console (`kofnes.visualPorSis`). TV em luz linear no estilo crt-lottes (linha gaussiana, máscara com média 1), HD = xBR
+> nível 1 em um passo pra qualquer escala, Pintura = Kuwahara, Desenho = Kuwahara + degraus + Sobel. **Shader sob medida**:
+> ajuste no padrão e escolhas viram constantes (`KofVisual.fonte/chave`), um programa por combinação (`glPrograma`), senão
+> o shader único caía de 60 pra 14 fps no SwiftShader. Uniforms empacotados (`tela`, `u` = tempo/divisão/liga/pausa,
+> `p[13]`). Filmadora = `#filmadora` (texto da página). O Marcelo aprovou filtros e efeitos: NÃO mexer mais neles.
+> (3) **Molduras** `web/molduras.js` (`KofMolduras.LISTA`: 15 em SVG gerado no tamanho exato da tela, `svgMoldura`;
+> bordas por moldura em `b`, `bordasDe`), galeria `#molduras` com categorias, animações SMIL (`kofnes.moldAnim`), por console
+> (`kofnes.moldPorSis`, `PADRAO_SIS`) e **moldura sua em PNG** (acha o buraco transparente a partir do centro; guardada no
+> banco `c`/`molduraPropria`). Prints de teste usam `KOFnes.imagemTeste(rgba, l, a)` (o print do FF6 veio do
+> libretro-thumbnails `Named_Snaps`, só pra prévia, fora do git).
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
 > **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso
