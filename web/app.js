@@ -94,6 +94,14 @@ function cartelaTeste() {   // sem jogo aberto: uma cena em pixel art feita aqui
     if (y >= 212 && y < 220 && x >= 16 && x < 240) { const v = Math.round((x - 16) / 224 * 255); c = cor(v, v, v); }  // degradê
     px[y * 256 + x] = c;
   }
+  // formas com diagonal fina (onde o "HD", a "Pintura" e o "Desenho animado" aparecem): estrela, losango e as letras KOF
+  for (let y = 0; y < 60; y++) for (let x = 0; x < 60; x++) {
+    const dx = Math.abs(x - 30), dy = Math.abs(y - 30), ang = Math.atan2(y - 30, x - 30), r = Math.hypot(x - 30, y - 30);
+    if (r < 12 + 12 * Math.abs(Math.cos(ang * 2.5))) px[(30 + y) * 256 + 110 + x] = r < 8 ? cor(255, 140, 0) : cor(255, 210, 40);   // estrela
+    if (dx + dy < 18) px[(80 + y) * 256 + 150 + x] = dx + dy < 12 ? cor(230, 40, 120) : cor(120, 20, 160);                        // losango
+  }
+  const LETRAS = ['1...1.01110.11111', '1..1..10001.1....', '1.1...10001.1....', '11....10001.1111.', '1.1...10001.1....', '1..1..10001.1....', '1...1.01110.1....'];
+  LETRAS.forEach((l, j) => [...l].forEach((ch, i) => { if (ch === '1') for (let a = 0; a < 2; a++) for (let b2 = 0; b2 < 2; b2++) px[(52 + j * 2 + a) * 256 + 178 + i * 2 + b2] = cor(255, 255, 255); }));
   // xícara de café
   const X = ['....s..s..s.....', '.....s..s..s....', '................', '.bbbbbbbbbbbb...', '.bwwwwwwwwwwbbb.', '.bwccccccccwb.b.', '.bwccccccccwb.b.',
     '.bwwwwwwwwwwbbb.', '.bwwwwwwwwwwb...', '..bwwwwwwwwb....', '...bbbbbbbb.....', 'pppppppppppppp..'];

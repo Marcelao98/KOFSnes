@@ -37,20 +37,20 @@ const KofVisual = (() => {
   // predefinições: só o que muda do padrão
   const PREDEF = [
     ['original', 'Original', 'pixel nítido sem tremer, do jeitinho que o console desenha', {}],
-    ['nitido', 'Nítido', 'pixel quadradão, cru', { pixel: 0 }],
-    ['suave', 'Suave', 'borradinho, cara de emulador antigo', { pixel: 2 }],
-    ['tv', 'TV de tubo da sala', 'linhas, fósforo, curva e o cabo composto', { linhas: 0.45, mascara: 0.35, mascaraTipo: 1, curva: 0.35, cantos: 0.4, vinheta: 0.35, glow: 0.25, composto: 0.35 }],
-    ['fliperama', 'Monitor de fliperama', 'linhas fortes e o claro estourando', { linhas: 0.75, grossas: 0.8, mascara: 0.5, mascaraTam: 2, glow: 0.55, curva: 0.2, cantos: 0.3, vinheta: 0.25, saturacao: 1.15 }],
-    ['pvm', 'Monitor de estúdio', 'linhas finas e nítidas, sem curva', { linhas: 0.6, grossas: 0.3, mascara: 0.25, contraste: 1.05 }],
-    ['locadora', 'Locadora 1996', 'fita gasta, chiado e cor borrada', { pixel: 2, vhs: 0.6, chiado: 0.35, composto: 0.8, saturacao: 0.85, linhas: 0.2, vinheta: 0.3, tremor: 0.2 }],
-    ['vo', 'TV da vó', 'tubo bem curvo, amarelado, antena de bombril', { pixel: 2, curva: 0.8, cantos: 0.8, vinheta: 0.75, sepia: 0.35, tremor: 0.35, chiado: 0.15, linhas: 0.3, composto: 0.4 }],
-    ['gameboy', 'Game Boy tijolão', 'tela verde, grade e rastro', { pixel: 0, lcd: 0.6, rastro: 0.5, verde: 1 }],
-    ['gbc', 'Portátil colorido', 'grade e as cores lavadas da tela', { pixel: 0, lcd: 0.45, rastro: 0.25, portatil: 1 }],
-    ['hd', 'HD de mentirinha', 'contorno arredondado, parece desenho vetorial', { pixel: 3 }],
-    ['pintura', 'Pintura', 'traço macio, tipo aquarela', { pixel: 4, saturacao: 1.1 }],
+    ['nitido', 'Nítido e vivo', 'pixel quadradão com cor forte', { pixel: 0, contraste: 1.15, saturacao: 1.3 }],
+    ['suave', 'Suave', 'borrado, cara de emulador antigo', { pixel: 2 }],
+    ['tv', 'TV de tubo da sala', 'linhas, fósforo, curva e o cabo composto', { linhas: 0.65, mascara: 0.55, mascaraTipo: 1, mascaraTam: 2, curva: 0.6, cantos: 0.6, vinheta: 0.6, glow: 0.35, composto: 0.6, converg: 0.4 }],
+    ['fliperama', 'Monitor de fliperama', 'linhas grossas, cor estourada e brilho', { linhas: 0.95, grossas: 1, mascara: 0.7, mascaraTam: 3, glow: 0.8, curva: 0.35, cantos: 0.4, vinheta: 0.4, saturacao: 1.35, contraste: 1.15 }],
+    ['pvm', 'Monitor de estúdio', 'linhas finas e retas, imagem reta e afiada', { linhas: 0.85, grossas: 0.2, mascara: 0.45, contraste: 1.15, saturacao: 1.1 }],
+    ['locadora', 'Locadora 1996', 'fita gasta, chiado e cor borrada', { pixel: 2, vhs: 1, chiado: 0.6, composto: 1, saturacao: 0.7, linhas: 0.3, vinheta: 0.45, tremor: 0.5, temperatura: 0.2 }],
+    ['vo', 'TV da vó', 'tubo bem curvo, amarelado, antena de bombril', { pixel: 2, curva: 1, cantos: 1, vinheta: 1, sepia: 0.55, tremor: 0.5, chiado: 0.3, linhas: 0.45, composto: 0.6, brilho: -0.05 }],
+    ['gameboy', 'Game Boy tijolão', 'tela verde, grade e rastro', { pixel: 0, lcd: 0.9, rastro: 0.6, verde: 1 }],
+    ['gbc', 'Portátil colorido', 'grade e as cores lavadas da tela', { pixel: 0, lcd: 0.75, rastro: 0.35, portatil: 1 }],
+    ['hd', 'HD de mentirinha', 'contorno arredondado, parece desenho vetorial', { pixel: 3, saturacao: 1.1 }],
+    ['pintura', 'Pintura', 'pinceladas, tipo quadro a óleo', { pixel: 4, saturacao: 1.3 }],
     ['cartoon', 'Desenho animado', 'contorno preto e cor chapada', { pixel: 5, saturacao: 1.2 }],
-    ['sonho', 'Sonho', 'borrado bonito, brilhando', { pixel: 2, glow: 0.9, saturacao: 1.35, brilho: 0.05, vinheta: 0.3 }],
-    ['cafe', 'Café (sépia)', 'foto antiga', { pixel: 2, sepia: 0.8, vinheta: 0.5 }],
+    ['sonho', 'Sonho', 'borrado brilhando, cor de sonho', { pixel: 2, glow: 1, saturacao: 1.6, brilho: 0.1, vinheta: 0.5 }],
+    ['cafe', 'Café (sépia)', 'foto antiga', { pixel: 2, sepia: 1, vinheta: 0.7, contraste: 0.9, chiado: 0.15 }],
   ];
   const valores = (id) => { const p = PREDEF.find((x) => x[0] === id); return { ...PADRAO, ...(p ? p[3] : {}) }; };
   // filtros do menu antigo -> predefinição nova (quem já tinha escolhido continua com o parecido)
@@ -110,16 +110,26 @@ vec3 epx(vec2 c) {
   vec3 r = E;
   if (parece(v, h) && !parece(v, oh) && !parece(h, ov)) {
     vec2 g = abs(f - .5) * 2.;                       // perto do canto: pega a cor do vizinho; no meio: a do pixel
-    r = mix(E, h, smoothstep(.55, .95, g.x + g.y));
+    r = mix(E, h, smoothstep(.4, .9, g.x + g.y));
   }
   return r;
+}
+vec3 suave(vec2 c) { vec2 d = .8 / tam; return tx(c) * .36 + (tx(c + vec2(d.x, 0.)) + tx(c - vec2(d.x, 0.)) + tx(c + vec2(0., d.y)) + tx(c - vec2(0., d.y))) * .16; }
+vec3 hd(vec2 c) { vec2 d = .22 / tam; return (epx(c + d) + epx(c - d) + epx(c + vec2(d.x, -d.y)) + epx(c - vec2(d.x, -d.y))) * .25; }
+// pintura: média de uma área (a pincelada) em poucos tons, com o contorno do arredondado por cima
+vec3 pintura(vec2 c) {
+  vec2 d = 1. / tam; vec3 m = vec3(0.);
+  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) m += tx(c + vec2(float(i), float(j)) * d * .9);
+  m /= 9.;
+  vec3 e = hd(c);
+  return mix(floor(m * 7. + .5) / 7., e, .35);
 }
 vec3 amostra(vec2 c) {
   if (PIXEL < .5) return perto(c);
   if (PIXEL < 1.5) return nitidoSuave(c);
-  if (PIXEL < 2.5) return tx(c);
-  if (PIXEL < 3.5) return epx(c);
-  if (PIXEL < 4.5) { vec2 d = .3 / tam; return (epx(c + vec2(d.x, d.y)) + epx(c - vec2(d.x, d.y)) + epx(c + vec2(d.x, -d.y)) + epx(c - vec2(d.x, -d.y))) * .25; }
+  if (PIXEL < 2.5) return suave(c);
+  if (PIXEL < 3.5) return hd(c);
+  if (PIXEL < 4.5) return pintura(c);
   // desenho animado: cores em degraus e contorno preto onde a luz muda de repente
   vec2 d = 1. / tam; vec3 c0 = tx(c);
   float g = abs(luz(tx(c + vec2(d.x, 0.))) - luz(tx(c - vec2(d.x, 0.)))) + abs(luz(tx(c + vec2(0., d.y))) - luz(tx(c - vec2(0., d.y))));
@@ -133,7 +143,7 @@ vec3 composto(vec2 c, vec3 base) {
   float pe = .3;
   for (int k = 1; k <= 3; k++) { float w = .35 / float(k + 1); s.yz += (yiq(tx(c + d * float(k))).yz + yiq(tx(c - d * float(k))).yz) * w; pe += 2. * w; }
   vec3 y = vec3(yiq(base).x, s.yz / pe);
-  float faixa = sin((c.x * tam.x + c.y * tam.y) * 3.14159 + tempo * 30.) * length(y.yz) * .18;   // a "listrinha" do composto
+  float faixa = sin((c.x * tam.x + c.y * tam.y) * 3.14159 + tempo * 30.) * length(y.yz) * .3;   // a "listrinha" do composto
   return rgb(y + vec3(faixa, 0., 0.));
 }
 void main() {
@@ -153,13 +163,13 @@ void main() {
     c.x += fx;
   }
   if (CURVA > 0.) {
-    vec2 q = c * 2. - 1.; vec2 o = abs(q.yx) * CURVA * vec2(.22, .3); q += q * o * o; c = q * .5 + .5;
+    vec2 q = c * 2. - 1.; vec2 o = abs(q.yx) * CURVA * vec2(.34, .45); q += q * o * o; c = q * .5 + .5;
     if (c.x < 0. || c.x > 1. || c.y < 0. || c.y > 1.) { gl_FragColor = vec4(0., 0., 0., 1.); return; }
   }
   // a cor do pixel
   vec3 col;
   if (CONVERG > 0. || VHS > 0.) {
-    vec2 o = vec2((CONVERG * 1.2 + VHS * 1.5) / tam.x, 0.);
+    vec2 o = vec2((CONVERG * 1.8 + VHS * 2.) / tam.x, 0.);
     col = vec3(amostra(c + o).r, amostra(c).g, amostra(c - o).b);
   } else col = amostra(c);
   if (COMPOSTO > 0.) col = mix(col, composto(c, col), COMPOSTO);
@@ -169,7 +179,7 @@ void main() {
     b += tx(c + vec2(d.x, 0.)) + tx(c - vec2(d.x, 0.)) + tx(c + vec2(0., d.y)) + tx(c - vec2(0., d.y));
     b += tx(c + d) + tx(c - d) + tx(c + vec2(d.x, -d.y)) + tx(c - vec2(d.x, -d.y));
     b /= 8.;
-    col += b * b * GLOW * .8;
+    col += b * b * GLOW * 1.3;
   }
   if (RASTRO > 0.) col = mix(col, texture2D(tp, c).rgb, RASTRO * .55);
   // cor
@@ -198,7 +208,7 @@ void main() {
     s = pow(s, mix(1.2, .35, luz(col) * GROSSAS));
     col *= mix(1., s, LINHAS * .85) * (1. + LINHAS * .32);
   }
-  if (LCD > 0.) { vec2 f = fract(c * tam); float g = smoothstep(0., .14, f.x) * smoothstep(0., .14, f.y) * smoothstep(1., .9, f.x) * smoothstep(1., .9, f.y); col *= mix(1., .45 + .55 * g, LCD) * (1. + LCD * .12); }
+  if (LCD > 0.) { vec2 f = fract(c * tam); float g = smoothstep(0., .14, f.x) * smoothstep(0., .14, f.y) * smoothstep(1., .9, f.x) * smoothstep(1., .9, f.y); col *= mix(1., .2 + .8 * g, LCD) * (1. + LCD * .2); }
   if (MASCARA > 0.) {
     vec2 fc = floor(gl_FragCoord.xy / MTAM);
     float col3 = mod(fc.x, 3.);
@@ -207,9 +217,9 @@ void main() {
     if (MTIPO > .5 && MTIPO < 1.5 && mod(fc.y + floor(fc.x / 3.) * 2., 4.) < 1.) m *= .5;   // fenda: a TV comum
     col *= mix(vec3(1.), m * 1.55, MASCARA * .7);
   }
-  if (VINHETA > 0.) { vec2 v = c * (1. - c.yx); col *= pow(clamp(v.x * v.y * 15., 0., 1.), VINHETA * .45); }
+  if (VINHETA > 0.) { vec2 v = c * (1. - c.yx); col *= pow(clamp(v.x * v.y * 15., 0., 1.), VINHETA * 1.1); }
   if (CANTOS > 0.) { vec2 q = abs(c - .5) * 2.; vec2 k = max(q - (1. - CANTOS * .12), 0.) / (CANTOS * .12 + .0001); col *= smoothstep(1., .85, length(k)); }
-  if (CHIADO > 0.) col += (sorte(gl_FragCoord.xy + fract(tempo) * 100.) - .5) * CHIADO * .28;
+  if (CHIADO > 0.) col += (sorte(gl_FragCoord.xy + fract(tempo) * 100.) - .5) * CHIADO * .4;
   gl_FragColor = vec4(clamp(col, 0., 1.), 1.);
 }`;
   // os valores na ordem do shader (vec4 p[7])
