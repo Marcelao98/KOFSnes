@@ -35,6 +35,8 @@
 > `lr_onda_pos_c`); `SISTEMAS[x].indices` diz quais canais o sistema usa. Mudo/solo do genplus = opções de volume por canal
 > do núcleo (`genesis_plus_gx_md_channel_N_volume`/`psg_channel_N_volume`), só na instância da jukebox. HTML do PC ~6,7 MB,
 > do celular ~10,7 MB. ROMs de teste: geradas (68000 e Z80 escritos à mão: cor + FM + PSG); o 240p Test Suite só tem fonte.
+> **20/10 (fim):** KOF RODOU no KOFstation (Neo Geo, testado pelo Marcelo). Versão publicada 202610200139: o zip de Neo Geo é
+> reconhecido também pelo conteúdo (`KofNeoGeoCrc`/`setNeoGeoDoZip`), qualquer nome. Próximo: ele vai jogar/testar tudo e trazer bugs.
 > **PUBLICADO 20/10 (versão 202610200121, lançador 7):** main = `neogeo` (Sega + núcleos separados + GBA + Neo Geo). Testado
 > no Wine baixando do GitHub de verdade: o lançador 6 troca html+exe, o 7 baixa os 5 núcleos na abertura seguinte. O Marcelo
 > é praticamente o único usuário: pode publicar sem medo quando ele pedir.
