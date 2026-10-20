@@ -470,78 +470,9 @@ body { background-image: var(--fundo-img); background-size: cover; }
    o JS põe o padding (as bordas) e --h = altura da tela do jogo */
 #moldura { position: relative; line-height: 0; }
 body.vazio #moldura { visibility: hidden; }
-.mold-extra { display: none; position: absolute; inset: 0; pointer-events: none; }
-body:not([data-moldura="nenhuma"]) .mold-extra { display: block; }
-body:not([data-moldura="nenhuma"]) #tela { box-shadow: none; }
+.mold-extra { display: none; }
+body:not([data-moldura="nenhuma"]) #tela { box-shadow: none; border: 0; }
 .mold-extra::before, .mold-extra::after { content: ""; position: absolute; line-height: 1; }
-
-/* TV de madeira, anos 80: gabinete de madeira, tela à esquerda, painel com botões à direita */
-body[data-moldura="tv80"] #moldura {
-  background: repeating-linear-gradient(92deg, #5c3519 0 3px, #6e4220 3px 8px, #4f2c13 8px 10px, #643a1b 10px 15px);
-  border-radius: calc(var(--h) * .07);
-  box-shadow: 0 calc(var(--h) * .04) calc(var(--h) * .1) #000b, inset 0 0 0 calc(var(--h) * .014) #2c180a, inset 0 calc(var(--h) * .02) calc(var(--h) * .04) #ffffff18;
-}
-body[data-moldura="tv80"] #tela { border: calc(var(--h) * .035) solid #141210; border-radius: calc(var(--h) * .09); outline: calc(var(--h) * .012) solid #8c7b5e; }
-body[data-moldura="tv80"] .mold-extra::before {        /* painel: dois botões giratórios e o alto-falante */
-  top: calc(var(--h) * .1); bottom: calc(var(--h) * .1); right: calc(var(--h) * .07); width: calc(var(--h) * .3);
-  border-radius: calc(var(--h) * .03); border: calc(var(--h) * .008) solid #1a140e;
-  background:
-    radial-gradient(circle at 50% 16%, #d8d0c0 0 calc(var(--h) * .05), #6d6455 calc(var(--h) * .052) calc(var(--h) * .062), transparent calc(var(--h) * .064)),
-    radial-gradient(circle at 50% 38%, #d8d0c0 0 calc(var(--h) * .04), #6d6455 calc(var(--h) * .042) calc(var(--h) * .05), transparent calc(var(--h) * .052)),
-    repeating-linear-gradient(0deg, #15110c 0 calc(var(--h) * .008), #3a3127 calc(var(--h) * .008) calc(var(--h) * .016)) 50% 92% / 80% 36% no-repeat,
-    linear-gradient(#2f2820, #211b15);
-}
-body[data-moldura="tv80"] .mold-extra::after {         /* plaquinha com o nome */
-  content: "KOFnes"; right: calc(var(--h) * .07); width: calc(var(--h) * .3); top: calc(var(--h) * .6); text-align: center;
-  font: italic 700 calc(var(--h) * .045) Georgia, serif; color: #e2b85c; text-shadow: 0 1px 0 #000;
-}
-
-/* TV de tubo, anos 90: plástico preto, alto-falantes embaixo, luz de ligada */
-body[data-moldura="tv90"] #moldura {
-  background: linear-gradient(#3c3c40, #1b1b1e); border-radius: calc(var(--h) * .06) calc(var(--h) * .06) calc(var(--h) * .09) calc(var(--h) * .09);
-  box-shadow: 0 calc(var(--h) * .04) calc(var(--h) * .1) #000b, inset 0 calc(var(--h) * .01) 0 #ffffff14;
-}
-body[data-moldura="tv90"] #tela { border: calc(var(--h) * .03) solid #0a0a0b; border-radius: calc(var(--h) * .08); }
-body[data-moldura="tv90"] .mold-extra::before {        /* duas grades de alto-falante e a luz vermelha */
-  left: calc(var(--h) * .1); right: calc(var(--h) * .1); bottom: calc(var(--h) * .05); height: calc(var(--h) * .09);
-  background:
-    radial-gradient(circle at 50% 50%, #ff3b30 0 calc(var(--h) * .008), #ff3b3055 calc(var(--h) * .012), transparent calc(var(--h) * .02)) 96% 50% / calc(var(--h) * .05) 100% no-repeat,
-    repeating-linear-gradient(90deg, #0c0c0d 0 calc(var(--h) * .007), transparent calc(var(--h) * .007) calc(var(--h) * .016)) 0 50% / 28% 80% no-repeat,
-    repeating-linear-gradient(90deg, #0c0c0d 0 calc(var(--h) * .007), transparent calc(var(--h) * .007) calc(var(--h) * .016)) 82% 50% / 28% 80% no-repeat;
-}
-body[data-moldura="tv90"] .mold-extra::after {
-  content: "KOFnes"; left: 0; right: 0; bottom: calc(var(--h) * .075); text-align: center;
-  font: 700 calc(var(--h) * .04) "Segoe UI", system-ui, sans-serif; letter-spacing: .15em; color: #b8b8c0;
-}
-
-/* Fliperama: letreiro em neon em cima, painel com alavanca e botões embaixo */
-body[data-moldura="fliperama"] #moldura {
-  background: linear-gradient(90deg, #4a1470, #16061f 14%, #16061f 86%, #4a1470);
-  border-radius: calc(var(--h) * .03); box-shadow: 0 0 calc(var(--h) * .08) #ff3ec855, 0 calc(var(--h) * .04) calc(var(--h) * .1) #000b;
-}
-body[data-moldura="fliperama"] #tela { border: calc(var(--h) * .025) solid #000; border-radius: calc(var(--h) * .02); }
-body[data-moldura="fliperama"] .mold-extra::before {   /* letreiro */
-  content: "KOFnes"; top: calc(var(--h) * .04); left: calc(var(--h) * .12); right: calc(var(--h) * .12); height: calc(var(--h) * .21);
-  display: grid; place-items: center; border-radius: calc(var(--h) * .015);
-  background: linear-gradient(#ff3ec8, #7a1fd6 60%, #3a0d6b); box-shadow: inset 0 0 calc(var(--h) * .03) #fff6, 0 0 calc(var(--h) * .05) #ff3ec8aa;
-  font: 900 calc(var(--h) * .12) Impact, "Arial Black", sans-serif; letter-spacing: .06em; color: #fff;
-  text-shadow: 0 0 calc(var(--h) * .02) #fff, 0 0 calc(var(--h) * .05) #26e0ff;
-}
-body[data-moldura="fliperama"] .mold-extra::after {    /* painel: alavanca + 6 botões */
-  left: calc(var(--h) * .06); right: calc(var(--h) * .06); bottom: calc(var(--h) * .04); height: calc(var(--h) * .24);
-  border-radius: calc(var(--h) * .02) calc(var(--h) * .02) calc(var(--h) * .04) calc(var(--h) * .04);
-  background:
-    radial-gradient(circle, #ff2a2a 0 calc(var(--h) * .035), #7a0000 calc(var(--h) * .037) calc(var(--h) * .045), transparent calc(var(--h) * .047)) 18% 45% / calc(var(--h) * .12) calc(var(--h) * .12) no-repeat,
-    radial-gradient(circle, #222 0 calc(var(--h) * .012), transparent calc(var(--h) * .014)) 18% 62% / calc(var(--h) * .12) calc(var(--h) * .12) no-repeat,
-    radial-gradient(circle, #26e0ff 0 calc(var(--h) * .025), #0a6070 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 58% 35% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #ffe14d 0 calc(var(--h) * .025), #806a10 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 70% 35% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #7dff4f 0 calc(var(--h) * .025), #2f7a10 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 82% 35% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #ff3ec8 0 calc(var(--h) * .025), #7a1060 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 58% 72% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #ffffff 0 calc(var(--h) * .025), #777 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 70% 72% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    radial-gradient(circle, #ff8c1a 0 calc(var(--h) * .025), #7a3a00 calc(var(--h) * .027) calc(var(--h) * .032), transparent calc(var(--h) * .034)) 82% 72% / calc(var(--h) * .08) calc(var(--h) * .08) no-repeat,
-    linear-gradient(#2a0f3d, #12051c);
-  box-shadow: inset 0 calc(var(--h) * .008) 0 #ff3ec866;
-}
 
 /* Caçador de bugs */
 #bug { width: min(560px, 94vw); text-align: left; z-index: 11; }
@@ -1528,6 +1459,57 @@ html:not(.celular) .so-cel { display: none !important; }   /* texto só do celul
 .ab-dicas { line-height: 1.9; }
 .ab-pular { position: absolute; right: 16px; bottom: 16px; background: transparent; color: var(--fraco); border: 1px solid var(--borda); border-radius: 20px; padding: 6px 14px; cursor: pointer; }
 
+/* ---------------- painel de imagem (gaveta à direita; o jogo continua visível e rodando) ---------------- */
+#visual {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(390px, 92vw); z-index: 5; overflow-y: auto;
+  background: var(--painel2); border-left: 1px solid var(--borda); box-shadow: var(--brilho); padding: 14px 16px; text-align: left;
+}
+body.com-visual #palco { padding-right: min(390px, 92vw); }
+#visual .titulo-j { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 10px; }
+#vis-pre { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 6px; margin-bottom: 10px; }
+#vis-pre button {
+  padding: 8px 6px; border-radius: var(--raio); border: 1px solid var(--borda); background: var(--painel);
+  font-size: 12px; text-align: center; line-height: 1.2; min-height: 42px;
+}
+#vis-pre button.ativo { border-color: var(--destaque); box-shadow: inset 0 0 0 2px var(--destaque); }
+#vis-pre button.meu { border-style: dashed; }
+#vis-pre button:hover { background: var(--sel); }
+.vis-linha { display: flex; gap: 8px; align-items: center; margin: 8px 0; font-size: 13px; }
+#vis-ajustes details { border: 1px solid var(--borda); border-radius: var(--raio); margin: 6px 0; background: var(--painel); }
+#vis-ajustes summary { padding: 8px 10px; cursor: pointer; font-weight: 700; }
+#vis-ajustes summary small { font-weight: 400; color: var(--fraco); margin-left: 6px; }
+.vis-aj { display: grid; grid-template-columns: 1fr 44px; gap: 2px 8px; padding: 4px 10px 8px; align-items: center; font-size: 13px; }
+.vis-aj label { grid-column: 1 / -1; color: var(--fraco); }
+.vis-aj input[type=range] { width: 100%; accent-color: var(--destaque); }
+.vis-aj output { text-align: right; font-variant-numeric: tabular-nums; }
+.vis-aj select { grid-column: 1 / -1; padding: 5px; background: var(--painel2); color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); }
+.vis-botoes .grande { width: 100%; }
+html.celular #visual { top: auto; height: 58%; width: 100%; border-left: 0; border-top: 1px solid var(--borda); }
+html.celular body.com-visual #palco { padding-right: 0; padding-bottom: 58vh; }
+
+/* filmadora: PLAY e data por cima do jogo */
+#filmadora { position: absolute; pointer-events: none; line-height: 1.25; font-family: "Courier New", monospace; font-weight: 700; color: #fff;
+  text-shadow: 2px 2px 0 #000, 0 0 6px rgba(255,255,255,.6); padding: 4% 5%; box-sizing: border-box; }
+#filmadora .fd-play { position: absolute; top: 5%; left: 5%; animation: fd-pisca 1.6s steps(1) infinite; }
+#filmadora .fd-data { position: absolute; bottom: 6%; right: 5%; text-align: right; white-space: pre; }
+@keyframes fd-pisca { 50% { opacity: .15; } }
+
+/* galeria de molduras */
+#molduras { width: min(980px, 94vw); max-height: 88vh; overflow-y: auto; z-index: 9; }
+#mold-cats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 4px 0 12px; }
+#mold-cats button { padding: 5px 12px; border-radius: 99px; border: 1px solid var(--borda); background: var(--painel); }
+#mold-cats button.ativo { background: var(--destaque); color: var(--painel); border-color: var(--destaque); }
+#grade-molduras { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.mold-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; border-radius: var(--raio); border: 1px solid var(--borda); background: var(--painel); }
+.mold-card:hover { background: var(--sel); }
+.mold-card.ativo { border-color: var(--destaque); box-shadow: inset 0 0 0 2px var(--destaque); }
+.mold-quadro { position: relative; display: grid; place-items: center; min-height: 110px; }
+.mold-quadro img { position: absolute; image-rendering: pixelated; object-fit: fill; }
+.mold-card span { display: flex; flex-direction: column; gap: 2px; text-align: center; }
+.mold-card small { color: var(--fraco); font-size: 12px; }
+.mold-opcoes { margin-top: 12px; text-align: left; }
+.mold-opcoes .grande { width: auto; }
+
 </style>
 </head>
 <body>
@@ -1537,6 +1519,7 @@ html:not(.celular) .so-cel { display: none !important; }   /* texto só do celul
     <button data-acao="biblioteca">Biblioteca<kbd>Ctrl+L</kbd></button>
     <button data-acao="pasta">Escolher pasta de ROMs…</button>
     <button data-acao="abrir">Adicionar arquivo…<kbd>Ctrl+O</kbd></button>
+    <button data-acao="traducao">Aplicar tradução (patch)…</button>
     <button data-acao="bios">BIOS…</button>
     <button data-acao="estatisticas">📊 Estatísticas</button>
     <hr>
@@ -1563,10 +1546,8 @@ html:not(.celular) .so-cel { display: none !important; }   /* texto só do celul
     <button data-prop="87">Pixel perfeito (8:7)</button>
     <button data-prop="esticar">Esticar</button>
     <hr>
+    <button data-acao="molduras">🖼 Galeria de molduras…</button>
     <button data-moldura="nenhuma">Sem moldura</button>
-    <button data-moldura="tv80">Moldura: TV de madeira (anos 80)</button>
-    <button data-moldura="tv90">Moldura: TV de tubo (anos 90)</button>
-    <button data-moldura="fliperama">Moldura: Fliperama</button>
     <hr>
     <button data-paleta-gb="auto">Game Boy: cores do Game Boy Color</button>
     <button data-paleta-gb="verde">Game Boy: verde (o original)</button>
@@ -1575,13 +1556,13 @@ html:not(.celular) .so-cel { display: none !important; }   /* texto só do celul
     <button data-paleta-nes="composite-direct-fbx">NES: TV de tubo</button>
     <button data-paleta-nes="wavebeam">NES: cores vivas</button>
     <hr>
-    <button data-filtro="nitido">Filtro: Nítido</button>
-    <button data-filtro="suave">Filtro: Suave</button>
-    <button data-filtro="crt">Filtro: TV de tubo (CRT)</button>
-    <button data-filtro="fliperama">Filtro: Fliperama</button>
-    <button data-filtro="gameboy">Filtro: Game Boy</button>
-    <button data-filtro="cafe">Filtro: Café (sépia)</button>
-    <button data-filtro="lcd">Filtro: Tela LCD</button>
+    <button data-acao="visual">🎛 Painel de imagem…<kbd>F4</kbd></button>
+    <button data-filtro="original">Filtro: Original</button>
+    <button data-filtro="tv">Filtro: TV de tubo da sala</button>
+    <button data-filtro="fliperama">Filtro: Monitor de fliperama</button>
+    <button data-filtro="locadora">Filtro: Locadora 1996</button>
+    <button data-filtro="gameboy">Filtro: Game Boy tijolão</button>
+    <button data-filtro="hd">Filtro: HD de mentirinha</button>
     <hr>
     <button data-acao="cheia">Tela cheia<kbd>F11</kbd></button>
     <button data-acao="sofa">Modo sofá (tela cheia, controle)</button>
@@ -1656,7 +1637,7 @@ html:not(.celular) .so-cel { display: none !important; }   /* texto só do celul
     <footer class="hm-rodape">SNES do PC em Kof, linguagem parceira · <span id="hm-versao"></span> · <button class="hm-link" data-acao="guia">guia</button> · <button class="hm-link" data-acao="bug">reportar bug</button> · <button class="hm-link" data-acao="musica-inicio">🎵 Se Essa Rua</button></footer>
   </section>
 
-  <div id="moldura"><canvas id="tela" width="256" height="224"></canvas><div class="mold-extra"></div></div>
+  <div id="moldura"><canvas id="tela" width="256" height="224"></canvas><div id="filmadora" hidden><span class="fd-play">▶ PLAY</span><span class="fd-data"></span></div><div class="mold-extra"></div></div>
 
   <section id="biblioteca" class="janela">
     <div class="titulo-j">☕ Biblioteca <span><button class="x so-pc" data-acao="sofa" title="modo sofá (Select no controle)">🛋</button>
@@ -1898,6 +1879,31 @@ html:not(.celular) .so-cel { display: none !important; }   /* texto só do celul
     <button class="grande sec" data-acao="showcase">▶ Showcase lento: um tema a cada 3,5 s</button>
     <button class="grande sec" data-acao="showcase-rapido">⚡ Showcase rápido: meio segundo por tema</button>
     <p class="dica so-pc">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p><p class="dica so-cel">toque num tema pra escolher</p>
+  </section>
+
+  <section id="molduras" class="janela" hidden>
+    <div class="titulo-j"><span>🖼 Molduras</span><button class="x" data-acao="fechar-molduras">×</button></div>
+    <div id="mold-cats"></div>
+    <div id="grade-molduras"></div>
+    <div class="mold-opcoes">
+      <label class="vis-linha"><input type="checkbox" id="mold-anim"> Animações (LED piscando, neon, bandeirinha)</label>
+      <label class="vis-linha"><input type="checkbox" id="mold-porsis"> Cada console com a sua (Game Boy no tijolão, Neo Geo no fliperama…)</label>
+      <button class="grande sec" data-acao="mold-propria">📂 Usar uma moldura minha (PNG com o meio transparente)…</button>
+    </div>
+    <p class="dica so-pc">clique pra escolher · Esc fecha</p>
+  </section>
+
+  <section id="visual" hidden>
+    <div class="titulo-j"><span>🎛 Imagem <small id="vis-nome" class="dica"></small></span><button class="x" data-acao="fechar-visual">×</button></div>
+    <div id="vis-pre"></div>
+    <label class="vis-linha"><input type="checkbox" id="vis-comparar"> Comparar antes | depois <small class="dica">(arraste na imagem)</small></label>
+    <div id="vis-ajustes"></div>
+    <div class="vis-botoes">
+      <button class="grande sec" data-acao="vis-salvar">💾 Salvar como meu jeito…</button>
+      <button class="grande sec" data-acao="vis-zerar">↺ Voltar ao original</button>
+    </div>
+    <label class="vis-linha"><input type="checkbox" id="vis-porsis"> Lembrar um jeito pra cada console</label>
+    <p class="dica so-pc">o jogo continua rodando: mexa e veja na hora · F4 abre e fecha</p>
   </section>
 
   <section id="estatisticas" class="janela" hidden>
@@ -10779,6 +10785,660 @@ const KofSpc = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = KofSpc;
 
+// Patches de tradução (e hacks): IPS, BPS e UPS aplicados na memória. A ROM original nunca muda: o jogo traduzido vira
+// outro jogo na biblioteca (outra ROM, outro save). BPS e UPS trazem o CRC32 da ROM certa: com a ROM errada, avisa.
+// Cópia de SNES com cabeçalho de 512 bytes: se o CRC não bate, tenta sem o cabeçalho (e o IPS, com e sem, pelo tamanho).
+const KofPatch = (() => {
+  'use strict';
+  const EXT = /\.(ips|bps|ups)$/i;
+  const T = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; T[n] = c >>> 0; }
+  const crc32 = (u8, ini = 0, fim = u8.length) => { let c = 0xFFFFFFFF; for (let i = ini; i < fim; i++) c = T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  const txt = (u8, i, n) => String.fromCharCode(...u8.subarray(i, i + n));
+  const tipo = (p) => txt(p, 0, 5) === 'PATCH' ? 'ips' : txt(p, 0, 4) === 'BPS1' ? 'bps' : txt(p, 0, 4) === 'UPS1' ? 'ups' : null;
+  const erroRom = () => new Error('esse patch é pra outra versão do jogo (a ROM não bate com a que ele espera)');
+
+  function ips(rom, p) {
+    let i = 5, tam = rom.length, out = new Uint8Array(Math.max(rom.length, 16 << 20)), fimMax = rom.length;
+    out.set(rom);
+    while (i + 3 <= p.length) {
+      if (txt(p, i, 3) === 'EOF') { i += 3; if (i + 3 <= p.length) tam = (p[i] << 16) | (p[i + 1] << 8) | p[i + 2]; else tam = fimMax; return out.slice(0, tam); }
+      const ofs = (p[i] << 16) | (p[i + 1] << 8) | p[i + 2], n = (p[i + 3] << 8) | p[i + 4];
+      i += 5;
+      if (n) { out.set(p.subarray(i, i + n), ofs); i += n; fimMax = Math.max(fimMax, ofs + n); }
+      else { const r = (p[i] << 8) | p[i + 1], v = p[i + 2]; out.fill(v, ofs, ofs + r); i += 3; fimMax = Math.max(fimMax, ofs + r); }
+    }
+    throw new Error('patch IPS incompleto');
+  }
+  // número de tamanho variável do BPS/UPS
+  function leitor(p, i) {
+    return {
+      i,
+      num() { let d = 0, s = 1; for (;;) { const x = p[this.i++]; d += (x & 0x7F) * s; if (x & 0x80) break; s *= 128; d += s; } return d; },
+    };
+  }
+  function bps(rom, p) {
+    const fim = p.length - 12, l = leitor(p, 4);
+    const tamOrig = l.num(), tamNovo = l.num(), meta = l.num(); l.i += meta;
+    const dv = new DataView(p.buffer, p.byteOffset, p.byteLength);
+    if (crc32(p, 0, p.length - 4) !== dv.getUint32(p.length - 4, true)) throw new Error('patch BPS corrompido');
+    const crcOrig = dv.getUint32(fim, true), crcNovo = dv.getUint32(fim + 4, true);
+    if (rom.length !== tamOrig || crc32(rom) !== crcOrig) throw erroRom();
+    const out = new Uint8Array(tamNovo);
+    let o = 0, fonte = 0, alvo = 0;
+    while (l.i < fim) {
+      const d = l.num(), acao = d & 3, n = Math.floor(d / 4) + 1;
+      if (acao === 0) { out.set(rom.subarray(o, o + n), o); o += n; }
+      else if (acao === 1) { out.set(p.subarray(l.i, l.i + n), o); l.i += n; o += n; }
+      else {
+        const x = l.num(), desl = (x & 1 ? -1 : 1) * Math.floor(x / 2);
+        if (acao === 2) { fonte += desl; out.set(rom.subarray(fonte, fonte + n), o); fonte += n; o += n; }
+        else { alvo += desl; for (let k = 0; k < n; k++) out[o++] = out[alvo++]; }
+      }
+    }
+    if (crc32(out) !== crcNovo) throw new Error('o patch não deu certo nessa ROM (o resultado não confere)');
+    return out;
+  }
+  function ups(rom, p) {
+    const fim = p.length - 12, l = leitor(p, 4), dv = new DataView(p.buffer, p.byteOffset, p.byteLength);
+    const tamA = l.num(), tamB = l.num(), crcA = dv.getUint32(fim, true), crcB = dv.getUint32(fim + 4, true);
+    const crc = crc32(rom), ida = rom.length === tamA && crc === crcA, volta = rom.length === tamB && crc === crcB;
+    if (!ida && !volta) throw erroRom();
+    const out = new Uint8Array(ida ? tamB : tamA);
+    out.set(rom.subarray(0, Math.min(rom.length, out.length)));
+    let o = 0;
+    while (l.i < fim) {
+      o += l.num();
+      while (l.i < fim) { const x = p[l.i++]; if (o < out.length) out[o] = (o < rom.length ? rom[o] : 0) ^ x; o++; if (!x) break; }
+    }
+    if (crc32(out) !== (ida ? crcB : crcA)) throw new Error('o patch não deu certo nessa ROM (o resultado não confere)');
+    return out;
+  }
+  // devolve a ROM nova; "cabecalho": ROM de SNES com os 512 bytes de cópia na frente
+  function aplicar(rom, patch, sistema) {
+    const t = tipo(patch);
+    if (!t) throw new Error('não reconheci esse patch (aceito .ips, .bps e .ups)');
+    const temCab = sistema === 'snes' && rom.length % 1024 === 512;
+    const semCab = temCab ? rom.subarray(512) : rom;
+    if (t === 'ips') return { tipo: t, rom: ips(temCab ? semCab : rom, patch) };   // os patches de hoje são pra ROM sem cabeçalho
+    const f = t === 'bps' ? bps : ups;
+    try { return { tipo: t, rom: f(rom, patch) }; } catch (e) {
+      if (temCab && e.message === erroRom().message) return { tipo: t, rom: f(semCab, patch) };
+      throw e;
+    }
+  }
+  return { aplicar, tipo, crc32, EXT };
+})();
+if (typeof module !== 'undefined') module.exports = KofPatch;
+
+// Painel de imagem do KOFstation: um shader só (WebGL 1) com todos os ajustes como parâmetros, mais as predefinições.
+// Inspirado nos shaders do RetroArch (sharp-bilinear, ScaleFX/xBR, crt-geom/royale/lottes, blargg NTSC, vhs, lcd-grid,
+// gameboy, gba-color, daltonize), mas escrito do zero aqui: nenhuma linha copiada de lá.
+// Cada ajuste: [id, grupo, nome, mínimo, máximo, passo, padrão, opções (lista de nomes, quando é escolha)]
+const KofVisual = (() => {
+  'use strict';
+  const AJUSTES = [
+    ['pixel', 'Pixels', 'Desenho do pixel', 0, 5, 1, 1, ['Nítido', 'Nítido suave', 'Suave', 'Arredondado (HD)', 'Pintura', 'Desenho animado']],
+    ['linhas', 'TV', 'Linhas de varredura', 0, 1, 0.05, 0],
+    ['grossas', 'TV', 'Linhas mais grossas no claro', 0, 1, 0.05, 0],
+    ['mascara', 'TV', 'Máscara de fósforo', 0, 1, 0.05, 0],
+    ['mascaraTipo', 'TV', 'Tipo de máscara', 0, 2, 1, 0, ['Grade (tubo Trinitron)', 'Fenda (TV comum)', 'Pontinhos (monitor)']],
+    ['mascaraTam', 'TV', 'Tamanho da máscara', 1, 3, 1, 1],
+    ['curva', 'TV', 'Curvatura', 0, 1, 0.05, 0],
+    ['cantos', 'TV', 'Cantos arredondados', 0, 1, 0.05, 0],
+    ['vinheta', 'TV', 'Vinheta (bordas escuras)', 0, 1, 0.05, 0],
+    ['glow', 'TV', 'Brilho que espalha', 0, 1, 0.05, 0],
+    ['converg', 'TV', 'Cores desalinhadas', 0, 1, 0.05, 0],
+    ['composto', 'Sinal', 'Cabo composto (cor borrada)', 0, 1, 0.05, 0],
+    ['vhs', 'Sinal', 'Fita VHS', 0, 1, 0.05, 0],
+    ['chiado', 'Sinal', 'Chiado', 0, 1, 0.05, 0],
+    ['tremor', 'Sinal', 'Imagem tremendo', 0, 1, 0.05, 0],
+    ['rastro', 'Portátil', 'Rastro (tela lenta)', 0, 1, 0.05, 0],
+    ['lcd', 'Portátil', 'Grade do LCD', 0, 1, 0.05, 0],
+    ['verde', 'Portátil', 'Tela verde (tijolão)', 0, 1, 0.05, 0],
+    ['portatil', 'Portátil', 'Cor de tela de portátil', 0, 1, 0.05, 0],
+    ['brilho', 'Cor', 'Brilho', -0.3, 0.3, 0.02, 0],
+    ['contraste', 'Cor', 'Contraste', 0.5, 1.5, 0.05, 1],
+    ['saturacao', 'Cor', 'Saturação', 0, 2, 0.05, 1],
+    ['gama', 'Cor', 'Gama', 0.6, 1.6, 0.05, 1],
+    ['temperatura', 'Cor', 'Temperatura (frio ↔ quente)', -1, 1, 0.05, 0],
+    ['sepia', 'Cor', 'Sépia', 0, 1, 0.05, 0],
+    ['pb', 'Cor', 'Preto e branco', 0, 1, 0.05, 0],
+    ['dalton', 'Cor', 'Corrigir daltonismo', 0, 3, 1, 0, ['Desligado', 'Protanopia (vermelho)', 'Deuteranopia (verde)', 'Tritanopia (azul)']],
+    ['polaroid', 'Foto', 'Polaroid (com a moldura de papel)', 0, 1, 0.05, 0],
+    ['lomo', 'Foto', 'Lomo (cantos escuros, cor forte)', 0, 1, 0.05, 0],
+    ['filme', 'Foto', 'Filme antigo (grão e arranhões)', 0, 1, 0.05, 0],
+    ['vazamento', 'Foto', 'Vazamento de luz', 0, 1, 0.05, 0],
+    ['duotone', 'Foto', 'Duas cores (duotone)', 0, 1, 0.05, 0],
+    ['duotoneCor', 'Foto', 'Cores do duotone', 0, 3, 1, 0, ['Rosa e azul', 'Amarelo e roxo', 'Ciano e vinho', 'Laranja e verde-escuro']],
+    ['cinema', 'Foto', 'Azul e laranja (filme de Hollywood)', 0, 1, 0.05, 0],
+    ['desfoque', 'Foto', 'Fundo desfocado (retrato)', 0, 1, 0.05, 0],
+    ['pontilhado', 'Retrô', 'Pontilhado de 1 bit', 0, 1, 0.05, 0],
+    ['cga', 'Retrô', 'Paleta de 4 cores (CGA)', 0, 1, 0.05, 0],
+    ['fosforo', 'Retrô', 'Monitor de fósforo', 0, 1, 0.05, 0],
+    ['fosforoCor', 'Retrô', 'Cor do fósforo', 0, 2, 1, 0, ['Verde', 'Âmbar', 'Branco azulado']],
+    ['pixelao', 'Retrô', 'Pixelão (estilo Atari)', 0, 1, 0.05, 0],
+    ['gibi', 'Retrô', 'Revista em quadrinhos', 0, 1, 0.05, 0],
+    ['neon', 'Retrô', 'Neon (synthwave)', 0, 1, 0.05, 0],
+    ['foraDoAr', 'Efeitos', 'Fora do ar (chuvisco)', 0, 1, 0.05, 0],
+    ['rolagem', 'Efeitos', 'Imagem rolando (vertical solto)', 0, 1, 0.05, 0],
+    ['interferencia', 'Efeitos', 'Barra de interferência', 0, 1, 0.05, 0],
+    ['glitch', 'Efeitos', 'Glitch', 0, 1, 0.05, 0],
+    ['onda', 'Efeitos', 'Ondulação', 0, 1, 0.05, 0],
+    ['ondaTipo', 'Efeitos', 'Tipo de ondulação', 0, 1, 1, 0, ['Onda de calor', 'Debaixo d\'água']],
+    ['filmadora', 'Efeitos', 'Filmadora (PLAY e data na tela)', 0, 1, 1, 0, ['Desligada', 'Ligada']],
+    ['ligarTv', 'Efeitos', 'TV ligando ao abrir o jogo', 0, 1, 1, 0, ['Não', 'Sim']],
+    ['teste', 'Efeitos', 'Barras de teste quando pausa', 0, 1, 1, 0, ['Não', 'Sim']],
+  ];
+  const PADRAO = Object.fromEntries(AJUSTES.map((a) => [a[0], a[6]]));
+  // predefinições: só o que muda do padrão
+  const PREDEF = [
+    ['original', 'Original', 'pixel nítido sem tremer, do jeitinho que o console desenha', {}],
+    ['nitido', 'Nítido e vivo', 'pixel quadradão com cor forte', { pixel: 0, contraste: 1.15, saturacao: 1.3 }],
+    ['suave', 'Suave', 'borrado, cara de emulador antigo', { pixel: 2 }],
+    ['tv', 'TV de tubo da sala', 'linhas, fósforo, curva e o cabo composto', { linhas: 0.6, grossas: 0.6, mascara: 0.6, mascaraTipo: 1, mascaraTam: 2, curva: 0.55, cantos: 0.6, vinheta: 0.35, glow: 0.3, composto: 0.55, converg: 0.35, saturacao: 1.1 }],
+    ['fliperama', 'Monitor de fliperama', 'linhas grossas, cor estourada e brilho', { linhas: 1, grossas: 1, mascara: 0.8, mascaraTam: 3, glow: 0.7, curva: 0.3, cantos: 0.4, vinheta: 0.25, saturacao: 1.3, contraste: 1.1 }],
+    ['pvm', 'Monitor de estúdio', 'linhas finas e retas, imagem reta e afiada', { linhas: 0.9, grossas: 0.4, mascara: 0.5, contraste: 1.1, saturacao: 1.1 }],
+    ['locadora', 'Locadora 1996', 'fita gasta, chiado e cor borrada', { pixel: 2, vhs: 1, chiado: 0.45, composto: 1, saturacao: 0.8, linhas: 0.3, vinheta: 0.25, tremor: 0.5, temperatura: 0.2, brilho: 0.04 }],
+    ['vo', 'TV da vó', 'tubo bem curvo, amarelado, antena de bombril', { pixel: 2, curva: 1, cantos: 1, vinheta: 0.6, sepia: 0.5, tremor: 0.5, chiado: 0.25, linhas: 0.45, composto: 0.6, brilho: 0.04 }],
+    ['gameboy', 'Game Boy tijolão', 'tela verde, grade e rastro', { pixel: 0, lcd: 0.8, rastro: 0.6, verde: 1, brilho: 0.04 }],
+    ['gbc', 'Portátil colorido', 'grade e as cores lavadas da tela', { pixel: 0, lcd: 0.75, rastro: 0.35, portatil: 1 }],
+    ['hd', 'HD de mentirinha', 'contorno arredondado, parece desenho vetorial', { pixel: 3, saturacao: 1.1 }],
+    ['pintura', 'Pintura', 'pinceladas, tipo quadro a óleo', { pixel: 4, saturacao: 1.25, contraste: 1.05 }],
+    ['cartoon', 'Desenho animado', 'contorno preto e cor chapada', { pixel: 5, saturacao: 1.2 }],
+    ['sonho', 'Sonho', 'borrado brilhando, cor de sonho', { pixel: 2, glow: 1, saturacao: 1.5, brilho: 0.05, vinheta: 0.3 }],
+    ['cafe', 'Café (sépia)', 'foto antiga', { pixel: 2, sepia: 1, vinheta: 0.7, contraste: 0.9, chiado: 0.15 }],
+    ['polaroid95', 'Polaroid de 1995', 'foto desbotada com luz vazando', { polaroid: 1, vazamento: 0.6, filme: 0.3 }],
+    ['filmadora', 'Fita da filmadora', 'PLAY, data e a fita gasta', { vhs: 0.7, chiado: 0.3, composto: 0.7, filmadora: 1, linhas: 0.2, saturacao: 0.85 }],
+    ['terminal', 'Terminal anos 80', 'monitor de fósforo verde', { fosforo: 1, linhas: 0.7, curva: 0.4, cantos: 0.5, vinheta: 0.5, glow: 0.5 }],
+    ['ambar', 'Monitor âmbar', 'o laranja dos computadores antigos', { fosforo: 1, fosforoCor: 1, linhas: 0.6, curva: 0.3, cantos: 0.4, glow: 0.4 }],
+    ['synthwave', 'Synthwave', 'só os contornos em neon', { neon: 1, glow: 0.8, linhas: 0.3 }],
+    ['gibi', 'Gibi', 'retícula, contorno e cor chapada', { gibi: 1, saturacao: 1.3 }],
+    ['cinemamudo', 'Cinema mudo', 'preto e branco, grão e arranhões', { pb: 1, filme: 1, vinheta: 0.7, contraste: 1.2, tremor: 0.3 }],
+    ['lomo', 'Lomo', 'cantos escuros e cor estourada', { lomo: 1, vazamento: 0.3 }],
+    ['duotone', 'Capa de disco', 'duas cores, rosa e azul', { duotone: 1 }],
+    ['hollywood', 'Hollywood', 'azul e laranja com fundo desfocado', { cinema: 1, desfoque: 0.6, vinheta: 0.3 }],
+    ['mac', 'Macintosh 1984', 'pontilhado preto e branco', { pontilhado: 1, pixel: 0 }],
+    ['cgapc', 'PC CGA', 'quatro cores: ciano, magenta, branco e preto', { cga: 1, pixel: 0 }],
+    ['atari', 'Pixelão', 'pixel enorme, estilo Atari', { pixelao: 0.45, saturacao: 1.3, contraste: 1.1 }],
+    ['glitch', 'Glitch', 'imagem quebrando de vez em quando', { glitch: 0.8, chiado: 0.15 }],
+    ['foradoar', 'Fora do ar', 'chuvisco por cima do jogo', { foraDoAr: 0.45, rolagem: 0.15, interferencia: 0.6 }],
+  ];
+  const valores = (id) => { const p = PREDEF.find((x) => x[0] === id); return { ...PADRAO, ...(p ? p[3] : {}) }; };
+  // filtros do menu antigo -> predefinição nova (quem já tinha escolhido continua com o parecido)
+  const ANTIGO = { crt: 'tv', lcd: 'gbc' };
+
+  const FRAG0 = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform sampler2D t, tp; uniform vec4 tela, u, p[13];
+varying vec2 uv;
+#define tam tela.xy
+#define saida tela.zw
+#define tempo u.x
+#define divisao u.y
+#define liga u.z
+#define pausa u.w
+/*{{DEFINES}}*/
+#define MTIPO MASCARATIPO
+#define MTAM MASCARATAM
+float luz(vec3 c) { return dot(c, vec3(.299, .587, .114)); }
+float sorte(vec2 q) { return fract(sin(dot(q, vec2(12.9898, 78.233))) * 43758.5453); }
+vec3 tx(vec2 c) { return texture2D(t, c).rgb; }
+vec3 perto(vec2 c) { return tx((floor(c * tam) + .5) / tam); }
+// nítido suave: o pixel fica quadrado, só a costura entre dois pixels é misturada (escala que não é inteira não treme)
+vec3 nitidoSuave(vec2 c) {
+  vec2 q = c * tam, esc = max(saida / tam, vec2(1.)), f = fract(q) - .5, faixa = .5 - .5 / esc;
+  return tx((floor(q) + .5 + (f - clamp(f, -faixa, faixa)) * esc) / tam);
+}
+// distância entre duas cores do jeito que o olho sente (o brilho pesa mais que a cor), como no xBR
+float dif(vec3 a, vec3 b) { vec3 d = abs(a - b); return dot(d, vec3(.299, .587, .114)) * 3. + (abs(d.r - d.g) + abs(d.g - d.b)) * .5; }
+// HD de mentirinha: a ideia do xBR (nível 1), feita aqui pra qualquer escala num passo só. Cada pixel de saída só pode ser
+// mudado pelo canto do pixel de origem mais perto dele: compara as duas diagonais desse canto (somas ponderadas de
+// diferenças dos vizinhos) e, se a borda corre na diagonal, pinta o "triângulo" do canto com a cor do vizinho, com a
+// borda suavizada na largura de um pixel da tela
+vec3 hd(vec2 c) {
+  vec2 q = c * tam, fp = fract(q), s = sign(fp - .5), base = (floor(q) + .5) / tam;
+  vec2 dx = vec2(s.x / tam.x, 0.), dy = vec2(0., s.y / tam.y);
+  vec2 f = mix(1. - fp, fp, step(0., s));                         // posição dentro do pixel com o canto em (1, 1)
+  vec3 E = tx(base), F = tx(base + dx), H = tx(base + dy), I = tx(base + dx + dy);
+  vec3 B = tx(base - dy), D = tx(base - dx), C = tx(base + dx - dy), G = tx(base - dx + dy);
+  vec3 F4 = tx(base + 2. * dx), H5 = tx(base + 2. * dy), I4 = tx(base + 2. * dx + dy), I5 = tx(base + dx + 2. * dy);
+  float ao = dif(E, C) + dif(E, G) + dif(I, F4) + dif(I, H5) + 4. * dif(H, F);   // a borda cruza F-H?
+  float ad = dif(H, D) + dif(H, I5) + dif(F, I4) + dif(F, B) + 4. * dif(E, I);   // ou E-I?
+  if (ad >= ao || dif(E, F) < .02 && dif(E, H) < .02) return E;
+  vec3 novo = dif(E, F) <= dif(E, H) ? F : H;
+  float larg = max(tam.x / saida.x, .02) * 1.2;                   // um pixel da tela, em unidades do pixel de origem
+  return mix(E, novo, smoothstep(1.5 - larg, 1.5 + larg, f.x + f.y));
+}
+vec3 suave(vec2 c) { vec2 d = .8 / tam; return tx(c) * .36 + (tx(c + vec2(d.x, 0.)) + tx(c - vec2(d.x, 0.)) + tx(c + vec2(0., d.y)) + tx(c - vec2(0., d.y))) * .16; }
+// Kuwahara: as 4 regiões 3x3 em volta (cada uma num canto); fica a média da região mais uniforme (menor variação de brilho).
+// Alisa o que é parecido e mantém as bordas: vira pincelada
+vec3 kuwahara(vec2 c) {
+  vec2 d = 1. / tam; vec3 m0 = vec3(0.), m1 = vec3(0.), m2 = vec3(0.), m3 = vec3(0.); float v0 = 0., v1 = 0., v2 = 0., v3 = 0., l;
+  for (int j = 0; j <= 2; j++) for (int i = 0; i <= 2; i++) {
+    vec2 o = vec2(float(i), float(j)) * d;
+    vec3 a = tx(c + vec2(-o.x, -o.y)); l = luz(a); m0 += a; v0 += l * l;
+    a = tx(c + vec2(o.x, -o.y)); l = luz(a); m1 += a; v1 += l * l;
+    a = tx(c + vec2(-o.x, o.y)); l = luz(a); m2 += a; v2 += l * l;
+    a = tx(c + vec2(o.x, o.y)); l = luz(a); m3 += a; v3 += l * l;
+  }
+  m0 /= 9.; m1 /= 9.; m2 /= 9.; m3 /= 9.;
+  v0 = v0 / 9. - luz(m0) * luz(m0); v1 = v1 / 9. - luz(m1) * luz(m1); v2 = v2 / 9. - luz(m2) * luz(m2); v3 = v3 / 9. - luz(m3) * luz(m3);
+  vec3 r = m0; float v = v0;
+  if (v1 < v) { v = v1; r = m1; } if (v2 < v) { v = v2; r = m2; } if (v3 < v) { r = m3; }
+  return r;
+}
+vec3 amostra(vec2 c) {
+  if (PIXEL < .5) return perto(c);
+  if (PIXEL < 1.5) return nitidoSuave(c);
+  if (PIXEL < 2.5) return suave(c);
+  if (PIXEL < 3.5) return hd(c);
+  if (PIXEL < 4.5) return kuwahara(c);
+  // desenho animado: a pincelada do Kuwahara (áreas lisas), o brilho em 4 degraus mantendo a cor, e contorno preto só onde
+  // a borda é forte (detecção de Sobel sobre o brilho)
+  vec3 k = kuwahara(c); float lk = max(luz(k), .001);
+  vec3 deg = k * (floor(lk * 6. + .5) / 6. + .04) / lk;
+  vec2 d = 1. / tam;
+  float tl = luz(tx(c - d)), t = luz(tx(c - vec2(0., d.y))), tr = luz(tx(c + vec2(d.x, -d.y))), l0 = luz(tx(c - vec2(d.x, 0.)));
+  float r0 = luz(tx(c + vec2(d.x, 0.))), bl = luz(tx(c + vec2(-d.x, d.y))), b0 = luz(tx(c + vec2(0., d.y))), br = luz(tx(c + d));
+  float gx = tr + 2. * r0 + br - tl - 2. * l0 - bl, gy = bl + 2. * b0 + br - tl - 2. * t - tr;
+  return clamp(deg, 0., 1.) * (1. - .9 * smoothstep(.9, 1.3, length(vec2(gx, gy))));
+}
+vec3 yiq(vec3 c) { return mat3(.299, .596, .211, .587, -.274, -.523, .114, -.322, .312) * c; }
+vec3 rgb(vec3 y) { return mat3(1., 1., 1., .956, -.272, -1.106, .621, -.647, 1.703) * y; }
+vec3 composto(vec2 c, vec3 base) {
+  vec2 d = vec2(1. / tam.x, 0.); vec3 s = yiq(base) * .3;
+  float pe = .3;
+  for (int k = 1; k <= 3; k++) { float w = .35 / float(k + 1); s.yz += (yiq(tx(c + d * float(k))).yz + yiq(tx(c - d * float(k))).yz) * w; pe += 2. * w; }
+  vec3 y = vec3(yiq(base).x, s.yz / pe);
+  float faixa = sin((c.x * tam.x + c.y * tam.y) * 3.14159 + tempo * 30.) * length(y.yz) * .3;   // a "listrinha" do composto
+  return rgb(y + vec3(faixa, 0., 0.));
+}
+float bayer2(vec2 a) { a = floor(a); return fract(dot(a, vec2(.5, a.y * .75))); }
+float bayer4(vec2 a) { return bayer2(.5 * a) * .25 + bayer2(a); }
+float borda(vec2 c) {   // quanto a luz muda em volta (contorno)
+  vec2 d = 1. / tam;
+  return abs(luz(tx(c + vec2(d.x, 0.))) - luz(tx(c - vec2(d.x, 0.)))) + abs(luz(tx(c + vec2(0., d.y))) - luz(tx(c - vec2(0., d.y))));
+}
+vec3 barrasTeste(vec2 c) {   // barras coloridas de teste (com a faixa de baixo)
+  if (c.y < .67) { float b = floor(c.x * 7.); return b < 1. ? vec3(.75) : b < 2. ? vec3(.75, .75, 0.) : b < 3. ? vec3(0., .75, .75) : b < 4. ? vec3(0., .75, 0.) : b < 5. ? vec3(.75, 0., .75) : b < 6. ? vec3(.75, 0., 0.) : vec3(0., 0., .75); }
+  if (c.y < .75) { float b = floor(c.x * 7.); return b < 1. ? vec3(0., 0., .75) : b < 2. ? vec3(.07) : b < 3. ? vec3(.75, 0., .75) : b < 4. ? vec3(.07) : b < 5. ? vec3(0., .75, .75) : b < 6. ? vec3(.07) : vec3(.75); }
+  float b = floor(c.x * 6.); return b < 1. ? vec3(0., .13, .3) : b < 2. ? vec3(1.) : b < 3. ? vec3(.2, 0., .42) : b < 5. ? vec3(.07) : vec3(0.);
+}
+void main() {
+  vec2 c = uv;
+  if (TESTE > .5 && pausa > .5) { gl_FragColor = vec4(barrasTeste(c), 1.); return; }
+  if (divisao > 0. && gl_FragCoord.x < divisao * saida.x) {   // antes | depois: do lado esquerdo, a imagem crua
+    vec3 o = nitidoSuave(c);
+    if (abs(gl_FragCoord.x - divisao * saida.x) < 1.5) o = vec3(1.);
+    gl_FragColor = vec4(o, 1.); return;
+  }
+  // coordenadas: tremor, fita e curvatura
+  if (TREMOR > 0.) { float q = floor(tempo * 30.); c += (vec2(sorte(vec2(q, 1.)), sorte(vec2(q, 2.))) - .5) * TREMOR * vec2(.004, .003); }
+  float fx = 0.;
+  if (VHS > 0.) {
+    float lin = floor(c.y * tam.y), faixaY = fract(tempo * .09);
+    float dentro = smoothstep(.06, 0., abs(c.y - faixaY));
+    fx = ((sorte(vec2(lin, floor(tempo * 20.))) - .5) * .0025 + dentro * (sorte(vec2(lin, tempo)) - .5) * .03) * VHS;
+    c.x += fx;
+  }
+  if (ONDA > 0.) {
+    if (ONDATIPO < .5) c.x += sin(c.y * 70. + tempo * 7.) * .004 * ONDA + sin(c.y * 23. - tempo * 3.) * .003 * ONDA;
+    else c += vec2(sin(c.y * 22. + tempo * 2.1), cos(c.x * 18. + tempo * 1.7)) * .008 * ONDA;
+  }
+  float gl0 = 0.;
+  if (GLITCH > 0.) {   // de vez em quando: faixas deslocadas e cor separando
+    float vez = floor(tempo * 9.), faixa = floor(c.y * 18. + sorte(vec2(vez, 3.)) * 6.);
+    if (sorte(vec2(vez, 7.)) < GLITCH * .7 && sorte(vec2(faixa, vez)) < .35) { gl0 = (sorte(vec2(faixa, vez + 1.)) - .5) * .12 * GLITCH; c.x += gl0; }
+  }
+  float barraV = 1.;
+  if (ROLAGEM > 0.) { c.y = fract(c.y + tempo * .18 * ROLAGEM); barraV = smoothstep(0., .035, c.y) * smoothstep(1., .985, c.y); }
+  float banda = 0.;
+  if (INTERFERENCIA > 0.) { banda = smoothstep(.1, 0., abs(c.y - fract(tempo * .23))) * INTERFERENCIA; c.x += banda * sin(c.y * 400. + tempo * 60.) * .006; }
+  if (PIXELAO > 0.) { float n = 1. + floor(PIXELAO * 7.); c = (floor(c * tam / n) + .5) * n / tam; }
+  if (POLAROID > 0.) {   // a moldura de papel: o jogo encolhe pra dentro dela
+    vec2 m0 = vec2(.05, .05), m1 = vec2(.95, .8);
+    if (c.x < m0.x || c.x > m1.x || c.y < m0.y || c.y > m1.y) { gl_FragColor = vec4(vec3(.96, .95, .9) - sorte(floor(gl_FragCoord.xy / 2.)) * .04, 1.); return; }
+    c = (c - m0) / (m1 - m0);
+  }
+  if (CURVA > 0.) {
+    vec2 q = c * 2. - 1.; vec2 o = abs(q.yx) * CURVA * vec2(.34, .45); q += q * o * o; c = q * .5 + .5;
+    if (c.x < 0. || c.x > 1. || c.y < 0. || c.y > 1.) { gl_FragColor = vec4(0., 0., 0., 1.); return; }
+  }
+  // a cor do pixel
+  vec3 col;
+  if (CONVERG > 0. || VHS > 0. || gl0 != 0.) {
+    vec2 o = vec2((CONVERG * 1.8 + VHS * 2. + abs(gl0) * 60.) / tam.x, 0.);
+    col = vec3(amostra(c + o).r, amostra(c).g, amostra(c - o).b);
+  } else col = amostra(c);
+  if (COMPOSTO > 0.) col = mix(col, composto(c, col), COMPOSTO);
+  if (VHS > 0.) { col = mix(col, vec3(luz(col)), .25 * VHS); col += (sorte(c * tam + tempo) - .5) * .12 * VHS * smoothstep(.06, 0., abs(c.y - fract(tempo * .09))) * 4.; }
+  if (RASTRO > 0.) col = mix(col, texture2D(tp, c).rgb, RASTRO * .55);
+  // cor
+  if (PORTATIL > 0.) {
+    vec3 l = pow(col, vec3(2.4));
+    l = mat3(.82, .24, -.06, .12, .66, .22, .06, .10, .84) * l;
+    col = mix(col, pow(clamp(l, 0., 1.), vec3(1. / 2.)) * .94 + .03, PORTATIL);
+  }
+  if (VERDE > 0.) col = mix(col, mix(vec3(.06, .22, .06), vec3(.61, .74, .06), smoothstep(0., 1., luz(col))), VERDE);
+  col = (col - .5) * CONTRASTE + .5 + BRILHO;
+  col = mix(vec3(luz(col)), col, SATURACAO);
+  col = pow(clamp(col, 0., 1.), vec3(1. / GAMA));
+  col *= vec3(1. + .12 * TEMPERATURA, 1. + .02 * TEMPERATURA, 1. - .12 * TEMPERATURA);
+  if (SEPIA > 0.) col = mix(col, vec3(luz(col)) * vec3(1.1, .88, .64), SEPIA);
+  if (PB > 0.) col = mix(col, vec3(luz(col)), PB);
+  if (DALTON > .5) {   // corrige: o que o olho perde vira diferença nos canais que ele vê
+    mat3 m = DALTON < 1.5 ? mat3(.567, .558, 0., .433, .442, .242, 0., 0., .758)
+           : DALTON < 2.5 ? mat3(.625, .7, 0., .375, .3, .3, 0., 0., .7)
+                          : mat3(.95, 0., 0., .05, .433, .475, 0., .567, .525);
+    vec3 e = col - m * col;
+    col += vec3(0., .7 * e.r + e.g, .7 * e.r + e.b);
+  }
+  // foto
+  float l = luz(col);
+  if (DESFOQUE > 0.) {
+    float r = smoothstep(.12, .55, distance(c, vec2(.5))) * DESFOQUE;
+    if (r > 0.) { vec2 d = r * 3.5 / tam; vec3 b = vec3(0.);
+      for (int i = 0; i < 8; i++) { float a = float(i) * .785; b += tx(c + vec2(cos(a), sin(a)) * d) + tx(c + vec2(cos(a), sin(a)) * d * .5); }
+      col = mix(col, b / 16., min(1., r * 1.6)); }
+  }
+  if (CINEMA > 0.) { vec3 tom = mix(vec3(.72, 1., 1.12), vec3(1.18, .95, .72), smoothstep(.15, .8, l)); col = mix(col, clamp(col * tom * 1.05, 0., 1.), CINEMA); }
+  if (LOMO > 0.) {
+    vec3 s3 = col * col * (3. - 2. * col); s3 = mix(vec3(luz(s3)), s3, 1.4); s3.b *= .88;
+    vec2 v = c * (1. - c.yx); col = mix(col, s3 * pow(clamp(v.x * v.y * 12., 0., 1.), .9), LOMO);
+  }
+  if (POLAROID > 0.) { vec3 f = mix(vec3(luz(col)), col, .7) * .82 + vec3(.1, .08, .05); col = mix(col, f * vec3(1.04, 1., .9), POLAROID); }
+  if (DUOTONE > 0.) {
+    vec3 a = DUOTONECOR < .5 ? vec3(.12, .1, .42) : DUOTONECOR < 1.5 ? vec3(.3, .05, .4) : DUOTONECOR < 2.5 ? vec3(.38, .04, .14) : vec3(.04, .22, .16);
+    vec3 b = DUOTONECOR < .5 ? vec3(1., .35, .65) : DUOTONECOR < 1.5 ? vec3(1., .88, .22) : DUOTONECOR < 2.5 ? vec3(.3, 1., .95) : vec3(1., .55, .15);
+    col = mix(col, mix(a, b, smoothstep(.05, .95, luz(col))), DUOTONE);
+  }
+  if (VAZAMENTO > 0.) {
+    vec3 v1 = vec3(1., .45, .1) * smoothstep(.95, 0., distance(c, vec2(1.05 + sin(tempo * .3) * .08, -.08)));
+    vec3 v2 = vec3(1., .2, .55) * smoothstep(.75, 0., distance(c, vec2(-.1, 1.05 + cos(tempo * .23) * .08)));
+    col = 1. - (1. - col) * (1. - (v1 + v2) * VAZAMENTO * .9);
+  }
+  if (FILME > 0.) {
+    col += (sorte(gl_FragCoord.xy * .5 + fract(tempo * 7.) * 91.) - .5) * .3 * FILME * (1. - l * .5);
+    float xs = sorte(vec2(floor(tempo * 12.), 5.)), ys = sorte(vec2(floor(tempo * 12.), 9.));
+    if (abs(c.x - xs) < .0018 && ys < .7) col = mix(col, vec3(.9, .88, .8), .6 * FILME);
+    col *= 1. + (sorte(vec2(floor(tempo * 24.), 1.)) - .5) * .12 * FILME;
+  }
+  // retrô
+  if (PONTILHADO > 0.) { float th = bayer4(c * tam); vec3 bw = luz(col) > th ? vec3(.93, .93, .86) : vec3(.08, .08, .1); col = mix(col, bw, PONTILHADO); }
+  if (CGA > 0.) {
+    vec3 q = col + (bayer4(c * tam) - .5) * .35, best = vec3(0.); float dm = 9.;
+    vec3 pal0 = vec3(0.), pal1 = vec3(.33, 1., 1.), pal2 = vec3(1., .33, 1.), pal3 = vec3(1.);
+    if (distance(q, pal0) < dm) { dm = distance(q, pal0); best = pal0; }
+    if (distance(q, pal1) < dm) { dm = distance(q, pal1); best = pal1; }
+    if (distance(q, pal2) < dm) { dm = distance(q, pal2); best = pal2; }
+    if (distance(q, pal3) < dm) { best = pal3; }
+    col = mix(col, best, CGA);
+  }
+  if (FOSFORO > 0.) {
+    vec3 f = FOSFOROCOR < .5 ? vec3(.25, 1., .35) : FOSFOROCOR < 1.5 ? vec3(1., .68, .12) : vec3(.78, .9, 1.);
+    col = mix(col, f * pow(luz(col), 1.2) * 1.15 + f * .03, FOSFORO);
+  }
+  if (GIBI > 0.) {
+    vec3 base = floor(col * 4. + .5) / 4.;
+    vec2 q = mat2(.707, -.707, .707, .707) * gl_FragCoord.xy / max(4., saida.y / 140.);
+    float d = length(fract(q) - .5), tinta = smoothstep(.04, 0., d - sqrt(1. - luz(col)) * .5);
+    base *= 1. - tinta * .55;
+    base *= 1. - smoothstep(.2, .45, borda(c));
+    col = mix(col, base, GIBI);
+  }
+  if (NEON > 0.) {
+    float g = smoothstep(.06, .35, borda(c));
+    vec3 n = mix(vec3(1., .2, .75), vec3(.15, .9, 1.), .5 + .5 * sin(c.x * 4. + c.y * 3. + tempo * .8));
+    col = mix(col, col * .12 + n * g * 1.4, NEON);
+  }
+  // efeitos de TV
+  if (banda > 0.) col += banda * (.25 + (sorte(gl_FragCoord.xy + tempo) - .5) * .5);
+  if (FORADOAR > 0.) { float n = sorte(floor(gl_FragCoord.xy / 1.5) + fract(tempo * 13.) * 77.); n = n * .8 + sorte(vec2(floor(gl_FragCoord.y / 3.), tempo)) * .2; col = mix(col, vec3(n), FORADOAR); }
+  col *= barraV;
+  // a tela, em luz linear (como o fósforo soma luz de verdade): brilho que espalha, linhas, grade do LCD, máscara
+  vec3 lin = pow(clamp(col, 0., 1.), vec3(2.2));
+  if (GLOW > 0.) {
+    vec2 d = 1.8 / tam; vec3 b = vec3(0.);
+    b += tx(c + vec2(d.x, 0.)) + tx(c - vec2(d.x, 0.)) + tx(c + vec2(0., d.y)) + tx(c - vec2(0., d.y));
+    b += tx(c + d) + tx(c - d) + tx(c + vec2(d.x, -d.y)) + tx(c - vec2(d.x, -d.y));
+    lin += pow(b / 8., vec3(2.2)) * GLOW * .7;
+  }
+  if (LINHAS > 0.) {
+    // linha de varredura como no crt-lottes: o feixe é uma gaussiana em volta do centro da linha; onde é claro o feixe
+    // engorda (a linha escura some). O brilho perdido volta dividindo pela média do feixe
+    float dd = fract(c.y * tam.y) - .5, duro = -3. - 11. * LINHAS;
+    float largura = mix(1., .55, sqrt(clamp(luz(lin), 0., 1.)) * GROSSAS);
+    float w = exp2(duro * dd * dd * largura * largura * 4.);
+    float med = (exp2(duro * .0156 * largura * largura) + exp2(duro * .1406 * largura * largura) + exp2(duro * .3906 * largura * largura) + exp2(duro * .7656 * largura * largura)) * .25;
+    lin *= mix(1., w / med, min(1., LINHAS * 1.4));
+  }
+  if (LCD > 0.) { vec2 f = fract(c * tam); float g = smoothstep(0., .14, f.x) * smoothstep(0., .14, f.y) * smoothstep(1., .9, f.x) * smoothstep(1., .9, f.y); lin *= mix(1., .15 + .85 * g, LCD) * (1. + LCD * .35); }
+  if (MASCARA > 0.) {
+    // máscara de fósforo como no crt-lottes: um fósforo claro e dois escuros por grupo, com média 1 (não escurece)
+    vec2 fc = floor(gl_FragCoord.xy / MTAM);
+    float c3 = mod(fc.x, 3.);
+    if (MTIPO > 1.5) c3 = mod(fc.x + mod(fc.y, 2.) * 1.5, 3.);
+    float esc = 1. - .5 * MASCARA, cla = 1. + MASCARA;
+    vec3 m = c3 < 1. ? vec3(cla, esc, esc) : c3 < 2. ? vec3(esc, cla, esc) : vec3(esc, esc, cla);
+    if (MTIPO > .5 && MTIPO < 1.5 && mod(fc.y + floor(fc.x / 3.) * 2., 4.) < 1.) m *= esc;
+    lin *= m;
+  }
+  col = pow(lin, vec3(1. / 2.2));
+  if (VINHETA > 0.) { vec2 v = c * (1. - c.yx); col *= pow(clamp(v.x * v.y * 15., 0., 1.), VINHETA * .7); }
+  if (CANTOS > 0.) { vec2 q = abs(c - .5) * 2.; vec2 k = max(q - (1. - CANTOS * .12), 0.) / (CANTOS * .12 + .0001); col *= smoothstep(1., .85, length(k)); }
+  if (CHIADO > 0.) col += (sorte(gl_FragCoord.xy + fract(tempo) * 100.) - .5) * CHIADO * .4;
+  if (liga < 1.) {   // ponto que vira linha e depois abre (como a TV de tubo ligando)
+    vec2 q = abs(uv - .5) * 2.;
+    float w = smoothstep(0., .35, liga), h = smoothstep(.3, 1., liga) * .98 + .02;
+    float dentro = step(q.x, w) * step(q.y, h * (.02 + w * .98));
+    col = mix(vec3(1.), col, smoothstep(.3, .8, liga)) * dentro * (1. + (1. - liga) * 1.5);
+  }
+  gl_FragColor = vec4(clamp(col, 0., 1.), 1.);
+}`;
+  // os valores na ordem dos ajustes (vec4 p[13]); cada ajuste vira um #define com o nome em maiúsculas
+  const ORDEM = AJUSTES.map((a) => a[0]);
+  // shader sob medida: ajuste desligado (no valor padrão) e escolhas (tipo de pixel, de máscara...) viram constantes, e o
+  // compilador do driver apaga o código deles; só o que está ligado lê o valor do controle (mexer no controle não recompila)
+  const ESCOLHA = new Set(AJUSTES.filter((a) => a[7]).map((a) => a[0]));
+  const num = (x) => (Number.isInteger(+x) ? (+x).toFixed(1) : String(+x));
+  const chave = (v) => ORDEM.map((k) => (ESCOLHA.has(k) ? 'e' + (+v[k]) : +v[k] === PADRAO[k] ? '-' : '+')).join('');
+  const fonte = (v) => FRAG0.replace('/*{{DEFINES}}*/', ORDEM.map((k, i) => `#define ${k.toUpperCase()} `
+    + (ESCOLHA.has(k) ? num(v[k]) : +v[k] === PADRAO[k] ? num(PADRAO[k]) : `p[${i >> 2}].${'xyzw'[i & 3]}`)).join('\n'));
+  const FRAG = fonte(PADRAO);
+  const vetor = (v) => { const a = new Float32Array(52); ORDEM.forEach((k, i) => { a[i] = v[k] !== undefined ? +v[k] : PADRAO[k]; }); return a; };
+  const animado = (v) => ['vhs', 'chiado', 'tremor', 'composto', 'filme', 'vazamento', 'neon', 'foraDoAr', 'rolagem', 'interferencia', 'glitch', 'onda'].some((k) => v[k] > 0);
+  return { AJUSTES, PADRAO, PREDEF, ANTIGO, FRAG, fonte, chave, valores, vetor, animado };
+})();
+if (typeof module !== 'undefined') module.exports = KofVisual;
+
+// Molduras do KOFstation: desenhadas aqui em SVG, no tamanho exato da tela (nítidas em qualquer resolução), sem imagem e
+// sem marca. Cada moldura diz quanto de borda tem em volta do jogo (frações da altura da tela: cima, direita, baixo,
+// esquerda) e desenha o resto em volta do retângulo da tela S = {x, y, w, h}. a = animações ligadas (LED, neon...).
+// Cores do tema (moldura "do tema") chegam em t = {fundo, painel, destaque, texto, borda}.
+const KofMolduras = (() => {
+  'use strict';
+  const n2 = (v) => Math.round(v * 10) / 10;
+  const R = (x, y, w, h, r, f, ex = '') => `<rect x="${n2(x)}" y="${n2(y)}" width="${n2(w)}" height="${n2(h)}" rx="${n2(r)}" fill="${f}" ${ex}/>`;
+  const C = (x, y, r, f, ex = '') => `<circle cx="${n2(x)}" cy="${n2(y)}" r="${n2(r)}" fill="${f}" ${ex}/>`;
+  // texto centralizado; o que vier em "ex" (font-family, font-size...) substitui o padrão (atributo repetido quebra o SVG)
+  const T = (x, y, tam, txt, f, ex = '') => `<text x="${n2(x)}" y="${n2(y)}"${/font-size=/.test(ex) ? '' : ` font-size="${n2(tam)}"`} fill="${f}" text-anchor="middle"${/font-family=/.test(ex) ? '' : ' font-family="Arial Black, Impact, sans-serif"'} font-weight="900" ${ex}>${txt}</text>`;
+  const L = (id, ...p) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${p.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient>`;
+  const LH = (id, ...p) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0">${p.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient>`;
+  const RG = (id, ...p) => `<radialGradient id="${id}">${p.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</radialGradient>`;
+  const pisca = (a, dur = '1.4s', v = '1;.15;1') => (a ? `<animate attributeName="opacity" values="${v}" dur="${dur}" repeatCount="indefinite"/>` : '');
+  const madeira = (id) => `<pattern id="${id}" width="60" height="14" patternUnits="userSpaceOnUse"><rect width="60" height="14" fill="#6b4020"/><path d="M0 3 Q15 1 30 4 T60 3 M0 9 Q20 7 35 10 T60 9" stroke="#55301a" stroke-width="2" fill="none"/><path d="M0 12 Q25 11 60 13" stroke="#7d4c27" stroke-width="1.2" fill="none"/></pattern>`;
+  const grade = (x, y, w, h, passo, cor, larg = 0.45) => { let s = ''; for (let i = x; i < x + w; i += passo) s += R(i, y, passo * larg, h, passo * larg / 2, cor); return s; };
+  // vidro escuro em volta da tela (a parte preta do tubo)
+  const vidro = (S, m, r, cor = '#0b0b0d') => R(S.x - m, S.y - m, S.w + 2 * m, S.h + 2 * m, r, cor);
+
+  const LISTA = [
+    { id: 'tv80', nome: 'TV de madeira (anos 80)', cat: 'TVs', desc: 'caixa de madeira, seletor de canal e botões giratórios', b: [0.1, 0.46, 0.12, 0.1], raio: 0.09,
+      d: (W, H, S, a) => { const u = S.h / 100, px = S.x + S.w + 8 * u;
+        return `<defs>${madeira('md')}${L('pn', [0, '#3a3128'], [1, '#1e1913'])}${RG('kn', [0, '#f2ead8'], [0.7, '#b9ae96'], [1, '#6d6455'])}</defs>`
+          + R(0, 0, W, H, 7 * u, 'url(#md)') + R(2 * u, 2 * u, W - 4 * u, H - 4 * u, 6 * u, 'none', `stroke="#2c180a" stroke-width="${2 * u}"`)
+          + vidro(S, 4 * u, 9 * u, '#141210') + R(S.x - 5.5 * u, S.y - 5.5 * u, S.w + 11 * u, S.h + 11 * u, 10 * u, 'none', `stroke="#8c7b5e" stroke-width="${1.2 * u}"`)
+          + R(px, S.y, W - px - 6 * u, S.h, 3 * u, 'url(#pn)', `stroke="#1a140e" stroke-width="${u}"`)
+          + C(px + (W - px - 6 * u) / 2, S.y + 18 * u, 11 * u, 'url(#kn)') + T(px + (W - px - 6 * u) / 2, S.y + 21 * u, 6 * u, '13', '#3a3128')
+          + C(px + (W - px - 6 * u) / 2, S.y + 42 * u, 8 * u, 'url(#kn)')
+          + grade(px + 5 * u, S.y + 58 * u, W - px - 16 * u, 26 * u, 3 * u, '#0e0b08')
+          + T(px + (W - px - 6 * u) / 2, S.y + 96 * u, 5 * u, 'KOFstation', '#e2b85c', 'font-family="Georgia, serif" font-style="italic"')
+          + C(px + 6 * u, S.y + 52 * u, 1.2 * u, '#ff3b30', '') + (a ? `<circle cx="${n2(px + 6 * u)}" cy="${n2(S.y + 52 * u)}" r="${n2(2.4 * u)}" fill="#ff3b3055">${pisca(a, '2s')}</circle>` : ''); } },
+    { id: 'tv90', nome: 'TV de tubo (anos 90)', cat: 'TVs', desc: 'plástico preto, alto-falantes embaixo e a luz vermelha', b: [0.08, 0.08, 0.22, 0.08], raio: 0.08,
+      d: (W, H, S, a) => { const u = S.h / 100, yb = S.y + S.h + 6 * u;
+        return `<defs>${L('pl', [0, '#46464b'], [0.5, '#2a2a2e'], [1, '#18181b'])}</defs>`
+          + R(0, 0, W, H, 7 * u, 'url(#pl)') + R(u, u, W - 2 * u, H - 2 * u, 6 * u, 'none', 'stroke="#ffffff14" stroke-width="2"')
+          + vidro(S, 3.5 * u, 8 * u)
+          + grade(S.x + 4 * u, yb + 2 * u, S.w * 0.28, 8 * u, 2 * u, '#0c0c0d', 0.4) + grade(S.x + S.w * 0.68, yb + 2 * u, S.w * 0.28, 8 * u, 2 * u, '#0c0c0d', 0.4)
+          + T(W / 2, yb + 9 * u, 5 * u, 'KOFstation', '#b8b8c0', 'letter-spacing="2"')
+          + R(S.x + S.w * 0.36, yb + 12 * u, 4 * u, 2 * u, u, '#111') + R(S.x + S.w * 0.36 + 6 * u, yb + 12 * u, 4 * u, 2 * u, u, '#111')
+          + `<circle cx="${n2(S.x + S.w - 2 * u)}" cy="${n2(yb + 13 * u)}" r="${n2(1.3 * u)}" fill="#ff3b30">${pisca(a, '3s', '1;.4;1')}</circle>`; } },
+    { id: 'vo', nome: 'TV da vó', cat: 'TVs', desc: 'na estante, com paninho de crochê, bailarina e antena com bombril', b: [0.62, 0.22, 0.44, 0.22], raio: 0.1,
+      d: (W, H, S, a) => { const u = S.h / 100, cx = S.x + S.w / 2, topo = S.y - 12 * u, base = S.y + S.h + 14 * u;
+        let croche = ''; for (let i = 0; i < 26; i++) { const x = S.x - 8 * u + i * (S.w + 16 * u) / 25; croche += C(x, topo + 1 * u, 3.2 * u, '#f6f1e4', 'stroke="#d8cfb8" stroke-width="0.6"') + C(x, topo + 1 * u, 1 * u, '#e6dcc4'); }
+        return `<defs>${L('pa', [0, '#e9dcc7'], [1, '#cdbb9d'])}${madeira('mv')}${L('cx', [0, '#8a7258'], [1, '#5e4a36'])}</defs>`
+          + R(0, 0, W, H, 0, 'url(#pa)') + `<path d="M0 ${n2(H * 0.2)} H${W}" stroke="#bfa98a" stroke-width="${u}" opacity=".5"/>`
+          + `<path d="M${n2(cx - 6 * u)} ${n2(topo - 2 * u)} L${n2(cx - 34 * u)} ${n2(6 * u)} M${n2(cx + 6 * u)} ${n2(topo - 2 * u)} L${n2(cx + 34 * u)} ${n2(6 * u)}" stroke="#9aa0a6" stroke-width="${1.4 * u}" stroke-linecap="round"/>`
+          + C(cx - 34 * u, 6 * u, 3.6 * u, '#c9ccd0', 'stroke="#8d9196" stroke-dasharray="2 1.5" stroke-width="1.5"') + C(cx + 34 * u, 6 * u, 3.6 * u, '#c9ccd0', 'stroke="#8d9196" stroke-dasharray="2 1.5" stroke-width="1.5"')
+          + R(cx - 9 * u, topo - 6 * u, 18 * u, 6 * u, 3 * u, '#3b3b3b')
+          + R(S.x - 12 * u, topo, S.w + 24 * u, base - topo, 6 * u, 'url(#cx)') + croche
+          + vidro(S, 4 * u, 10 * u, '#1a1814')
+          + C(S.x + S.w * 0.82, S.y + S.h + 7 * u, 3 * u, '#d8c9a8', 'stroke="#6d5a40" stroke-width="1"') + C(S.x + S.w * 0.9, S.y + S.h + 7 * u, 3 * u, '#d8c9a8', 'stroke="#6d5a40" stroke-width="1"')
+          + `<g transform="translate(${n2(S.x + S.w * 0.08)} ${n2(topo - 16 * u)})"><path d="M0 16 L${n2(4 * u)} ${n2(4 * u)} L${n2(8 * u)} 16 Z" fill="#f3b8c8"/>${C(4 * u, 2 * u, 2 * u, '#f6e0c8')}<path d="M${n2(4 * u)} ${n2(4 * u)} L${n2(4 * u)} ${n2(16 * u)}" stroke="#f3b8c8" stroke-width="${n2(1.2 * u)}"/><ellipse cx="${n2(4 * u)}" cy="${n2(12 * u)}" rx="${n2(6 * u)}" ry="${n2(2 * u)}" fill="#f7cad6"/></g>`
+          + R(0, base, W, H - base, 0, 'url(#mv)') + R(0, base, W, 2 * u, 0, '#3e2412'); } },
+    { id: 'quarto14', nome: 'TV de quarto 14"', cat: 'TVs', desc: 'branquinha em cima da cômoda, com o videogame e o controle com fio', b: [0.12, 0.14, 0.62, 0.14], raio: 0.08,
+      d: (W, H, S, a) => { const u = S.h / 100, yb = S.y + S.h + 10 * u, cm = yb + 6 * u;
+        return `<defs>${L('br', [0, '#f4f4f0'], [1, '#cfcfc8'])}${L('cm', [0, '#c98f5a'], [1, '#9c6a3f'])}${L('pd', [0, '#cfd9e6'], [1, '#aebccf'])}</defs>`
+          + R(0, 0, W, H, 0, 'url(#pd)')
+          + R(S.x - 10 * u, S.y - 10 * u, S.w + 20 * u, S.h + 20 * u, 6 * u, 'url(#br)', 'stroke="#b5b5ad" stroke-width="1.5"') + vidro(S, 3 * u, 8 * u, '#202022')
+          + C(S.x + S.w + 5 * u, S.y + S.h + 5 * u, 1.3 * u, '#36d36a') + R(S.x + S.w * 0.4, S.y + S.h + 3 * u, S.w * 0.2, 2 * u, u, '#bdbdb5')
+          + R(0, cm, W, H - cm, 0, 'url(#cm)') + R(0, cm, W, 2 * u, 0, '#e0aa75')
+          + R(S.x + S.w * 0.05, cm + 10 * u, S.w * 0.4, 14 * u, 3 * u, '#2b2b30') + R(S.x + S.w * 0.08, cm + 13 * u, S.w * 0.1, 3 * u, 1.5 * u, '#6d6d76') + C(S.x + S.w * 0.38, cm + 17 * u, 2 * u, '#c33')
+          + `<path d="M${n2(S.x + S.w * 0.45)} ${n2(cm + 17 * u)} C${n2(S.x + S.w * 0.6)} ${n2(cm + 35 * u)} ${n2(S.x + S.w * 0.55)} ${n2(cm + 22 * u)} ${n2(S.x + S.w * 0.7)} ${n2(cm + 28 * u)}" stroke="#222" stroke-width="${n2(0.9 * u)}" fill="none"/>`
+          + R(S.x + S.w * 0.68, cm + 24 * u, 16 * u, 8 * u, 4 * u, '#3a3a40') + C(S.x + S.w * 0.68 + 4 * u, cm + 28 * u, 1.5 * u, '#888') + C(S.x + S.w * 0.68 + 12 * u, cm + 27 * u, 1.3 * u, '#d33') + C(S.x + S.w * 0.68 + 14.5 * u, cm + 29 * u, 1.3 * u, '#33d'); } },
+    { id: 'pilha', nome: 'TV portátil de pilha', cat: 'TVs', desc: 'tela pequena, alça e antena telescópica', b: [0.42, 0.34, 0.3, 0.26], raio: 0.06,
+      d: (W, H, S, a) => { const u = S.h / 100, x0 = S.x - 14 * u, y0 = S.y - 14 * u, w0 = S.w + 14 * u + 32 * u, h0 = S.h + 28 * u;
+        return `<defs>${L('pt', [0, '#5a5f66'], [1, '#2f3237'])}${L('fd', [0, '#1d2630'], [1, '#0e1218'])}</defs>`
+          + R(0, 0, W, H, 0, 'url(#fd)')
+          + `<path d="M${n2(x0 + w0 * 0.2)} ${n2(y0)} C${n2(x0 + w0 * 0.2)} ${n2(y0 - 24 * u)} ${n2(x0 + w0 * 0.8)} ${n2(y0 - 24 * u)} ${n2(x0 + w0 * 0.8)} ${n2(y0)}" stroke="#222" stroke-width="${n2(5 * u)}" fill="none"/>`
+          + `<path d="M${n2(x0 + w0 - 6 * u)} ${n2(y0)} L${n2(W - 4 * u)} ${n2(3 * u)}" stroke="#c0c4c8" stroke-width="${n2(1.2 * u)}"/>` + C(W - 4 * u, 3 * u, 1.6 * u, '#e0e3e6')
+          + R(x0, y0, w0, h0, 6 * u, 'url(#pt)', 'stroke="#1c1e21" stroke-width="2"') + vidro(S, 3 * u, 6 * u, '#0e0f10')
+          + grade(S.x + S.w + 6 * u, S.y + 6 * u, 14 * u, S.h * 0.5, 2.2 * u, '#16181b', 0.5)
+          + C(S.x + S.w + 13 * u, S.y + S.h * 0.75, 6 * u, '#888c91', 'stroke="#222" stroke-width="1.5"') + T(S.x + S.w + 13 * u, S.y + S.h * 0.75 + 2 * u, 4 * u, 'VHF', '#222')
+          + T(S.x + S.w / 2, y0 + h0 - 4 * u, 4.5 * u, 'KOFstation MINI', '#c8ccd0', 'letter-spacing="1"'); } },
+    { id: 'fliperama', nome: 'Fliperama de bar', cat: 'Fliperamas', desc: 'letreiro aceso em cima e painel com alavanca e botões', b: [0.32, 0.12, 0.36, 0.12], raio: 0.02,
+      d: (W, H, S, a) => { const u = S.h / 100, yp = S.y + S.h + 5 * u;
+        const bt = (x, y, c) => C(x, y, 4 * u, c, `stroke="#0008" stroke-width="${n2(u)}"`) + C(x - u, y - u, 1.4 * u, '#fff8');
+        return `<defs>${LH('lat', [0, '#4a1470'], [0.14, '#16061f'], [0.86, '#16061f'], [1, '#4a1470'])}${L('le', [0, '#ff3ec8'], [0.6, '#7a1fd6'], [1, '#3a0d6b'])}${L('pa', [0, '#2a0f3d'], [1, '#12051c'])}</defs>`
+          + R(0, 0, W, H, 3 * u, 'url(#lat)')
+          + `<g>${R(S.x - 2 * u, 4 * u, S.w + 4 * u, S.y - 10 * u, 2 * u, 'url(#le)')}${T(W / 2, 4 * u + (S.y - 10 * u) * 0.68, (S.y - 10 * u) * 0.55, 'KOFstation', '#fff', 'style="filter:drop-shadow(0 0 4px #26e0ff)"')}${pisca(a, '2.6s', '1;.8;1;.95;1')}</g>`
+          + vidro(S, 2.5 * u, 2 * u, '#000')
+          + R(S.x - 6 * u, yp, S.w + 12 * u, H - yp - 4 * u, 3 * u, 'url(#pa)', `stroke="#ff3ec866" stroke-width="${n2(0.8 * u)}"`)
+          + C(S.x + S.w * 0.16, yp + 14 * u, 7 * u, '#ff2a2a', `stroke="#7a0000" stroke-width="${n2(1.5 * u)}"`) + R(S.x + S.w * 0.16 - u, yp + 14 * u, 2 * u, 14 * u, u, '#222')
+          + bt(S.x + S.w * 0.55, yp + 11 * u, '#26e0ff') + bt(S.x + S.w * 0.67, yp + 11 * u, '#ffe14d') + bt(S.x + S.w * 0.79, yp + 11 * u, '#7dff4f')
+          + bt(S.x + S.w * 0.55, yp + 24 * u, '#ff3ec8') + bt(S.x + S.w * 0.67, yp + 24 * u, '#ffffff') + bt(S.x + S.w * 0.79, yp + 24 * u, '#ff8c1a'); } },
+    { id: 'shopping', nome: 'Fliperama de shopping', cat: 'Fliperamas', desc: 'de pé, laterais pintadas, neon e a luz da FICHA', b: [0.4, 0.18, 0.62, 0.18], raio: 0.02,
+      d: (W, H, S, a) => { const u = S.h / 100, yp = S.y + S.h + 5 * u;
+        let raios = ''; for (let i = 0; i < 6; i++) raios += `<path d="M0 ${n2(H * (0.15 + i * 0.14))} L${n2(S.x - 4 * u)} ${n2(H * (0.05 + i * 0.14))} M${W} ${n2(H * (0.15 + i * 0.14))} L${n2(S.x + S.w + 4 * u)} ${n2(H * (0.05 + i * 0.14))}" stroke="${['#ffcc00', '#ff3366', '#33ccff'][i % 3]}" stroke-width="${n2(2.4 * u)}"/>`;
+        return `<defs>${L('cb', [0, '#101a3a'], [1, '#070b1c'])}${LH('ne', [0, '#00e5ff'], [0.5, '#ff00aa'], [1, '#00e5ff'])}</defs>`
+          + R(0, 0, W, H, 2 * u, 'url(#cb)') + raios
+          + `<g>${R(S.x - 4 * u, 5 * u, S.w + 8 * u, S.y - 12 * u, 3 * u, '#05060f', `stroke="url(#ne)" stroke-width="${n2(1.6 * u)}"`)}${T(W / 2, 5 * u + (S.y - 12 * u) * 0.7, (S.y - 12 * u) * 0.5, 'SUPER KOF', '#fff', 'style="filter:drop-shadow(0 0 5px #ff00aa)"')}${pisca(a, '1.1s', '1;1;.3;1;1;1;.6;1')}</g>`
+          + vidro(S, 3 * u, 2 * u, '#000')
+          + R(S.x - 4 * u, yp, S.w + 8 * u, 22 * u, 2 * u, '#1b2550', 'stroke="#33ccff66" stroke-width="1"')
+          + C(S.x + S.w * 0.2, yp + 11 * u, 5 * u, '#ffcc00') + C(S.x + S.w * 0.6, yp + 11 * u, 3.6 * u, '#ff3366') + C(S.x + S.w * 0.72, yp + 11 * u, 3.6 * u, '#33ccff') + C(S.x + S.w * 0.84, yp + 11 * u, 3.6 * u, '#7dff4f')
+          + R(W / 2 - 16 * u, yp + 30 * u, 32 * u, 26 * u, 2 * u, '#2a2f3a', 'stroke="#555" stroke-width="1.5"')
+          + `<g>${R(W / 2 - 11 * u, yp + 34 * u, 22 * u, 8 * u, 1.5 * u, '#ff3b30')}${T(W / 2, yp + 40.5 * u, 6 * u, 'FICHA', '#fff')}${pisca(a, '1.8s', '1;.35;1')}</g>`
+          + R(W / 2 - 1.5 * u, yp + 46 * u, 3 * u, 7 * u, 1 * u, '#111'); } },
+    { id: 'boteco', nome: 'Mesa de boteco', cat: 'Fliperamas', desc: 'fliperama de mesa visto de cima, com copo americano e coxinha', b: [0.3, 0.5, 0.3, 0.5], raio: 0.02,
+      d: (W, H, S, a) => { const u = S.h / 100, cx = S.x + S.w + 24 * u, cy = S.y + 26 * u;
+        const coxinha = (x, y, r) => `<path d="M${n2(x)} ${n2(y - r)} C${n2(x + r)} ${n2(y)} ${n2(x + r)} ${n2(y + r)} ${n2(x)} ${n2(y + r)} C${n2(x - r)} ${n2(y + r)} ${n2(x - r)} ${n2(y)} ${n2(x)} ${n2(y - r)} Z" fill="#c8812f" stroke="#8a5216" stroke-width="1"/>`;
+        return `<defs>${madeira('mb')}${RG('cp', [0, '#fff9'], [0.6, '#e8c56a88'], [1, '#d9a93a'])}</defs>`
+          + R(0, 0, W, H, 0, 'url(#mb)') + R(S.x - 10 * u, S.y - 10 * u, S.w + 20 * u, S.h + 20 * u, 4 * u, '#141418', 'stroke="#000" stroke-width="2"')
+          + R(S.x - 10 * u, S.y - 10 * u, S.w + 20 * u, S.h + 20 * u, 4 * u, '#ffffff10') + vidro(S, 3 * u, 2 * u, '#000')
+          + C(cx, cy, 13 * u, '#e7d9a8', 'stroke="#fff" stroke-width="2"') + C(cx, cy, 11 * u, 'url(#cp)') + C(cx, cy, 13 * u, 'none', 'stroke="#ffffffaa" stroke-width="1" stroke-dasharray="3 3"')
+          + C(S.x - 26 * u, S.y + S.h * 0.66, 18 * u, '#f4f4f4', 'stroke="#ccc" stroke-width="1.5"') + coxinha(S.x - 30 * u, S.y + S.h * 0.62, 7 * u) + coxinha(S.x - 20 * u, S.y + S.h * 0.7, 7 * u)
+          + R(S.x + S.w + 14 * u, S.y + S.h * 0.6, 20 * u, 26 * u, u, '#ffffff', 'transform="rotate(12 ' + n2(S.x + S.w + 24 * u) + ' ' + n2(S.y + S.h * 0.73) + ')"')
+          + C(S.x + S.w * 0.2, S.y + S.h + 18 * u, 4 * u, '#d33') + C(S.x + S.w * 0.8, S.y - 18 * u, 4 * u, '#33d'); } },
+    { id: 'tijolao', nome: 'Tijolão verde', cat: 'Portáteis', desc: 'o portátil cinza clássico, tela verde, direcional e A/B', b: [0.24, 0.3, 1.1, 0.3], raio: 0.02,
+      d: (W, H, S, a) => { const u = S.h / 100, yb = S.y + S.h + 14 * u;
+        return `<defs>${L('cz', [0, '#d5d3cc'], [1, '#b8b5ac'])}</defs>`
+          + R(0, 0, W, H, 10 * u, 'url(#cz)') + R(0, 0, W, H, 10 * u, 'none', 'stroke="#8e8b82" stroke-width="2"')
+          + `<path d="M${n2(S.x - 16 * u)} ${n2(S.y - 12 * u)} H${n2(S.x + S.w + 16 * u)} V${n2(S.y + S.h + 8 * u)} Q${n2(S.x + S.w + 16 * u)} ${n2(S.y + S.h + 14 * u)} ${n2(S.x + S.w + 4 * u)} ${n2(S.y + S.h + 14 * u)} H${n2(S.x - 16 * u)} Z" fill="#5f6268"/>`
+          + vidro(S, 2 * u, 0, '#1b2a10') + `<circle cx="${n2(S.x - 9 * u)}" cy="${n2(S.y + S.h * 0.4)}" r="${n2(1.6 * u)}" fill="#e33">${pisca(a, '4s', '1;.6;1')}</circle>`
+          + `<text x="${n2(S.x)}" y="${n2(S.y - 4 * u)}" font-size="${n2(3.6 * u)}" fill="#c9c9cf" font-family="Arial, sans-serif" font-style="italic">KOFSTATION · TELA DE PONTOS</text>`
+          + `<text x="${n2(S.x - 8 * u)}" y="${n2(yb + 6 * u)}" font-size="${n2(7 * u)}" fill="#2c3a8c" font-family="Arial Black, sans-serif" font-style="italic">KOFstation</text>`
+          + R(S.x + 4 * u, yb + 22 * u, 22 * u, 7 * u, 1.5 * u, '#222') + R(S.x + 11.5 * u, yb + 14.5 * u, 7 * u, 22 * u, 1.5 * u, '#222')
+          + C(S.x + S.w - 26 * u, yb + 32 * u, 6.5 * u, '#a2185a') + C(S.x + S.w - 10 * u, yb + 24 * u, 6.5 * u, '#a2185a')
+          + T(S.x + S.w - 26 * u, yb + 43 * u, 3.6 * u, 'B', '#2c3a8c') + T(S.x + S.w - 10 * u, yb + 35 * u, 3.6 * u, 'A', '#2c3a8c')
+          + R(W / 2 - 16 * u, yb + 52 * u, 10 * u, 3 * u, 1.5 * u, '#77757e', `transform="rotate(-25 ${n2(W / 2 - 11 * u)} ${n2(yb + 53 * u)})"`) + R(W / 2 + 2 * u, yb + 52 * u, 10 * u, 3 * u, 1.5 * u, '#77757e', `transform="rotate(-25 ${n2(W / 2 + 7 * u)} ${n2(yb + 53 * u)})"`)
+          + Array.from({ length: 6 }, (_, i) => R(S.x + S.w - 26 * u + i * 4 * u, yb + 60 * u, 1.6 * u, 18 * u, 0.8 * u, '#9a978e', `transform="rotate(-25 ${n2(S.x + S.w - 20 * u)} ${n2(yb + 69 * u)})"`)).join(''); } },
+    { id: 'roxo', nome: 'Portátil horizontal roxo', cat: 'Portáteis', desc: 'deitado, com L e R em cima', b: [0.26, 0.78, 0.3, 0.78], raio: 0.02,
+      d: (W, H, S, a) => { const u = S.h / 100, cy = S.y + S.h / 2;
+        return `<defs>${L('rx', [0, '#7a63c9'], [1, '#4d3a96'])}</defs>`
+          + R(0, 0, W, H, 40 * u, 'url(#rx)') + R(10 * u, -4 * u, 40 * u, 12 * u, 6 * u, '#3d2e78') + R(W - 50 * u, -4 * u, 40 * u, 12 * u, 6 * u, '#3d2e78')
+          + R(S.x - 8 * u, S.y - 8 * u, S.w + 16 * u, S.h + 16 * u, 6 * u, '#24243a') + vidro(S, 1.5 * u, 0, '#000')
+          + R(22 * u, cy - 4 * u, 26 * u, 8 * u, 2 * u, '#2b2340') + R(31 * u, cy - 13 * u, 8 * u, 26 * u, 2 * u, '#2b2340')
+          + C(W - 24 * u, cy - 7 * u, 7 * u, '#d9d4ee') + C(W - 40 * u, cy + 6 * u, 7 * u, '#d9d4ee') + T(W - 24 * u, cy - 4.5 * u, 6 * u, 'A', '#4d3a96') + T(W - 40 * u, cy + 8.5 * u, 6 * u, 'B', '#4d3a96')
+          + `<circle cx="${n2(S.x - 4 * u)}" cy="${n2(S.y - 3 * u)}" r="${n2(1.3 * u)}" fill="#6f6">${pisca(a, '5s', '1;.5;1')}</circle>` + T(W / 2, S.y + S.h + 22 * u, 5 * u, 'KOFstation', '#e6e0ff'); } },
+    { id: 'translucido', nome: 'Portátil translúcido', cat: 'Portáteis', desc: 'plástico transparente mostrando a placa, a moda de 98', b: [0.24, 0.3, 1.1, 0.3], raio: 0.02,
+      d: (W, H, S, a) => { const u = S.h / 100, yb = S.y + S.h + 14 * u;
+        let trilhas = ''; for (let i = 0; i < 18; i++) { const y = H * 0.1 + i * H * 0.05, x1 = (i * 37) % 60; trilhas += `<path d="M${n2(x1 * u / 2)} ${n2(y)} h${n2(20 * u)} l${n2(6 * u)} ${n2(6 * u)} h${n2(30 * u)}" stroke="#c9a45a" stroke-width="${n2(0.7 * u)}" fill="none" opacity=".55"/>` + C(x1 * u / 2 + 56 * u, y + 6 * u, 1.2 * u, '#c9a45a', 'opacity=".7"'); }
+        return `<defs>${L('tr', [0, '#5b3fa0cc'], [1, '#3b2577dd'])}</defs>`
+          + R(0, 0, W, H, 10 * u, '#2a6b3a') + trilhas + R(W * 0.55, H * 0.55, W * 0.3, H * 0.12, u, '#111', 'opacity=".8"')
+          + R(0, 0, W, H, 10 * u, 'url(#tr)') + R(0, 0, W, H, 10 * u, 'none', 'stroke="#ffffff55" stroke-width="2"')
+          + R(S.x - 16 * u, S.y - 12 * u, S.w + 32 * u, S.h + 26 * u, 4 * u, '#00000088') + vidro(S, 2 * u, 0, '#101010')
+          + R(S.x + 4 * u, yb + 22 * u, 22 * u, 7 * u, 1.5 * u, '#1d1630cc') + R(S.x + 11.5 * u, yb + 14.5 * u, 7 * u, 22 * u, 1.5 * u, '#1d1630cc')
+          + C(S.x + S.w - 26 * u, yb + 32 * u, 6.5 * u, '#b38cffcc') + C(S.x + S.w - 10 * u, yb + 24 * u, 6.5 * u, '#b38cffcc')
+          + `<text x="${n2(S.x - 8 * u)}" y="${n2(yb + 6 * u)}" font-size="${n2(7 * u)}" fill="#fff" font-family="Arial Black, sans-serif" font-style="italic" opacity=".85">KOFstation</text>`; } },
+    { id: 'locadora', nome: 'Locadora', cat: 'Bem brasileiro', desc: 'a TV no balcão, prateleira de fitas e o cartaz de LANÇAMENTOS', b: [0.56, 0.55, 0.5, 0.55], raio: 0.06,
+      d: (W, H, S, a) => { const u = S.h / 100, cores = ['#d62828', '#f77f00', '#fcbf49', '#2a9d8f', '#264653', '#e76f51', '#8338ec', '#3a86ff', '#06d6a0', '#ef476f'];
+        let fitas = ''; for (let p = 0; p < 4; p++) { const y = 8 * u + p * (H - 30 * u) / 4; fitas += R(0, y + 20 * u, W, 2.5 * u, 0, '#5c3a1e');
+          for (let x = 2 * u, k = p * 3; x < W - 6 * u; x += 5.2 * u, k++) fitas += R(x, y, 4.6 * u, 20 * u, 0.6 * u, cores[k % cores.length]) + R(x + 0.8 * u, y + 3 * u, 3 * u, 6 * u, 0.4 * u, '#fff', 'opacity=".75"'); }
+        const yb = S.y + S.h + 12 * u;
+        return `<defs>${L('bl', [0, '#b5651d'], [1, '#7b4214'])}</defs>`
+          + R(0, 0, W, H, 0, '#3b2a1e') + fitas
+          + `<g transform="rotate(-6 ${n2(S.x - 30 * u)} ${n2(S.y + 10 * u)})">${R(S.x - 52 * u, S.y - 2 * u, 42 * u, 22 * u, u, '#ffe600', 'stroke="#d62828" stroke-width="3"')}${T(S.x - 31 * u, S.y + 12.5 * u, 4.6 * u, 'LANÇAMENTOS', '#d62828')}${pisca(a, '2.4s', '1;.85;1')}</g>`
+          + R(S.x - 10 * u, S.y - 10 * u, S.w + 20 * u, S.h + 22 * u, 6 * u, '#2a2a2e') + vidro(S, 3 * u, 8 * u)
+          + R(0, yb, W, H - yb, 0, 'url(#bl)') + R(0, yb, W, 3 * u, 0, '#d9a066')
+          + R(S.x + S.w * 0.1, yb + 10 * u, 20 * u, 12 * u, u, '#111') + R(S.x + S.w * 0.1 + 2 * u, yb + 12 * u, 16 * u, 3 * u, 0.5 * u, '#3a86ff')
+          + T(S.x + S.w * 0.75, yb + 20 * u, 6 * u, 'DEVOLVER REBOBINADO', '#fff3', 'font-size="' + n2(4 * u) + '"'); } },
+    { id: 'quarto90', nome: 'Quarto anos 90', cat: 'Bem brasileiro', desc: 'TV na estante, pôster na parede, tapete e almofada', b: [0.42, 0.55, 0.5, 0.55], raio: 0.08,
+      d: (W, H, S, a) => { const u = S.h / 100, yb = S.y + S.h + 12 * u;
+        let pap = ''; for (let x = 0; x < W; x += 14 * u) pap += R(x, 0, 7 * u, yb, 0, '#ffffff10');
+        return `<defs>${L('pa', [0, '#3d5a80'], [1, '#2b4162'])}${L('ch', [0, '#a3734a'], [1, '#6e4a2c'])}</defs>`
+          + R(0, 0, W, H, 0, 'url(#pa)') + pap
+          + `<g transform="rotate(4 ${n2(S.x - 28 * u)} ${n2(S.y + 20 * u)})">${R(S.x - 50 * u, S.y - 6 * u, 36 * u, 50 * u, u, '#111')}${R(S.x - 48 * u, S.y - 4 * u, 32 * u, 46 * u, u, '#e63946')}${C(S.x - 32 * u, S.y + 12 * u, 9 * u, '#ffd166')}${T(S.x - 32 * u, S.y + 36 * u, 6 * u, 'KOF 98', '#fff')}</g>`
+          + `<g transform="rotate(-5 ${n2(S.x + S.w + 30 * u)} ${n2(S.y + 20 * u)})">${R(S.x + S.w + 14 * u, S.y - 2 * u, 34 * u, 40 * u, u, '#f1faee')}${R(S.x + S.w + 17 * u, S.y + u, 28 * u, 24 * u, 0, '#2a9d8f')}${T(S.x + S.w + 31 * u, S.y + 33 * u, 4.4 * u, 'PLANETA X', '#1d3557')}</g>`
+          + R(S.x - 10 * u, S.y - 10 * u, S.w + 20 * u, S.h + 22 * u, 6 * u, '#1f1f22') + vidro(S, 3 * u, 8 * u)
+          + R(0, yb, W, H - yb, 0, 'url(#ch)') + `<ellipse cx="${n2(W / 2)}" cy="${n2(H - 6 * u)}" rx="${n2(W * 0.38)}" ry="${n2(14 * u)}" fill="#c1121f" opacity=".85"/>`
+          + `<ellipse cx="${n2(W / 2)}" cy="${n2(H - 6 * u)}" rx="${n2(W * 0.3)}" ry="${n2(10 * u)}" fill="none" stroke="#fdf0d5" stroke-width="${n2(1.2 * u)}" stroke-dasharray="${n2(3 * u)} ${n2(2 * u)}"/>`
+          + R(S.x + S.w + 10 * u, H - 22 * u, 26 * u, 16 * u, 7 * u, '#ffb703'); } },
+    { id: 'copa', nome: 'Copa do Mundo', cat: 'Bem brasileiro', desc: 'TV enfeitada de bandeirinha, com o placar no canto', b: [0.36, 0.16, 0.26, 0.16], raio: 0.08,
+      d: (W, H, S, a) => { const u = S.h / 100;
+        let band = ''; const n = 14;
+        for (let k = 0; k < 2; k++) for (let i = 0; i < n; i++) { const x = i * W / (n - 1), y = 6 * u + k * 14 * u + Math.sin(i / (n - 1) * Math.PI) * 6 * u;
+          band += `<path d="M${n2(x - 3 * u)} ${n2(y)} L${n2(x + 3 * u)} ${n2(y)} L${n2(x)} ${n2(y + 8 * u)} Z" fill="${(i + k) % 2 ? '#009c3b' : '#ffdf00'}">${a ? `<animateTransform attributeName="transform" type="rotate" values="-6 ${n2(x)} ${n2(y)};6 ${n2(x)} ${n2(y)};-6 ${n2(x)} ${n2(y)}" dur="${(1.6 + (i % 3) * 0.3).toFixed(1)}s" repeatCount="indefinite"/>` : ''}</path>`; }
+        return `<defs>${L('cp', [0, '#1a7f3c'], [1, '#0c4a22'])}</defs>`
+          + R(0, 0, W, H, 0, 'url(#cp)') + `<path d="M0 ${n2(6 * u)} Q${n2(W / 2)} ${n2(14 * u)} ${W} ${n2(6 * u)} M0 ${n2(20 * u)} Q${n2(W / 2)} ${n2(28 * u)} ${W} ${n2(20 * u)}" stroke="#fff" stroke-width="1" fill="none"/>` + band
+          + R(S.x - 8 * u, S.y - 8 * u, S.w + 16 * u, S.h + 16 * u, 6 * u, '#222226') + vidro(S, 3 * u, 8 * u)
+          + R(S.x + S.w - 30 * u, S.y + S.h + 9 * u, 30 * u, 10 * u, 2 * u, '#002776') + T(S.x + S.w - 15 * u, S.y + S.h + 16.5 * u, 6 * u, 'BRA 2 × 0', '#ffdf00')
+          + R(S.x, S.y + S.h + 9 * u, 24 * u, 10 * u, 2 * u, '#ffdf00') + T(S.x + 12 * u, S.y + S.h + 16.5 * u, 6 * u, 'É HEXA!', '#009c3b'); } },
+    { id: 'tema', nome: 'Moldura do tema', cat: 'Do tema', desc: 'as cores do tema escolhido viram a moldura', b: [0.07, 0.07, 0.07, 0.07], raio: 0.03,
+      d: (W, H, S, a, t) => { const u = S.h / 100;
+        return `<defs>${L('tm', [0, t.painel], [1, t.fundo])}</defs>`
+          + R(0, 0, W, H, 4 * u, 'url(#tm)', `stroke="${t.borda}" stroke-width="${n2(0.8 * u)}"`)
+          + `<g>${R(S.x - 2.2 * u, S.y - 2.2 * u, S.w + 4.4 * u, S.h + 4.4 * u, 3 * u, 'none', `stroke="${t.destaque}" stroke-width="${n2(1.2 * u)}" style="filter:drop-shadow(0 0 ${n2(1.5 * u)}px ${t.destaque})"`)}${a ? pisca(a, '3.2s', '1;.6;1') : ''}</g>`
+          + vidro(S, 1 * u, 2 * u, '#000'); } },
+  ];
+  const PADRAO_SIS = { gb: 'tijolao', gba: 'roxo', neogeo: 'fliperama', md: 'tv90', sms: 'tv90', gg: 'pilha', nes: 'quarto14', snes: 'tv90' };
+  return { LISTA, PADRAO_SIS };
+})();
+if (typeof module !== 'undefined') module.exports = KofMolduras;
+
 // Música própria do KOFstation em 8 bits: um chip simples no estilo do NES (2 pulsos, triângulo e ruído) tocando duas
 // músicas de domínio público com arranjo nosso, sem gravação de ninguém:
 //   air: Air ("on the G string"), J. S. Bach, BWV 1068 — notas da partitura de domínio público do Mutopia Project
@@ -11409,11 +12069,9 @@ let escala = +(ler('escala') || 0), chaveSram = '', sramAntes = '';
 
 // ---------------- tela ----------------
 // O quadro do núcleo vai pra uma textura do tamanho da tela do sistema (SNES 256x224, Game Boy 160x144) e a placa de vídeo (WebGL)
-// desenha com o filtro escolhido. Sem WebGL, volta pro canvas 2D (só nítido).
-const FILTROS = [
-  ['nitido', 'Nítido'], ['suave', 'Suave'], ['crt', 'TV de tubo (CRT)'], ['fliperama', 'Fliperama'],
-  ['gameboy', 'Game Boy'], ['cafe', 'Café (sépia)'], ['lcd', 'Tela LCD'],
-];
+// desenha com os ajustes do painel de imagem (web/visual.js: um shader só, com todos os efeitos). Sem WebGL, canvas 2D (só nítido).
+// Duas texturas se revezando: a do quadro anterior serve pro "rastro" das telas de portátil.
+const FILTROS = KofVisual.PREDEF.map(([k, n]) => [k, n]);
 const tela = $('#tela');
 // sistemas que esta versão roda (nucleo.js diz quais núcleos vieram no html); sem ele, só SNES
 const SIS = typeof KofLibretro !== 'undefined' ? KofLibretro.SISTEMAS : { snes: { nome: 'Super Nintendo', curto: 'SNES', ext: ['sfc', 'smc', 'fig', 'swc'], minimo: 0x8000 } };
@@ -11423,84 +12081,277 @@ const EXT_ROM = new RegExp('\\.(' + [].concat(...SIS_ATIVOS.map((k) => SIS[k].ex
 const neoGeo = (n) => SIS_ATIVOS.includes('neogeo') && !!KofLibretro.setNeoGeo(n);
 const sistemaDoNome = (n) => (neoGeo(n) ? 'neogeo' : SIS_ATIVOS.find((k) => SIS[k].ext.some((e) => (n || '').toLowerCase().endsWith('.' + e))) || null);
 const sistemaDoItem = (r) => (r.jogo && (r.jogo.sistema || sistemaDoNome(r.jogo.arquivo))) || sistemaDoNome(r.arquivo) || sistemaDoNome(r.nome) || 'snes';
-$('#arquivo').accept = [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).map((e) => '.' + e).join(',') + ',.zip';
+$('#arquivo').accept = [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).map((e) => '.' + e).join(',') + ',.zip,.ips,.bps,.ups';
+// ajustes da imagem: a predefinição escolhida (ou "meu": mexeu nos controles) + os valores de cada efeito
+let visual = (() => {
+  try { const v = JSON.parse(ler('visual')); if (v && v.v) return { pre: v.pre, v: { ...KofVisual.PADRAO, ...v.v } }; } catch (e) { /* sem ajuste salvo */ }
+  const antigo = ler('filtro'), pre = KofVisual.ANTIGO[antigo] || (FILTROS.some(([k]) => k === antigo) ? antigo : 'original');
+  return { pre, v: KofVisual.valores(pre) };
+})();
+let filtro = visual.pre;
 let telaL = 256, telaA = 224, img = new ImageData(telaL, telaA), px = new Uint32Array(img.data.buffer), bytesTela = new Uint8Array(img.data.buffer);
-let filtro = ler('filtro') || 'nitido';
 const gl = tela.getContext('webgl', { alpha: false, antialias: false });
 const ctx = gl ? null : tela.getContext('2d', { alpha: false });
-let glModo = null, glTex = null, glTam = null, glSaida = null;
+let glTex = [], glVez = 0, glU = {}, divisao = 0, ligaIni = -1e9;
+const glProgs = {};   // um programa por combinação de efeitos ligados (chave do KofVisual), compilado na primeira vez
+let glVert = null;
+function glPrograma(v) {
+  const k = KofVisual.chave(v);
+  if (!glProgs[k]) {
+    const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s)); return s; };
+    if (!glVert) glVert = sombra(gl.VERTEX_SHADER, `attribute vec2 p; varying vec2 uv;
+    void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`);
+    const prog = gl.createProgram();
+    gl.attachShader(prog, glVert); gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, KofVisual.fonte(v)));
+    gl.bindAttribLocation(prog, 0, 'p'); gl.linkProgram(prog);
+    const u = { prog };
+    for (const n of ['t', 'tp', 'tela', 'u', 'p']) u[n] = gl.getUniformLocation(prog, n);
+    glProgs[k] = u;
+  }
+  const u = glProgs[k];
+  if (glU.prog !== u.prog) {
+    gl.useProgram(u.prog); glU = u;
+    gl.uniform1i(glU.t, 0); gl.uniform1i(glU.tp, 1);
+    gl.uniform4f(glU.tela, telaL, telaA, tela.width, tela.height);
+  }
+}
 if (gl) {
-  const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); return s; };
-  const prog = gl.createProgram();
-  gl.attachShader(prog, sombra(gl.VERTEX_SHADER, `attribute vec2 p; varying vec2 uv;
-    void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`));
-  gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, `precision mediump float;
-    uniform sampler2D t; uniform vec2 tam; uniform vec2 saida; uniform int modo; varying vec2 uv;
-    vec2 curva(vec2 q) { q = q * 2. - 1.; vec2 o = abs(q.yx) / vec2(6., 4.5); q += q * o * o; return q * .5 + .5; }
-    float luz(vec3 c) { return dot(c, vec3(.299, .587, .114)); }
-    void main() {
-      vec2 c = uv;
-      if (modo == 2) { c = curva(uv); if (c.x < 0. || c.x > 1. || c.y < 0. || c.y > 1.) { gl_FragColor = vec4(0., 0., 0., 1.); return; } }
-      vec3 col = texture2D(t, c).rgb;
-      if (modo == 2 || modo == 3) {
-        float s = .5 + .5 * cos(6.28318 * (c.y * tam.y - .5));      // linhas de varredura
-        col *= 1. - (modo == 2 ? .35 : .6) * (1. - s);
-        if (modo == 2) {
-          vec2 d = vec2(1. / tam.x, 0.);
-          col += (texture2D(t, c + d).rgb + texture2D(t, c - d).rgb) * .07;   // brilho do fósforo
-          float m = mod(gl_FragCoord.x, 3.);                                  // máscara RGB
-          col *= (m < 1. ? vec3(1., .82, .82) : m < 2. ? vec3(.82, 1., .82) : vec3(.82, .82, 1.)) * 1.18;
-          vec2 v = c * (1. - c.yx); col *= pow(clamp(v.x * v.y * 15., 0., 1.), .25);   // vinheta
-        } else col *= 1.3;
-      }
-      if (modo == 4) {
-        float l = luz(col);
-        col = l < .25 ? vec3(.06, .22, .06) : l < .5 ? vec3(.19, .38, .19) : l < .75 ? vec3(.55, .67, .06) : vec3(.61, .74, .06);
-      }
-      if (modo == 5) {
-        col = mix(col, vec3(luz(col)) * vec3(1.08, .86, .62), .78);
-        vec2 v = uv * (1. - uv.yx); col *= pow(clamp(v.x * v.y * 16., 0., 1.), .22);
-      }
-      if (modo == 6) { vec2 f = fract(c * tam); col *= (.5 + .5 * step(.1, f.x) * step(.1, f.y)) * 1.12; }
-      gl_FragColor = vec4(col, 1.);
-    }`));
-  gl.linkProgram(prog); gl.useProgram(prog);
   const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-  const ap = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
-  glTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, telaL, telaA, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-  glModo = gl.getUniformLocation(prog, 'modo'); glTam = gl.getUniformLocation(prog, 'tam'); glSaida = gl.getUniformLocation(prog, 'saida');
-  gl.uniform2f(glTam, telaL, telaA);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  for (let i = 0; i < 2; i++) {
+    glTex[i] = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex[i]);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);   // o shader faz o nítido sozinho
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, telaL, telaA, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  }
+  glPrograma(visual.v);
 }
 // jogo de outro sistema: imagem, textura e canvas mudam de tamanho
 function tamanhoTela(l, a) {
   if (l === telaL && a === telaA) return;
   telaL = l; telaA = a;
   img = new ImageData(l, a); px = new Uint32Array(img.data.buffer); bytesTela = new Uint8Array(img.data.buffer);
-  if (gl) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, l, a, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); gl.uniform2f(glTam, l, a); }
+  if (gl) { for (const t of glTex) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, l, a, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); } gl.uniform4f(glU.tela, l, a, tela.width, tela.height); }
 }
-function pintar() {
+// novo = chegou um quadro novo (troca de textura: a outra vira o "quadro anterior"); sem isso, só redesenha
+function pintar(novo) {
   if (!gl) { ctx.putImageData(img, 0, 0); return; }
-  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, telaL, telaA, gl.RGBA, gl.UNSIGNED_BYTE, bytesTela);
+  if (novo) glVez ^= 1;
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glTex[glVez ^ 1]);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glTex[glVez]);
+  if (novo !== false) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, telaL, telaA, gl.RGBA, gl.UNSIGNED_BYTE, bytesTela);
+  const agora = performance.now(), liga = visual.v.ligarTv > 0.5 ? Math.min(1, (agora - ligaIni) / 650) : 1;
+  gl.uniform4f(glU.u, (agora / 1000) % 1000, divisao, liga, pausado && snes && !rapidoAberto && telaAtual() === 'jogo' ? 1 : 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
-function aplicarFiltro(nome) {
-  filtro = FILTROS.some(([k]) => k === nome) ? nome : 'nitido';
-  guardar('filtro', filtro);
+// filmadora: "▶ PLAY" e a data no canto, por cima do jogo (texto da página, não do shader)
+function marcarFilmadora() {
+  const f = $('#filmadora'), on = visual.v.filmadora > 0.5;
+  f.hidden = !on; if (!on) return;
+  Object.assign(f.style, { left: tela.offsetLeft + 'px', top: tela.offsetTop + 'px', width: tela.offsetWidth + 'px', height: tela.offsetHeight + 'px', fontSize: Math.max(12, tela.offsetHeight / 16) + 'px' });
+  const d = new Date(), M = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'][d.getMonth()];
+  f.querySelector('.fd-data').textContent = `${M} ${String(d.getDate()).padStart(2, '0')} 1996\n${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+setInterval(() => { if (visual.v.filmadora > 0.5) marcarFilmadora(); }, 20000);
+// aplica os ajustes (do painel ou de uma predefinição) e guarda
+function aplicarVisual(v, pre) {
+  visual = { pre: pre || 'meu', v: { ...KofVisual.PADRAO, ...v } }; filtro = visual.pre;
+  guardar('visual', JSON.stringify(visual));
   document.querySelectorAll('[data-filtro]').forEach((b) => b.classList.toggle('ativo', b.dataset.filtro === filtro));
   if (!gl) return;
-  const n = FILTROS.findIndex(([k]) => k === filtro);
-  gl.uniform1i(glModo, n);
-  const suave = ['suave', 'crt', 'fliperama', 'cafe'].includes(filtro) ? gl.LINEAR : gl.NEAREST;
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, suave); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, suave);
-  pintar();
+  glPrograma(visual.v);
+  gl.uniform4fv(glU.p, KofVisual.vetor(visual.v));
+  marcarFilmadora();
+  pintar(false);
 }
+function aplicarFiltro(nome) {
+  const pre = KofVisual.ANTIGO[nome] || (FILTROS.some(([k]) => k === nome) ? nome : 'original');
+  aplicarVisual(KofVisual.valores(pre), pre);
+}
+// ---------------- painel de imagem ----------------
+// gaveta à direita: predefinições + todos os ajustes em grupos; o jogo continua rodando atrás (sem jogo: uma imagem de teste)
+const visMeus = () => { try { return JSON.parse(ler('visualMeus')) || []; } catch (e) { return []; } };
+let visVazio = false, visVoltar = null;
+function cartelaTeste() {   // sem jogo aberto: uma cena em pixel art feita aqui (céu, morros, xícara, barras de cor e xadrez)
+  tamanhoTela(256, 224);
+  const cor = (r, g, b) => 0xFF000000 | (b << 16) | (g << 8) | r;
+  for (let y = 0; y < 224; y++) for (let x = 0; x < 256; x++) {
+    let c = y < 140 ? cor(40 + y, 90 + y, 200) : cor(60, 150 - (y - 140), 60);
+    if (y >= 100 && y < 140 && Math.sin(x / 18) * 12 + 118 < y) c = cor(50, 130, 70);   // morros
+    const dx = x - 200, dy = y - 40; if (dx * dx + dy * dy < 280) c = cor(255, 220, 90);    // sol
+    if (y >= 150 && y < 190 && x >= 16 && x < 240) { const b = Math.floor((x - 16) / 28); c = [cor(255, 255, 255), cor(255, 255, 0), cor(0, 255, 255), cor(0, 255, 0), cor(255, 0, 255), cor(255, 0, 0), cor(0, 0, 255), cor(20, 20, 20)][b]; }
+    if (y >= 196 && y < 210 && x >= 16 && x < 240) c = ((x >> 1) + (y >> 1)) & 1 ? cor(255, 255, 255) : cor(0, 0, 0);   // xadrez fino
+    if (y >= 212 && y < 220 && x >= 16 && x < 240) { const v = Math.round((x - 16) / 224 * 255); c = cor(v, v, v); }  // degradê
+    px[y * 256 + x] = c;
+  }
+  // formas com diagonal fina (onde o "HD", a "Pintura" e o "Desenho animado" aparecem): estrela, losango e as letras KOF
+  for (let y = 0; y < 60; y++) for (let x = 0; x < 60; x++) {
+    const dx = Math.abs(x - 30), dy = Math.abs(y - 30), ang = Math.atan2(y - 30, x - 30), r = Math.hypot(x - 30, y - 30);
+    if (r < 12 + 12 * Math.abs(Math.cos(ang * 2.5))) px[(30 + y) * 256 + 110 + x] = r < 8 ? cor(255, 140, 0) : cor(255, 210, 40);   // estrela
+    if (dx + dy < 18) px[(80 + y) * 256 + 150 + x] = dx + dy < 12 ? cor(230, 40, 120) : cor(120, 20, 160);                        // losango
+  }
+  const LETRAS = ['1...1.01110.11111', '1..1..10001.1....', '1.1...10001.1....', '11....10001.1111.', '1.1...10001.1....', '1..1..10001.1....', '1...1.01110.1....'];
+  LETRAS.forEach((l, j) => [...l].forEach((ch, i) => { if (ch === '1') for (let a = 0; a < 2; a++) for (let b2 = 0; b2 < 2; b2++) px[(52 + j * 2 + a) * 256 + 178 + i * 2 + b2] = cor(255, 255, 255); }));
+  // xícara de café
+  const X = ['....s..s..s.....', '.....s..s..s....', '................', '.bbbbbbbbbbbb...', '.bwwwwwwwwwwbbb.', '.bwccccccccwb.b.', '.bwccccccccwb.b.',
+    '.bwwwwwwwwwwbbb.', '.bwwwwwwwwwwb...', '..bwwwwwwwwb....', '...bbbbbbbb.....', 'pppppppppppppp..'];
+  const P = { s: cor(230, 230, 230), b: cor(40, 20, 10), w: cor(250, 245, 235), c: cor(120, 60, 20), p: cor(200, 180, 160) };
+  X.forEach((l, j) => [...l].forEach((ch, i) => { if (P[ch]) for (let a = 0; a < 3; a++) for (let b2 = 0; b2 < 3; b2++) px[(70 + j * 3 + a) * 256 + 40 + i * 3 + b2] = P[ch]; }));
+  pintar(true); pintar(true);
+}
+function montarVisual() {
+  const pre = $('#vis-pre'); pre.textContent = '';
+  for (const [k, n, d] of KofVisual.PREDEF) {
+    const b = document.createElement('button'); b.textContent = n; b.title = d; b.dataset.visPre = k;
+    b.classList.toggle('ativo', visual.pre === k); pre.appendChild(b);
+  }
+  visMeus().forEach((m, i) => {
+    const b = document.createElement('button'); b.textContent = '⭐ ' + m.nome; b.title = 'clique pra usar · botão direito pra apagar'; b.dataset.visMeu = i;
+    b.className = 'meu' + (visual.pre === 'meu:' + m.nome ? ' ativo' : ''); pre.appendChild(b);
+  });
+  $('#vis-nome').textContent = visual.pre === 'meu' ? '· do seu jeito' : visual.pre.startsWith('meu:') ? '· ⭐ ' + visual.pre.slice(4) : '· ' + ((FILTROS.find(([k]) => k === visual.pre) || [0, ''])[1]);
+  const aj = $('#vis-ajustes'), abertos = new Set([...aj.querySelectorAll('details[open]')].map((d) => d.dataset.g));
+  if (!aj.childElementCount) abertos.add('Pixels').add('TV');
+  aj.textContent = '';
+  const grupos = {};
+  for (const a of KofVisual.AJUSTES) (grupos[a[1]] = grupos[a[1]] || []).push(a);
+  const DICA = { Pixels: 'como cada pixel é desenhado', TV: 'linhas, fósforo, curva', Sinal: 'cabo, fita e chiado', Portátil: 'telas de LCD', Cor: 'brilho, contraste, daltonismo' };
+  for (const [g, lista] of Object.entries(grupos)) {
+    const det = document.createElement('details'); det.dataset.g = g; det.open = abertos.has(g);
+    det.innerHTML = `<summary>${g}<small>${DICA[g] || ''}</small></summary>`;
+    for (const [id, , nome, min, max, passo, , opcoes] of lista) {
+      const v = visual.v[id], l = document.createElement('div'); l.className = 'vis-aj';
+      if (opcoes) {
+        l.innerHTML = `<label>${nome}</label><select data-vis="${id}">${opcoes.map((o, i) => `<option value="${i}"${+v === i ? ' selected' : ''}>${o}</option>`).join('')}</select>`;
+      } else {
+        const mostra = (x) => (max <= 1.01 && min >= 0 ? Math.round(x * 100) + '%' : (+x).toFixed(passo < 1 ? 2 : 0));
+        l.innerHTML = `<label>${nome}</label><input type="range" data-vis="${id}" min="${min}" max="${max}" step="${passo}" value="${v}"><output>${mostra(v)}</output>`;
+        l.querySelector('input').addEventListener('input', (e) => { l.querySelector('output').textContent = mostra(e.target.value); });
+      }
+      det.appendChild(l);
+    }
+    aj.appendChild(det);
+  }
+  $('#vis-porsis').checked = ler('visualPorSis') === '1';
+}
+function abrirVisual() {
+  if (!$('#visual').hidden) return;
+  fecharMenus(); if (rapidoAberto) fecharRapido();
+  visVoltar = telaAtual() !== 'jogo' ? telaAtual() : null;
+  for (const id of TELAS) $('#' + id).hidden = true;
+  visVazio = !snes;
+  if (visVazio) { document.body.classList.remove('vazio'); cartelaTeste(); }
+  montarVisual(); $('#visual').hidden = false; document.body.classList.add('com-visual'); ajustarEscala();
+}
+function fecharVisual() {
+  if ($('#visual').hidden) return;
+  $('#visual').hidden = true; document.body.classList.remove('com-visual');
+  divisao = 0; $('#vis-comparar').checked = false; if (gl) pintar(false);
+  if (visVazio && !snes) document.body.classList.add('vazio');
+  ajustarEscala();
+  if (visVoltar) $('#' + visVoltar).hidden = false; else if (!snes) abrirHome();
+  visVoltar = null;
+}
+function guardarPorSis() { if (snes && ler('visualPorSis') === '1') guardar('visual.' + (snes.sistema || 'snes'), JSON.stringify(visual)); }
+$('#visual').addEventListener('input', (e) => {
+  const id = e.target.dataset.vis; if (!id) return;
+  aplicarVisual({ ...visual.v, [id]: +e.target.value }, 'meu'); guardarPorSis();
+  $('#vis-pre').querySelectorAll('button').forEach((b) => b.classList.remove('ativo')); $('#vis-nome').textContent = '· do seu jeito';
+});
+$('#visual').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.visPre) { aplicarFiltro(b.dataset.visPre); guardarPorSis(); montarVisual(); }
+  else if (b.dataset.visMeu) { const m = visMeus()[+b.dataset.visMeu]; if (m) { aplicarVisual(m.v, 'meu:' + m.nome); guardarPorSis(); montarVisual(); } }
+});
+$('#vis-pre').addEventListener('contextmenu', (e) => {
+  const b = e.target.closest('[data-vis-meu]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const l = visMeus(), m = l[+b.dataset.visMeu];
+  if (m && confirm('Apagar "' + m.nome + '"?')) { l.splice(+b.dataset.visMeu, 1); guardar('visualMeus', JSON.stringify(l)); montarVisual(); }
+});
+$('#vis-comparar').addEventListener('change', (e) => { divisao = e.target.checked ? 0.5 : 0; if (gl) pintar(false); });
+$('#mold-anim').addEventListener('change', (e) => { moldAnim = e.target.checked; guardar('moldAnim', moldAnim ? '1' : '0'); ajustarEscala(); });
+$('#mold-porsis').addEventListener('change', (e) => { guardar('moldPorSis', e.target.checked ? '1' : '0'); if (snes && e.target.checked) guardar('moldura.' + (snes.sistema || 'snes'), moldura); });
+$('#vis-porsis').addEventListener('change', (e) => { guardar('visualPorSis', e.target.checked ? '1' : '0'); guardarPorSis(); });
+tela.addEventListener('pointermove', (e) => {   // comparar: a divisória segue o mouse/dedo
+  if (!divisao || $('#visual').hidden || !(e.buttons & 1)) return;
+  const r = tela.getBoundingClientRect(); divisao = Math.min(0.98, Math.max(0.02, (e.clientX - r.left) / r.width));
+  pintar(false);
+});
+// por console: ao abrir um jogo, volta o jeito guardado daquele console
+function visualDoSistema(sis) {
+  if (ler('visualPorSis') !== '1') return;
+  try { const v = JSON.parse(ler('visual.' + sis)); if (v && v.v) aplicarVisual(v.v, v.pre); } catch (e) { /* nada guardado pra esse console */ }
+}
+// ---------------- galeria de molduras ----------------
+let moldVoltar = null, moldCat = 'Todas', imagemTeste = false;
+function montarMolduras() {
+  const cats = ['Todas', ...new Set(KofMolduras.LISTA.map((m) => m.cat)), 'Sua'];
+  $('#mold-cats').innerHTML = cats.map((c) => `<button data-mold-cat="${c}" class="${c === moldCat ? 'ativo' : ''}">${c}</button>`).join('');
+  const r = naTv() ? 4 / 3 : (snes && snes.proporcao) || telaL / telaA, h = 96, w = Math.round(h * r);
+  const print = snes || imagemTeste ? foto(256) : (cartelaTeste(), foto(256));
+  const g = $('#grade-molduras'); g.textContent = '';
+  const itens = [['nenhuma', 'Sem moldura', 'só o jogo', 'Todas'], ...KofMolduras.LISTA.map((m) => [m.id, m.nome, m.desc, m.cat]), ['propria', 'Moldura sua (PNG)', propria ? 'a que você escolheu' : 'escolha um PNG com o meio transparente', 'Sua']];
+  for (const [id, nome, desc, cat] of itens) {
+    if (moldCat !== 'Todas' && cat !== moldCat && id !== 'nenhuma') continue;
+    const b = document.createElement('button'); b.className = 'mold-card' + (id === moldura ? ' ativo' : ''); b.dataset.moldEscolher = id; b.title = desc;
+    const sv = id === 'nenhuma' || id === 'propria' ? null : svgMoldura(id, w, h, false);
+    const W = sv ? sv.W : w, H = sv ? sv.H : h, esc = Math.min(1, 200 / W, 150 / H);
+    const quadro = document.createElement('div'); quadro.className = 'mold-quadro';
+    quadro.style.cssText = `width:${Math.round(W * esc)}px;height:${Math.round(H * esc)}px;` + (sv ? `background-image:${sv.url};background-size:100% 100%` : id === 'propria' && propria ? `background-image:url("${propria.url}");background-size:100% 100%` : '');
+    const im = document.createElement('img'); im.src = print; im.alt = '';
+    const S = sv ? sv.S : id === 'propria' && propria ? null : { x: 0, y: 0, w, h };
+    if (S) im.style.cssText = `left:${S.x * esc}px;top:${S.y * esc}px;width:${S.w * esc}px;height:${S.h * esc}px;border-radius:${sv ? sv.raio * h * esc : 2}px`;
+    else { const [x, y, ww, hh] = propria.buraco; im.style.cssText = `left:${x / propria.larg * 100}%;top:${y / propria.alt * 100}%;width:${ww / propria.larg * 100}%;height:${hh / propria.alt * 100}%`; }
+    if (id === 'propria' && !propria) im.hidden = true;
+    quadro.appendChild(im); b.appendChild(quadro);
+    const t = document.createElement('span'); t.innerHTML = `<b>${nome}</b><small>${desc}</small>`; b.appendChild(t);
+    g.appendChild(b);
+  }
+  $('#mold-anim').checked = moldAnim; $('#mold-porsis').checked = ler('moldPorSis') === '1';
+  if (!snes && !imagemTeste) document.body.classList.add('vazio');
+}
+function abrirMolduras() {
+  fecharMenus(); if (rapidoAberto) fecharRapido();
+  moldVoltar = telaAtual() !== 'jogo' ? telaAtual() : null;
+  montarMolduras(); $('#molduras').hidden = false; $('#veu').hidden = false;
+}
+function fecharMolduras() {
+  if ($('#molduras').hidden) return;
+  $('#molduras').hidden = true; $('#veu').hidden = true;
+  if (moldVoltar) $('#' + moldVoltar).hidden = false;
+  moldVoltar = null;
+}
+// moldura sua: um PNG; o buraco transparente do meio (onde o alfa é baixo, crescendo a partir do centro) vira a tela
+async function escolherMolduraPropria() {
+  const e = document.createElement('input'); e.type = 'file'; e.accept = 'image/png,image/webp';
+  e.onchange = async () => {
+    const f = e.files[0]; if (!f) return;
+    try {
+      const bmp = await createImageBitmap(f), c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+      const g = c.getContext('2d'); g.drawImage(bmp, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height).data, a = (x, y) => d[(y * c.width + x) * 4 + 3];
+      const cx = c.width >> 1, cy = c.height >> 1;
+      if (a(cx, cy) > 40) throw new Error('o meio dessa imagem não é transparente: a moldura precisa de um buraco pra tela');
+      let x0 = cx, x1 = cx, y0 = cy, y1 = cy;
+      while (x0 > 0 && a(x0 - 1, cy) <= 40) x0--; while (x1 < c.width - 1 && a(x1 + 1, cy) <= 40) x1++;
+      while (y0 > 0 && a(cx, y0 - 1) <= 40) y0--; while (y1 < c.height - 1 && a(cx, y1 + 1) <= 40) y1++;
+      const blob = new Blob([await f.arrayBuffer()], { type: f.type || 'image/png' });
+      propria = { url: URL.createObjectURL(blob), buraco: [x0, y0, x1 - x0 + 1, y1 - y0 + 1], larg: c.width, alt: c.height };
+      await bdPor('c', 'molduraPropria', { blob, buraco: propria.buraco, larg: c.width, alt: c.height });
+      mudarMoldura('propria'); montarMolduras(); avisar('🖼 moldura sua guardada (tela de ' + propria.buraco[2] + '×' + propria.buraco[3] + ' px)');
+    } catch (er) { avisar(er.message, 5000); }
+  };
+  e.click();
+}
+(async () => {   // a moldura própria guardada volta quando o app abre
+  try { const p = await bdPegar('c', 'molduraPropria'); if (p) { propria = { url: URL.createObjectURL(p.blob), buraco: p.buraco, larg: p.larg, alt: p.alt }; if (ler('moldura') === 'propria') mudarMoldura('propria', true); } } catch (e) { /* sem banco */ }
+})();
 function desenhar() {
   if (snes.rgba) {   // núcleo libretro: já vem no formato da textura
     if (snes.largura !== telaL || snes.altura !== telaA) { tamanhoTela(snes.largura, snes.altura); ajustarEscala(); }   // o jogo trocou de resolução (Mega Drive)
-    px.set(snes.rgba); pintar(); return;
+    px.set(snes.rgba); pintar(true); return;
   }
   const f = snes.ppu.frame;
   // o núcleo Kof entrega 0xAARRGGBB; a textura (little-endian) quer 0xAABBGGRR
@@ -11508,7 +12359,7 @@ function desenhar() {
     const c = f[i];
     px[i] = 0xFF000000 | ((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF);
   }
-  pintar();
+  pintar(true);
 }
 // proporção: 4:3 é como aparecia na TV (o pixel do SNES não é quadrado); 8:7 é o pixel quadrado (256x224);
 // esticar ocupa o palco inteiro. Em outro sistema, "original" é a proporção que o núcleo informa (Game Boy: 10:9)
@@ -11517,16 +12368,40 @@ const naTv = () => !snes || !snes.lr || snes.sistema === 'snes' || !!(SIS[snes.s
 const RAZAO = { 43: () => (naTv() ? 4 / 3 : snes.proporcao || telaL / telaA), 87: () => telaL / telaA };
 const nomeProporcao = (k) => (naTv() ? null : { 43: 'Original (como no aparelho)', 87: 'Pixel perfeito' }[k]) || PROPORCOES.find(([c]) => c === k)[1];
 let proporcao = PROPORCOES.some(([k]) => k === ler('proporcao')) ? ler('proporcao') : '43';
-// moldura em volta do jogo; as bordas são frações da altura da tela (cima, direita, baixo, esquerda)
-const MOLDURAS = [['nenhuma', 'Sem moldura'], ['tv80', 'TV de madeira (anos 80)'], ['tv90', 'TV de tubo (anos 90)'], ['fliperama', 'Fliperama']];
-const BORDAS = { nenhuma: [0, 0, 0, 0], tv80: [0.1, 0.44, 0.1, 0.1], tv90: [0.08, 0.08, 0.2, 0.08], fliperama: [0.3, 0.12, 0.34, 0.12] };
-let moldura = BORDAS[ler('moldura')] ? ler('moldura') : 'nenhuma';
-function mudarMoldura(v) { moldura = BORDAS[v] ? v : 'nenhuma'; guardar('moldura', moldura); ajustarEscala(); }
+// moldura em volta do jogo (web/molduras.js: desenhos em SVG feitos no tamanho exato da tela); as bordas são frações da
+// altura da tela (cima, direita, baixo, esquerda). "propria" = um PNG com fundo transparente que a pessoa escolheu
+const MOLDURAS = [['nenhuma', 'Sem moldura'], ...KofMolduras.LISTA.map((m) => [m.id, m.nome]), ['propria', 'Moldura sua (PNG)']];
+let moldura = MOLDURAS.some(([k]) => k === ler('moldura')) ? ler('moldura') : 'nenhuma';
+let moldAnim = ler('moldAnim') !== '0', propria = null;   // propria = { url, buraco: [x, y, w, h], larg, alt }
+function bordasDe(id, r) {
+  if (id === 'propria' && propria) {   // o buraco transparente do PNG vira a tela: o resto é borda
+    const [x, y, w, h] = propria.buraco, k = r / (w / h);   // a largura do PNG estica pro jogo caber no buraco
+    return [y / h, (propria.larg - x - w) / h * k, (propria.alt - y - h) / h, x / h * k];
+  }
+  const m = KofMolduras.LISTA.find((l) => l.id === id);
+  return m ? m.b : [0, 0, 0, 0];
+}
+function mudarMoldura(v, semGuardar) {
+  moldura = MOLDURAS.some(([k]) => k === v) && (v !== 'propria' || propria) ? v : 'nenhuma';
+  if (!semGuardar) { guardar('moldura', moldura); if (snes && ler('moldPorSis') === '1') guardar('moldura.' + (snes.sistema || 'snes'), moldura); }
+  ajustarEscala();
+}
+function coresTema() {
+  const c = getComputedStyle(document.documentElement), v = (n, p) => (c.getPropertyValue(n).trim() || p);
+  return { fundo: v('--fundo', '#222'), painel: v('--painel', '#333'), destaque: v('--destaque', '#e2b85c'), texto: v('--texto', '#eee'), borda: v('--borda', '#555') };
+}
+// desenha a moldura escolhida em volta de uma tela w x h (px); devolve o fundo (CSS) e onde fica a tela
+function svgMoldura(id, w, h, anim) {
+  const m = KofMolduras.LISTA.find((l) => l.id === id); if (!m) return null;
+  const [bc, bd, bb, be] = m.b, W = Math.round(w + (bd + be) * h), H = Math.round(h * (1 + bc + bb)), S = { x: be * h, y: bc * h, w, h };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${m.d(W, H, S, anim, coresTema())}</svg>`;
+  return { url: 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")', raio: m.raio, S, W, H };
+}
 function ajustarEscala() {
   const p = $('#palco'), cheia = document.body.classList.contains('cheia') || document.documentElement.classList.contains('celular'), folga = cheia ? 0 : 16;   // celular: sempre o maior que couber (sem múltiplo inteiro)
   const pc = getComputedStyle(p), miolo = (l, r) => (parseFloat(pc[l]) || 0) + (parseFloat(pc[r]) || 0);   // celular na horizontal: o palco tem folga dos lados pros botões
   const W = Math.max(telaL, p.clientWidth - folga - miolo('paddingLeft', 'paddingRight')), H = Math.max(telaA, p.clientHeight - folga - miolo('paddingTop', 'paddingBottom'));
-  const [bc, bd, bb, be] = BORDAS[moldura], comMoldura = moldura !== 'nenhuma';
+  const [bc, bd, bb, be] = bordasDe(moldura, proporcao === 'esticar' ? RAZAO['43']() : RAZAO[proporcao]()), comMoldura = moldura !== 'nenhuma';
   let w, h;
   if (proporcao === 'esticar') { h = H / (1 + bc + bb); w = W - (bd + be) * h; } else {
     const r = RAZAO[proporcao](), hMax = Math.min(H / (1 + bc + bb), W / (r + bd + be));
@@ -11543,11 +12418,16 @@ function ajustarEscala() {
   document.body.dataset.moldura = moldura;
   m.style.padding = [bc, bd, bb, be].map((f) => Math.round(f * h) + 'px').join(' ');
   m.style.setProperty('--h', h + 'px');
+  const sv = moldura === 'propria' ? null : svgMoldura(moldura, w, h, moldAnim);
+  m.style.backgroundImage = sv ? sv.url : moldura === 'propria' && propria ? `url("${propria.url}")` : '';
+  m.style.backgroundSize = '100% 100%';
+  tela.style.borderRadius = sv ? Math.round(sv.raio * h) + 'px' : '';
   if (gl) {   // o canvas WebGL desenha na resolução da tela, pros filtros terem detalhe
     const dpr = window.devicePixelRatio || 1;
     tela.width = Math.round(w * dpr); tela.height = Math.round(h * dpr);
-    gl.viewport(0, 0, tela.width, tela.height); gl.uniform2f(glSaida, tela.width, tela.height); pintar();
+    gl.viewport(0, 0, tela.width, tela.height); gl.uniform4f(glU.tela, telaL, telaA, tela.width, tela.height); pintar(false);
   } else { tela.width = telaL; tela.height = telaA; }
+  marcarFilmadora();
   document.querySelectorAll('[data-escala]').forEach((b) => b.classList.toggle('ativo', +b.dataset.escala === escala));
   document.querySelectorAll('[data-prop]').forEach((b) => b.classList.toggle('ativo', b.dataset.prop === proporcao));
   document.querySelectorAll('[data-moldura]').forEach((b) => { if (b.tagName === 'BUTTON') b.classList.toggle('ativo', b.dataset.moldura === moldura); });
@@ -11795,6 +12675,9 @@ addEventListener('keydown', (e) => {
     if (e.code === 'Enter' || e.code === 'Space') return;   // o botão em foco recebe o clique
   }
   if (e.code === 'F2') { e.preventDefault(); acao('rapido'); return; }
+  if (e.code === 'F4') { e.preventDefault(); acao('visual'); return; }
+  if (e.code === 'Escape' && !$('#visual').hidden) { e.preventDefault(); fecharVisual(); return; }
+  if (e.code === 'Escape' && !$('#molduras').hidden) { e.preventDefault(); fecharMolduras(); return; }
   if (e.code === 'Minus' || e.code === 'NumpadSubtract') { e.preventDefault(); mudarVolume(-10); return; }
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { e.preventDefault(); mudarVolume(10); return; }
   if (e.ctrlKey && e.code === 'KeyO') { e.preventDefault(); acao('abrir'); return; }
@@ -11828,6 +12711,7 @@ addEventListener('blur', () => { teclado = 0; turbo = false; voltandoTecla = fal
 let ultimo = 0, sobra = 0, contados = 0, marco = 0;
 function laco(t) {
   requestAnimationFrame(laco);
+  if (gl && (!snes || pausado) && (performance.now() - ligaIni < 700 || (KofVisual.animado(visual.v) && (!$('#visual').hidden || (snes && telaAtual() === 'jogo'))))) pintar(false);   // chiado/fita mexendo mesmo parado
   const querVoltar = snes && voltando() && !pausado && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden && $('#home').hidden;
   if (querVoltar && rebob && (rebobinou || rebobPronto())) { rebobinarPasso(); ultimo = marco = t; contados = 0; return; }
   if (rebobinou) terminarRebobinar();
@@ -12220,7 +13104,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610201720 · 4ae5451', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610202133 · f3449ee', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   const b = semCombo(estado());
@@ -12353,7 +13237,7 @@ function terminarRebobinar() {
 }
 
 // ---------------- ROMs ----------------
-async function lerZip(buf) {
+async function lerZip(buf, filtro = EXT_ROM) {
   const v = new DataView(buf), u8 = new Uint8Array(buf);
   let e = -1;
   for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) {
@@ -12368,7 +13252,7 @@ async function lerZip(buf) {
     const loc = v.getUint32(p + 42, true);
     const nome = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl));
     p += 46 + nl + xl + cl;
-    if (!EXT_ROM.test(nome)) continue;
+    if (!filtro.test(nome)) continue;
     const dados = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true);
     const bruto = u8.subarray(dados, dados + tam);
     if (metodo === 0) return { nome, bytes: bruto };
@@ -12376,7 +13260,7 @@ async function lerZip(buf) {
     const s = new Blob([bruto]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
     return { nome, bytes: new Uint8Array(await new Response(s).arrayBuffer()) };
   }
-  throw new Error('o zip não tem nenhuma ROM dentro');
+  throw new Error(filtro === EXT_ROM ? 'o zip não tem nenhuma ROM dentro' : 'o zip não tem nada que eu reconheça');
 }
 // ---------------- banco interno (IndexedDB) ----------------
 // c: configurações (a pasta de ROMs) · jogos: nome, prints, quando jogou ·
@@ -12650,10 +13534,33 @@ async function abrirArquivo(arq) {
     if (ehZip && !neoGeo(nome)) {
       // zip de Neo Geo com outro nome ("King of Fighters 98.zip"): reconhece pelo conteúdo e passa a usar o nome do set
       const set = SIS_ATIVOS.includes('neogeo') && KofLibretro.setNeoGeoDoZip(bytes);
-      if (set) nome = set + '.zip'; else ({ nome, bytes } = await lerZip(bytes.buffer));
+      // zip de tradução: costuma trazer só o patch (e um leia-me)
+      if (set) nome = set + '.zip'; else ({ nome, bytes } = await lerZip(bytes.buffer, new RegExp(EXT_ROM.source + '|' + KofPatch.EXT.source, 'i')));
     }
+    if (KofPatch.EXT.test(nome) || KofPatch.tipo(bytes)) { await aplicarPatch(nome, bytes); return; }
     await abrirBytes(nome, bytes, true);
   } catch (e) { avisar(e.message, 5000); }
+}
+// Patch de tradução (.ips/.bps/.ups): aplica no jogo aberto ou pede a ROM; o jogo traduzido vira outro jogo na biblioteca
+// (a ROM original fica intacta e cada um tem o seu save). Arrastar a ROM e o patch juntos também funciona.
+function escolherRom() {
+  return new Promise((ok) => {
+    const e = document.createElement('input'); e.type = 'file'; e.accept = $('#arquivo').accept;
+    e.onchange = async () => { const f = e.files[0]; if (!f) return ok(null); let nome = f.name, bytes = new Uint8Array(await f.arrayBuffer());
+      if (/\.zip$/i.test(nome)) ({ nome, bytes } = await lerZip(bytes.buffer)); ok({ nome, bytes }); };
+    e.click();
+  });
+}
+async function aplicarPatch(nomePatch, patch, rom) {
+  if (!rom && snes && romAtual && SIS[snes.sistema || 'snes'] && !SIS[snes.sistema || 'snes'].caminho) rom = { nome: romArquivo, bytes: romAtual };
+  if (!rom) { avisar('agora escolha a ROM do jogo pra aplicar a tradução', 4000); rom = await escolherRom(); if (!rom) return; }
+  const sis = !/\.[a-z0-9]{2,4}$/i.test(rom.nome) ? 'snes' : sistemaDoNome(rom.nome);
+  if (!sis || SIS[sis].caminho) throw new Error('patch só vale pra ROM de cartucho (não pra zip de fliperama)');
+  const r = KofPatch.aplicar(rom.bytes, patch, sis);
+  const base = rom.nome.replace(/\.[^.]+$/, '').replace(/ \(tradução\)$/, ''), ext = (rom.nome.match(/\.[^.]+$/) || ['.sfc'])[0];
+  await abrirBytes(base + ' (tradução)' + ext, r.rom, true);
+  try { await bdMudarJogo(jogoId, (j) => j && Object.assign(j, { traducao: nomePatch.replace(/^.*[\\/]/, ''), original: base })); } catch (e) { /* sem banco */ }
+  avisar('🇧🇷 tradução aplicada (' + r.tipo.toUpperCase() + '): o jogo traduzido ficou na biblioteca, separado do original', 5000);
 }
 // BIOS (arquivo de sistema que alguns consoles pedem, ex.: gba_bios.bin): o usuário escolhe a dele, fica no banco e vai pro
 // núcleo antes de cada jogo. O KOFstation nunca traz BIOS junto.
@@ -12733,6 +13640,8 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   }
   s.reset();
   tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
+  visualDoSistema(sis); ligaIni = performance.now();
+  if (ler('moldPorSis') === '1') mudarMoldura(ler('moldura.' + sis) || KofMolduras.PADRAO_SIS[sis] || moldura, true);
   document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy e NES: só A, B, Start e Select)
   document.body.classList.toggle('so-ab', !!(SIS[sis] && SIS[sis].botoes && !SIS[sis].botoes.includes('X')));
   if (typeof rotularControle === 'function') rotularControle(sis);   // celular: nomes dos botões do console (Mega Drive A/B/C...)
@@ -12847,6 +13756,9 @@ addEventListener('drop', (e) => {
   e.preventDefault(); document.body.classList.remove('arrastando');
   const fs = [...e.dataTransfer.files];
   if (fs.length && fs.every((f) => /\.spc$/i.test(f.name))) { importarSpcs(fs); return; }
+  // ROM + patch soltos juntos: aplica a tradução nessa ROM
+  const pt = fs.find((f) => KofPatch.EXT.test(f.name)), rm = fs.find((f) => EXT_ROM.test(f.name));
+  if (pt && rm) { (async () => aplicarPatch(pt.name, new Uint8Array(await pt.arrayBuffer()), { nome: rm.name, bytes: new Uint8Array(await rm.arrayBuffer()) }))().catch((er) => avisar(er.message, 5000)); return; }
   if (fs[0]) abrirArquivo(fs[0]);
 });
 
@@ -13181,6 +14093,7 @@ function adicionarLis(ate) {
     const nm = document.createElement('span'); nm.textContent = r.nome; li.appendChild(nm);
     const sis = SIS_ATIVOS.length > 1 && sistemaDoItem(r);
     if (sis && sis !== 'snes') { const tag = document.createElement('small'); tag.className = 'sis-tag'; tag.textContent = SIS[sis].curto; li.appendChild(tag); }
+    if (r.jogo && r.jogo.traducao) { const tag = document.createElement('small'); tag.className = 'sis-tag'; tag.textContent = '🇧🇷'; tag.title = 'traduzido: ' + r.jogo.traducao; li.appendChild(tag); }
     const sm = document.createElement('small');
     sm.textContent = r.jogo ? (contagem[r.jogo.id] ? '💾 ' + contagem[r.jogo.id] : '★') : r.ext;
     li.appendChild(sm);
@@ -13305,11 +14218,11 @@ const ITENS_RAPIDO = [
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
   { t: '🎨 Tema', v: () => TODOS_TEMAS.find(([k]) => k === temaSalvo)[1], aj: (d) => tema(ciclar(TODOS_TEMAS, temaSalvo, d)), f: () => { fecharRapido(); acao('temas'); } },
-  { t: 'Filtro', v: () => FILTROS.find(([k]) => k === filtro)[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, filtro, d)) },
+  { t: 'Filtro', v: () => (FILTROS.find(([k]) => k === filtro) || [0, 'Meu jeito'])[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, FILTROS.some(([k]) => k === filtro) ? filtro : 'original', d)) },
   { t: 'Cores do Game Boy', so: () => !!(snes && snes.sistema === 'gb'), v: () => PALETAS_GB.find(([k]) => k === paletaGb)[1], aj: (d) => mudarPaletaGb(ciclar(PALETAS_GB, paletaGb, d)) },
   { t: 'Cores do NES', so: () => !!(snes && snes.sistema === 'nes'), v: () => PALETAS_NES.find(([k]) => k === paletaNes)[1], aj: (d) => mudarPaletaNes(ciclar(PALETAS_NES, paletaNes, d)) },
   { t: 'Proporção', v: () => nomeProporcao(proporcao), aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
-  { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS, moldura, d)) },
+  { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS.filter(([k]) => k !== 'propria' || propria), moldura, d)) },
   { t: 'Volume', v: () => (mudo ? 'mudo' : volume + '%'), aj: (d) => mudarVolume(d * 10) },
   { t: '⛶ Tela cheia', f: () => acao('cheia') },
   { t: '↺ Reiniciar', f: () => { fecharRapido(); acao('reiniciar'); } },
@@ -13904,11 +14817,17 @@ function tema(nome) {
   document.documentElement.dataset.tema = nome; guardar('tema', nome);
   document.querySelectorAll('[data-tema]').forEach((b) => { if (b.tagName === 'BUTTON') b.classList.toggle('ativo', b.dataset.tema === nome); });
   coresOndas();   // o osciloscópio da jukebox segue o tema
+  if (moldura === 'tema') ajustarEscala();
 }
 async function acao(a) {
   fecharMenus();
   switch (a) {
     case 'abrir': $('#arquivo').click(); break;
+    case 'traducao': {   // escolhe o .ips/.bps/.ups; com jogo aberto aplica nele, senão pede a ROM depois
+      const e = document.createElement('input'); e.type = 'file'; e.accept = '.ips,.bps,.ups,.zip';
+      e.onchange = () => { if (e.files[0]) abrirArquivo(e.files[0]); };
+      e.click(); break;
+    }
     case 'bios': escolherBios(); break;
     case 'boas-vindas': abrirAbertura(); break;
     case 'ab-pular': abPular(); break;
@@ -13945,7 +14864,7 @@ async function acao(a) {
     case 'salvar-estado': await salvarEstado(); break;
     case 'carregar-ultimo': await carregarUltimo(); break;
     case 'reiniciar': if (snes) { snes.reset(); novoRebob(); avisar('reiniciado'); } break;
-    case 'pausar': if (snes) { if (juke.tocando) jukePausar(); pausado = !pausado; avisar(pausado ? 'pausado' : 'continuando'); } break;
+    case 'pausar': if (snes) { if (juke.tocando) jukePausar(); pausado = !pausado; pintar(false); avisar(pausado ? 'pausado' : 'continuando'); } break;
     case 'mudo': mudo = !mudo; guardar('mudo', mudo ? '1' : '0'); marcarSom(); avisar(mudo ? 'som desligado' : 'som ligado'); break;
     case 'bug': abrirBug(); break;
     case 'atualizacao': await procurarAtualizacao(true); break;
@@ -13974,6 +14893,18 @@ async function acao(a) {
       avisar(pausaAuto ? 'pausa ao sair da janela ligada' : 'pausa ao sair da janela desligada'); break;
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
     case 'temas': if ($('#temas').hidden) abrirTemas(); else fecharTemas(); break;
+    case 'visual': if ($('#visual').hidden) abrirVisual(); else fecharVisual(); break;
+    case 'molduras': if ($('#molduras').hidden) abrirMolduras(); else fecharMolduras(); break;
+    case 'fechar-molduras': fecharMolduras(); break;
+    case 'mold-propria': escolherMolduraPropria(); break;
+    case 'fechar-visual': fecharVisual(); break;
+    case 'vis-zerar': aplicarFiltro('original'); guardarPorSis(); montarVisual(); break;
+    case 'vis-salvar': {
+      const nome = (prompt('Nome do seu jeito (ex.: "Minha TV"):', '') || '').trim().slice(0, 24);
+      if (!nome) break;
+      const l = visMeus().filter((m) => m.nome !== nome); l.push({ nome, v: visual.v });
+      guardar('visualMeus', JSON.stringify(l)); aplicarVisual(visual.v, 'meu:' + nome); montarVisual(); avisar('⭐ "' + nome + '" guardado nas predefinições'); break;
+    }
     case 'showcase': fecharTemas(); iniciarShowcase(3500); break;
     case 'showcase-rapido': fecharTemas(); iniciarShowcase(500); break;
     case 'showcase-parar': pararShowcase(false); break;
@@ -14015,6 +14946,8 @@ addEventListener('click', (e) => {
   else if (b.dataset.filtro) { aplicarFiltro(b.dataset.filtro); fecharMenus(); }
   else if (b.dataset.prop) { mudarProporcao(b.dataset.prop); fecharMenus(); }
   else if (b.dataset.moldura) { mudarMoldura(b.dataset.moldura); fecharMenus(); }
+  else if (b.dataset.moldEscolher) { if (b.dataset.moldEscolher === 'propria' && !propria) escolherMolduraPropria(); else { mudarMoldura(b.dataset.moldEscolher); montarMolduras(); } }
+  else if (b.dataset.moldCat) { moldCat = b.dataset.moldCat; montarMolduras(); }
   else if (b.dataset.paletaGb) { mudarPaletaGb(b.dataset.paletaGb); fecharMenus(); }
   else if (b.dataset.paletaNes) { mudarPaletaNes(b.dataset.paletaNes); fecharMenus(); }
 });
@@ -14023,7 +14956,7 @@ document.body.classList.add('vazio');
 carregarMapa();
 montarAjuda();
 tema(ler('tema') || 'cafe');
-aplicarFiltro(filtro);
+aplicarVisual(visual.v, visual.pre);
 marcarAuto();
 marcarSom();
 marcarCacador();
@@ -14035,7 +14968,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
