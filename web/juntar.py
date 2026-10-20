@@ -107,7 +107,7 @@ partes = {
     "{{CSS}}": (web / "estilo.css").read_text() + ((web / "android.css").read_text() if android else ""),
     "{{NUCLEO}}": script,
     "{{APP}}": (
-        (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n"
+        (web / "estado.js").read_text() + "\n" + (web / "spc.js").read_text() + "\n" + (web / "patch.js").read_text() + "\n" + (web / "visual.js").read_text() + "\n"
         # música própria em 8 bits (abertura e Início): o Air vem da partitura de domínio público já convertida (musicas/air.json)
         + (web / "musica.js").read_text().replace("/*{{AIR}}*/ null", (web / "musicas" / "air.json").read_text().strip()) + "\n"
         # a trilha no som do Mega Drive (comandos gerados por musicas/fm/trilha.py) e o núcleo só de som que toca ela

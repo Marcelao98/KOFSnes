@@ -13,98 +13,180 @@ let escala = +(ler('escala') || 0), chaveSram = '', sramAntes = '';
 
 // ---------------- tela ----------------
 // O quadro do núcleo vai pra uma textura do tamanho da tela do sistema (SNES 256x224, Game Boy 160x144) e a placa de vídeo (WebGL)
-// desenha com o filtro escolhido. Sem WebGL, volta pro canvas 2D (só nítido).
-const FILTROS = [
-  ['nitido', 'Nítido'], ['suave', 'Suave'], ['crt', 'TV de tubo (CRT)'], ['fliperama', 'Fliperama'],
-  ['gameboy', 'Game Boy'], ['cafe', 'Café (sépia)'], ['lcd', 'Tela LCD'],
-];
-const tela = $('#tela');
-// sistemas que esta versão roda (nucleo.js diz quais núcleos vieram no html); sem ele, só SNES
-const SIS = typeof KofLibretro !== 'undefined' ? KofLibretro.SISTEMAS : { snes: { nome: 'Super Nintendo', curto: 'SNES', ext: ['sfc', 'smc', 'fig', 'swc'], minimo: 0x8000 } };
-const SIS_ATIVOS = Object.keys(SIS).filter((k) => k === 'snes' || (typeof KofLibretro !== 'undefined' && KofLibretro.disponivel(k)));
-const EXT_ROM = new RegExp('\\.(' + [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).join('|') + ')$', 'i');
-// zip de Neo Geo (mslug.zip...) é o jogo inteiro: reconhecido pelo nome na lista do FBNeo
-const neoGeo = (n) => SIS_ATIVOS.includes('neogeo') && !!KofLibretro.setNeoGeo(n);
-const sistemaDoNome = (n) => (neoGeo(n) ? 'neogeo' : SIS_ATIVOS.find((k) => SIS[k].ext.some((e) => (n || '').toLowerCase().endsWith('.' + e))) || null);
-const sistemaDoItem = (r) => (r.jogo && (r.jogo.sistema || sistemaDoNome(r.jogo.arquivo))) || sistemaDoNome(r.arquivo) || sistemaDoNome(r.nome) || 'snes';
-$('#arquivo').accept = [].concat(...SIS_ATIVOS.map((k) => SIS[k].ext)).map((e) => '.' + e).join(',') + ',.zip';
+// desenha com os ajustes do painel de imagem (web/visual.js: um shader só, com todos os efeitos). Sem WebGL, canvas 2D (só nítido).
+// Duas texturas se revezando: a do quadro anterior serve pro "rastro" das telas de portátil.
+const FILTROS = KofVisual.PREDEF.map(([k, n]) => [k, n]);
+// ajustes da imagem: a predefinição escolhida (ou "meu": mexeu nos controles) + os valores de cada efeito
+let visual = (() => {
+  try { const v = JSON.parse(ler('visual')); if (v && v.v) return { pre: v.pre, v: { ...KofVisual.PADRAO, ...v.v } }; } catch (e) { /* sem ajuste salvo */ }
+  const antigo = ler('filtro'), pre = KofVisual.ANTIGO[antigo] || (FILTROS.some(([k]) => k === antigo) ? antigo : 'original');
+  return { pre, v: KofVisual.valores(pre) };
+})();
+let filtro = visual.pre;
 let telaL = 256, telaA = 224, img = new ImageData(telaL, telaA), px = new Uint32Array(img.data.buffer), bytesTela = new Uint8Array(img.data.buffer);
-let filtro = ler('filtro') || 'nitido';
 const gl = tela.getContext('webgl', { alpha: false, antialias: false });
 const ctx = gl ? null : tela.getContext('2d', { alpha: false });
-let glModo = null, glTex = null, glTam = null, glSaida = null;
+let glTex = [], glVez = 0, glU = {}, divisao = 0;
 if (gl) {
-  const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); return s; };
+  const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s)); return s; };
   const prog = gl.createProgram();
   gl.attachShader(prog, sombra(gl.VERTEX_SHADER, `attribute vec2 p; varying vec2 uv;
     void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`));
-  gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, `precision mediump float;
-    uniform sampler2D t; uniform vec2 tam; uniform vec2 saida; uniform int modo; varying vec2 uv;
-    vec2 curva(vec2 q) { q = q * 2. - 1.; vec2 o = abs(q.yx) / vec2(6., 4.5); q += q * o * o; return q * .5 + .5; }
-    float luz(vec3 c) { return dot(c, vec3(.299, .587, .114)); }
-    void main() {
-      vec2 c = uv;
-      if (modo == 2) { c = curva(uv); if (c.x < 0. || c.x > 1. || c.y < 0. || c.y > 1.) { gl_FragColor = vec4(0., 0., 0., 1.); return; } }
-      vec3 col = texture2D(t, c).rgb;
-      if (modo == 2 || modo == 3) {
-        float s = .5 + .5 * cos(6.28318 * (c.y * tam.y - .5));      // linhas de varredura
-        col *= 1. - (modo == 2 ? .35 : .6) * (1. - s);
-        if (modo == 2) {
-          vec2 d = vec2(1. / tam.x, 0.);
-          col += (texture2D(t, c + d).rgb + texture2D(t, c - d).rgb) * .07;   // brilho do fósforo
-          float m = mod(gl_FragCoord.x, 3.);                                  // máscara RGB
-          col *= (m < 1. ? vec3(1., .82, .82) : m < 2. ? vec3(.82, 1., .82) : vec3(.82, .82, 1.)) * 1.18;
-          vec2 v = c * (1. - c.yx); col *= pow(clamp(v.x * v.y * 15., 0., 1.), .25);   // vinheta
-        } else col *= 1.3;
-      }
-      if (modo == 4) {
-        float l = luz(col);
-        col = l < .25 ? vec3(.06, .22, .06) : l < .5 ? vec3(.19, .38, .19) : l < .75 ? vec3(.55, .67, .06) : vec3(.61, .74, .06);
-      }
-      if (modo == 5) {
-        col = mix(col, vec3(luz(col)) * vec3(1.08, .86, .62), .78);
-        vec2 v = uv * (1. - uv.yx); col *= pow(clamp(v.x * v.y * 16., 0., 1.), .22);
-      }
-      if (modo == 6) { vec2 f = fract(c * tam); col *= (.5 + .5 * step(.1, f.x) * step(.1, f.y)) * 1.12; }
-      gl_FragColor = vec4(col, 1.);
-    }`));
+  gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, KofVisual.FRAG));
   gl.linkProgram(prog); gl.useProgram(prog);
   const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const ap = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
-  glTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, telaL, telaA, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-  glModo = gl.getUniformLocation(prog, 'modo'); glTam = gl.getUniformLocation(prog, 'tam'); glSaida = gl.getUniformLocation(prog, 'saida');
-  gl.uniform2f(glTam, telaL, telaA);
+  for (let i = 0; i < 2; i++) {
+    glTex[i] = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex[i]);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);   // o shader faz o nítido sozinho
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, telaL, telaA, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  }
+  for (const n of ['t', 'tp', 'tam', 'saida', 'tempo', 'divisao', 'p']) glU[n] = gl.getUniformLocation(prog, n);
+  gl.uniform1i(glU.t, 0); gl.uniform1i(glU.tp, 1);
+  gl.uniform2f(glU.tam, telaL, telaA);
 }
 // jogo de outro sistema: imagem, textura e canvas mudam de tamanho
 function tamanhoTela(l, a) {
   if (l === telaL && a === telaA) return;
   telaL = l; telaA = a;
   img = new ImageData(l, a); px = new Uint32Array(img.data.buffer); bytesTela = new Uint8Array(img.data.buffer);
-  if (gl) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, l, a, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); gl.uniform2f(glTam, l, a); }
+  if (gl) { for (const t of glTex) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, l, a, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); } gl.uniform2f(glU.tam, l, a); }
 }
-function pintar() {
+// novo = chegou um quadro novo (troca de textura: a outra vira o "quadro anterior"); sem isso, só redesenha
+function pintar(novo) {
   if (!gl) { ctx.putImageData(img, 0, 0); return; }
-  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, telaL, telaA, gl.RGBA, gl.UNSIGNED_BYTE, bytesTela);
+  if (novo) glVez ^= 1;
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glTex[glVez ^ 1]);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glTex[glVez]);
+  if (novo !== false) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, telaL, telaA, gl.RGBA, gl.UNSIGNED_BYTE, bytesTela);
+  gl.uniform1f(glU.tempo, (performance.now() / 1000) % 1000);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
-function aplicarFiltro(nome) {
-  filtro = FILTROS.some(([k]) => k === nome) ? nome : 'nitido';
-  guardar('filtro', filtro);
+// aplica os ajustes (do painel ou de uma predefinição) e guarda
+function aplicarVisual(v, pre) {
+  visual = { pre: pre || 'meu', v: { ...KofVisual.PADRAO, ...v } }; filtro = visual.pre;
+  guardar('visual', JSON.stringify(visual));
   document.querySelectorAll('[data-filtro]').forEach((b) => b.classList.toggle('ativo', b.dataset.filtro === filtro));
   if (!gl) return;
-  const n = FILTROS.findIndex(([k]) => k === filtro);
-  gl.uniform1i(glModo, n);
-  const suave = ['suave', 'crt', 'fliperama', 'cafe'].includes(filtro) ? gl.LINEAR : gl.NEAREST;
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, suave); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, suave);
-  pintar();
+  gl.uniform4fv(glU.p, KofVisual.vetor(visual.v));
+  gl.uniform1f(glU.divisao, divisao);
+  pintar(false);
+}
+function aplicarFiltro(nome) {
+  const pre = KofVisual.ANTIGO[nome] || (FILTROS.some(([k]) => k === nome) ? nome : 'original');
+  aplicarVisual(KofVisual.valores(pre), pre);
+}
+// ---------------- painel de imagem ----------------
+// gaveta à direita: predefinições + todos os ajustes em grupos; o jogo continua rodando atrás (sem jogo: uma imagem de teste)
+const visMeus = () => { try { return JSON.parse(ler('visualMeus')) || []; } catch (e) { return []; } };
+let visVazio = false, visVoltar = null;
+function cartelaTeste() {   // sem jogo aberto: uma cena em pixel art feita aqui (céu, morros, xícara, barras de cor e xadrez)
+  tamanhoTela(256, 224);
+  const cor = (r, g, b) => 0xFF000000 | (b << 16) | (g << 8) | r;
+  for (let y = 0; y < 224; y++) for (let x = 0; x < 256; x++) {
+    let c = y < 140 ? cor(40 + y, 90 + y, 200) : cor(60, 150 - (y - 140), 60);
+    if (y >= 100 && y < 140 && Math.sin(x / 18) * 12 + 118 < y) c = cor(50, 130, 70);   // morros
+    const dx = x - 200, dy = y - 40; if (dx * dx + dy * dy < 280) c = cor(255, 220, 90);    // sol
+    if (y >= 150 && y < 190 && x >= 16 && x < 240) { const b = Math.floor((x - 16) / 28); c = [cor(255, 255, 255), cor(255, 255, 0), cor(0, 255, 255), cor(0, 255, 0), cor(255, 0, 255), cor(255, 0, 0), cor(0, 0, 255), cor(20, 20, 20)][b]; }
+    if (y >= 196 && y < 210 && x >= 16 && x < 240) c = ((x >> 1) + (y >> 1)) & 1 ? cor(255, 255, 255) : cor(0, 0, 0);   // xadrez fino
+    if (y >= 212 && y < 220 && x >= 16 && x < 240) { const v = Math.round((x - 16) / 224 * 255); c = cor(v, v, v); }  // degradê
+    px[y * 256 + x] = c;
+  }
+  // xícara de café
+  const X = ['....s..s..s.....', '.....s..s..s....', '................', '.bbbbbbbbbbbb...', '.bwwwwwwwwwwbbb.', '.bwccccccccwb.b.', '.bwccccccccwb.b.',
+    '.bwwwwwwwwwwbbb.', '.bwwwwwwwwwwb...', '..bwwwwwwwwb....', '...bbbbbbbb.....', 'pppppppppppppp..'];
+  const P = { s: cor(230, 230, 230), b: cor(40, 20, 10), w: cor(250, 245, 235), c: cor(120, 60, 20), p: cor(200, 180, 160) };
+  X.forEach((l, j) => [...l].forEach((ch, i) => { if (P[ch]) for (let a = 0; a < 3; a++) for (let b2 = 0; b2 < 3; b2++) px[(70 + j * 3 + a) * 256 + 40 + i * 3 + b2] = P[ch]; }));
+  pintar(true); pintar(true);
+}
+function montarVisual() {
+  const pre = $('#vis-pre'); pre.textContent = '';
+  for (const [k, n, d] of KofVisual.PREDEF) {
+    const b = document.createElement('button'); b.textContent = n; b.title = d; b.dataset.visPre = k;
+    b.classList.toggle('ativo', visual.pre === k); pre.appendChild(b);
+  }
+  visMeus().forEach((m, i) => {
+    const b = document.createElement('button'); b.textContent = '⭐ ' + m.nome; b.title = 'clique pra usar · botão direito pra apagar'; b.dataset.visMeu = i;
+    b.className = 'meu' + (visual.pre === 'meu:' + m.nome ? ' ativo' : ''); pre.appendChild(b);
+  });
+  $('#vis-nome').textContent = visual.pre === 'meu' ? '· do seu jeito' : visual.pre.startsWith('meu:') ? '· ⭐ ' + visual.pre.slice(4) : '· ' + ((FILTROS.find(([k]) => k === visual.pre) || [0, ''])[1]);
+  const aj = $('#vis-ajustes'), abertos = new Set([...aj.querySelectorAll('details[open]')].map((d) => d.dataset.g));
+  if (!aj.childElementCount) abertos.add('Pixels').add('TV');
+  aj.textContent = '';
+  const grupos = {};
+  for (const a of KofVisual.AJUSTES) (grupos[a[1]] = grupos[a[1]] || []).push(a);
+  const DICA = { Pixels: 'como cada pixel é desenhado', TV: 'linhas, fósforo, curva', Sinal: 'cabo, fita e chiado', Portátil: 'telas de LCD', Cor: 'brilho, contraste, daltonismo' };
+  for (const [g, lista] of Object.entries(grupos)) {
+    const det = document.createElement('details'); det.dataset.g = g; det.open = abertos.has(g);
+    det.innerHTML = `<summary>${g}<small>${DICA[g] || ''}</small></summary>`;
+    for (const [id, , nome, min, max, passo, , opcoes] of lista) {
+      const v = visual.v[id], l = document.createElement('div'); l.className = 'vis-aj';
+      if (opcoes) {
+        l.innerHTML = `<label>${nome}</label><select data-vis="${id}">${opcoes.map((o, i) => `<option value="${i}"${+v === i ? ' selected' : ''}>${o}</option>`).join('')}</select>`;
+      } else {
+        const mostra = (x) => (max <= 1.01 && min >= 0 ? Math.round(x * 100) + '%' : (+x).toFixed(passo < 1 ? 2 : 0));
+        l.innerHTML = `<label>${nome}</label><input type="range" data-vis="${id}" min="${min}" max="${max}" step="${passo}" value="${v}"><output>${mostra(v)}</output>`;
+        l.querySelector('input').addEventListener('input', (e) => { l.querySelector('output').textContent = mostra(e.target.value); });
+      }
+      det.appendChild(l);
+    }
+    aj.appendChild(det);
+  }
+  $('#vis-porsis').checked = ler('visualPorSis') === '1';
+}
+function abrirVisual() {
+  if (!$('#visual').hidden) return;
+  fecharMenus(); if (rapidoAberto) fecharRapido();
+  visVoltar = telaAtual() !== 'jogo' ? telaAtual() : null;
+  for (const id of TELAS) $('#' + id).hidden = true;
+  visVazio = !snes;
+  if (visVazio) { document.body.classList.remove('vazio'); cartelaTeste(); }
+  montarVisual(); $('#visual').hidden = false; document.body.classList.add('com-visual'); ajustarEscala();
+}
+function fecharVisual() {
+  if ($('#visual').hidden) return;
+  $('#visual').hidden = true; document.body.classList.remove('com-visual');
+  divisao = 0; $('#vis-comparar').checked = false; if (gl) { gl.uniform1f(glU.divisao, 0); }
+  if (visVazio && !snes) document.body.classList.add('vazio');
+  ajustarEscala();
+  if (visVoltar) $('#' + visVoltar).hidden = false; else if (!snes) abrirHome();
+  visVoltar = null;
+}
+function guardarPorSis() { if (snes && ler('visualPorSis') === '1') guardar('visual.' + (snes.sistema || 'snes'), JSON.stringify(visual)); }
+$('#visual').addEventListener('input', (e) => {
+  const id = e.target.dataset.vis; if (!id) return;
+  aplicarVisual({ ...visual.v, [id]: +e.target.value }, 'meu'); guardarPorSis();
+  $('#vis-pre').querySelectorAll('button').forEach((b) => b.classList.remove('ativo')); $('#vis-nome').textContent = '· do seu jeito';
+});
+$('#visual').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.visPre) { aplicarFiltro(b.dataset.visPre); guardarPorSis(); montarVisual(); }
+  else if (b.dataset.visMeu) { const m = visMeus()[+b.dataset.visMeu]; if (m) { aplicarVisual(m.v, 'meu:' + m.nome); guardarPorSis(); montarVisual(); } }
+});
+$('#vis-pre').addEventListener('contextmenu', (e) => {
+  const b = e.target.closest('[data-vis-meu]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const l = visMeus(), m = l[+b.dataset.visMeu];
+  if (m && confirm('Apagar "' + m.nome + '"?')) { l.splice(+b.dataset.visMeu, 1); guardar('visualMeus', JSON.stringify(l)); montarVisual(); }
+});
+$('#vis-comparar').addEventListener('change', (e) => { divisao = e.target.checked ? 0.5 : 0; if (gl) { gl.uniform1f(glU.divisao, divisao); pintar(false); } });
+$('#vis-porsis').addEventListener('change', (e) => { guardar('visualPorSis', e.target.checked ? '1' : '0'); guardarPorSis(); });
+tela.addEventListener('pointermove', (e) => {   // comparar: a divisória segue o mouse/dedo
+  if (!divisao || $('#visual').hidden || !(e.buttons & 1)) return;
+  const r = tela.getBoundingClientRect(); divisao = Math.min(0.98, Math.max(0.02, (e.clientX - r.left) / r.width));
+  gl.uniform1f(glU.divisao, divisao); pintar(false);
+});
+// por console: ao abrir um jogo, volta o jeito guardado daquele console
+function visualDoSistema(sis) {
+  if (ler('visualPorSis') !== '1') return;
+  try { const v = JSON.parse(ler('visual.' + sis)); if (v && v.v) aplicarVisual(v.v, v.pre); } catch (e) { /* nada guardado pra esse console */ }
 }
 function desenhar() {
   if (snes.rgba) {   // núcleo libretro: já vem no formato da textura
     if (snes.largura !== telaL || snes.altura !== telaA) { tamanhoTela(snes.largura, snes.altura); ajustarEscala(); }   // o jogo trocou de resolução (Mega Drive)
-    px.set(snes.rgba); pintar(); return;
+    px.set(snes.rgba); pintar(true); return;
   }
   const f = snes.ppu.frame;
   // o núcleo Kof entrega 0xAARRGGBB; a textura (little-endian) quer 0xAABBGGRR
@@ -112,7 +194,7 @@ function desenhar() {
     const c = f[i];
     px[i] = 0xFF000000 | ((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF);
   }
-  pintar();
+  pintar(true);
 }
 // proporção: 4:3 é como aparecia na TV (o pixel do SNES não é quadrado); 8:7 é o pixel quadrado (256x224);
 // esticar ocupa o palco inteiro. Em outro sistema, "original" é a proporção que o núcleo informa (Game Boy: 10:9)
@@ -150,7 +232,7 @@ function ajustarEscala() {
   if (gl) {   // o canvas WebGL desenha na resolução da tela, pros filtros terem detalhe
     const dpr = window.devicePixelRatio || 1;
     tela.width = Math.round(w * dpr); tela.height = Math.round(h * dpr);
-    gl.viewport(0, 0, tela.width, tela.height); gl.uniform2f(glSaida, tela.width, tela.height); pintar();
+    gl.viewport(0, 0, tela.width, tela.height); gl.uniform2f(glU.saida, tela.width, tela.height); pintar(false);
   } else { tela.width = telaL; tela.height = telaA; }
   document.querySelectorAll('[data-escala]').forEach((b) => b.classList.toggle('ativo', +b.dataset.escala === escala));
   document.querySelectorAll('[data-prop]').forEach((b) => b.classList.toggle('ativo', b.dataset.prop === proporcao));
@@ -399,6 +481,8 @@ addEventListener('keydown', (e) => {
     if (e.code === 'Enter' || e.code === 'Space') return;   // o botão em foco recebe o clique
   }
   if (e.code === 'F2') { e.preventDefault(); acao('rapido'); return; }
+  if (e.code === 'F4') { e.preventDefault(); acao('visual'); return; }
+  if (e.code === 'Escape' && !$('#visual').hidden) { e.preventDefault(); fecharVisual(); return; }
   if (e.code === 'Minus' || e.code === 'NumpadSubtract') { e.preventDefault(); mudarVolume(-10); return; }
   if (e.code === 'Equal' || e.code === 'NumpadAdd') { e.preventDefault(); mudarVolume(10); return; }
   if (e.ctrlKey && e.code === 'KeyO') { e.preventDefault(); acao('abrir'); return; }
@@ -432,6 +516,7 @@ addEventListener('blur', () => { teclado = 0; turbo = false; voltandoTecla = fal
 let ultimo = 0, sobra = 0, contados = 0, marco = 0;
 function laco(t) {
   requestAnimationFrame(laco);
+  if (gl && !$('#visual').hidden && (!snes || pausado) && KofVisual.animado(visual.v)) pintar(false);   // chiado/fita mexendo mesmo parado
   const querVoltar = snes && voltando() && !pausado && !rapidoAberto && $('#biblioteca').hidden && $('#bug').hidden && $('#home').hidden;
   if (querVoltar && rebob && (rebobinou || rebobPronto())) { rebobinarPasso(); ultimo = marco = t; contados = 0; return; }
   if (rebobinou) terminarRebobinar();
@@ -957,7 +1042,7 @@ function terminarRebobinar() {
 }
 
 // ---------------- ROMs ----------------
-async function lerZip(buf) {
+async function lerZip(buf, filtro = EXT_ROM) {
   const v = new DataView(buf), u8 = new Uint8Array(buf);
   let e = -1;
   for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) {
@@ -972,7 +1057,7 @@ async function lerZip(buf) {
     const loc = v.getUint32(p + 42, true);
     const nome = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl));
     p += 46 + nl + xl + cl;
-    if (!EXT_ROM.test(nome)) continue;
+    if (!filtro.test(nome)) continue;
     const dados = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true);
     const bruto = u8.subarray(dados, dados + tam);
     if (metodo === 0) return { nome, bytes: bruto };
@@ -980,7 +1065,7 @@ async function lerZip(buf) {
     const s = new Blob([bruto]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
     return { nome, bytes: new Uint8Array(await new Response(s).arrayBuffer()) };
   }
-  throw new Error('o zip não tem nenhuma ROM dentro');
+  throw new Error(filtro === EXT_ROM ? 'o zip não tem nenhuma ROM dentro' : 'o zip não tem nada que eu reconheça');
 }
 // ---------------- banco interno (IndexedDB) ----------------
 // c: configurações (a pasta de ROMs) · jogos: nome, prints, quando jogou ·
@@ -1254,10 +1339,33 @@ async function abrirArquivo(arq) {
     if (ehZip && !neoGeo(nome)) {
       // zip de Neo Geo com outro nome ("King of Fighters 98.zip"): reconhece pelo conteúdo e passa a usar o nome do set
       const set = SIS_ATIVOS.includes('neogeo') && KofLibretro.setNeoGeoDoZip(bytes);
-      if (set) nome = set + '.zip'; else ({ nome, bytes } = await lerZip(bytes.buffer));
+      // zip de tradução: costuma trazer só o patch (e um leia-me)
+      if (set) nome = set + '.zip'; else ({ nome, bytes } = await lerZip(bytes.buffer, new RegExp(EXT_ROM.source + '|' + KofPatch.EXT.source, 'i')));
     }
+    if (KofPatch.EXT.test(nome) || KofPatch.tipo(bytes)) { await aplicarPatch(nome, bytes); return; }
     await abrirBytes(nome, bytes, true);
   } catch (e) { avisar(e.message, 5000); }
+}
+// Patch de tradução (.ips/.bps/.ups): aplica no jogo aberto ou pede a ROM; o jogo traduzido vira outro jogo na biblioteca
+// (a ROM original fica intacta e cada um tem o seu save). Arrastar a ROM e o patch juntos também funciona.
+function escolherRom() {
+  return new Promise((ok) => {
+    const e = document.createElement('input'); e.type = 'file'; e.accept = $('#arquivo').accept;
+    e.onchange = async () => { const f = e.files[0]; if (!f) return ok(null); let nome = f.name, bytes = new Uint8Array(await f.arrayBuffer());
+      if (/\.zip$/i.test(nome)) ({ nome, bytes } = await lerZip(bytes.buffer)); ok({ nome, bytes }); };
+    e.click();
+  });
+}
+async function aplicarPatch(nomePatch, patch, rom) {
+  if (!rom && snes && romAtual && SIS[snes.sistema || 'snes'] && !SIS[snes.sistema || 'snes'].caminho) rom = { nome: romArquivo, bytes: romAtual };
+  if (!rom) { avisar('agora escolha a ROM do jogo pra aplicar a tradução', 4000); rom = await escolherRom(); if (!rom) return; }
+  const sis = !/\.[a-z0-9]{2,4}$/i.test(rom.nome) ? 'snes' : sistemaDoNome(rom.nome);
+  if (!sis || SIS[sis].caminho) throw new Error('patch só vale pra ROM de cartucho (não pra zip de fliperama)');
+  const r = KofPatch.aplicar(rom.bytes, patch, sis);
+  const base = rom.nome.replace(/\.[^.]+$/, '').replace(/ \(tradução\)$/, ''), ext = (rom.nome.match(/\.[^.]+$/) || ['.sfc'])[0];
+  await abrirBytes(base + ' (tradução)' + ext, r.rom, true);
+  try { await bdMudarJogo(jogoId, (j) => j && Object.assign(j, { traducao: nomePatch.replace(/^.*[\\/]/, ''), original: base })); } catch (e) { /* sem banco */ }
+  avisar('🇧🇷 tradução aplicada (' + r.tipo.toUpperCase() + '): o jogo traduzido ficou na biblioteca, separado do original', 5000);
 }
 // BIOS (arquivo de sistema que alguns consoles pedem, ex.: gba_bios.bin): o usuário escolhe a dele, fica no banco e vai pro
 // núcleo antes de cada jogo. O KOFstation nunca traz BIOS junto.
@@ -1337,6 +1445,7 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca) {
   }
   s.reset();
   tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
+  visualDoSistema(sis);
   document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy e NES: só A, B, Start e Select)
   document.body.classList.toggle('so-ab', !!(SIS[sis] && SIS[sis].botoes && !SIS[sis].botoes.includes('X')));
   if (typeof rotularControle === 'function') rotularControle(sis);   // celular: nomes dos botões do console (Mega Drive A/B/C...)
@@ -1451,6 +1560,9 @@ addEventListener('drop', (e) => {
   e.preventDefault(); document.body.classList.remove('arrastando');
   const fs = [...e.dataTransfer.files];
   if (fs.length && fs.every((f) => /\.spc$/i.test(f.name))) { importarSpcs(fs); return; }
+  // ROM + patch soltos juntos: aplica a tradução nessa ROM
+  const pt = fs.find((f) => KofPatch.EXT.test(f.name)), rm = fs.find((f) => EXT_ROM.test(f.name));
+  if (pt && rm) { (async () => aplicarPatch(pt.name, new Uint8Array(await pt.arrayBuffer()), { nome: rm.name, bytes: new Uint8Array(await rm.arrayBuffer()) }))().catch((er) => avisar(er.message, 5000)); return; }
   if (fs[0]) abrirArquivo(fs[0]);
 });
 
@@ -1785,6 +1897,7 @@ function adicionarLis(ate) {
     const nm = document.createElement('span'); nm.textContent = r.nome; li.appendChild(nm);
     const sis = SIS_ATIVOS.length > 1 && sistemaDoItem(r);
     if (sis && sis !== 'snes') { const tag = document.createElement('small'); tag.className = 'sis-tag'; tag.textContent = SIS[sis].curto; li.appendChild(tag); }
+    if (r.jogo && r.jogo.traducao) { const tag = document.createElement('small'); tag.className = 'sis-tag'; tag.textContent = '🇧🇷'; tag.title = 'traduzido: ' + r.jogo.traducao; li.appendChild(tag); }
     const sm = document.createElement('small');
     sm.textContent = r.jogo ? (contagem[r.jogo.id] ? '💾 ' + contagem[r.jogo.id] : '★') : r.ext;
     li.appendChild(sm);
@@ -1909,7 +2022,7 @@ const ITENS_RAPIDO = [
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
   { t: '🎨 Tema', v: () => TODOS_TEMAS.find(([k]) => k === temaSalvo)[1], aj: (d) => tema(ciclar(TODOS_TEMAS, temaSalvo, d)), f: () => { fecharRapido(); acao('temas'); } },
-  { t: 'Filtro', v: () => FILTROS.find(([k]) => k === filtro)[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, filtro, d)) },
+  { t: 'Filtro', v: () => (FILTROS.find(([k]) => k === filtro) || [0, 'Meu jeito'])[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, FILTROS.some(([k]) => k === filtro) ? filtro : 'original', d)) },
   { t: 'Cores do Game Boy', so: () => !!(snes && snes.sistema === 'gb'), v: () => PALETAS_GB.find(([k]) => k === paletaGb)[1], aj: (d) => mudarPaletaGb(ciclar(PALETAS_GB, paletaGb, d)) },
   { t: 'Cores do NES', so: () => !!(snes && snes.sistema === 'nes'), v: () => PALETAS_NES.find(([k]) => k === paletaNes)[1], aj: (d) => mudarPaletaNes(ciclar(PALETAS_NES, paletaNes, d)) },
   { t: 'Proporção', v: () => nomeProporcao(proporcao), aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
@@ -2513,6 +2626,11 @@ async function acao(a) {
   fecharMenus();
   switch (a) {
     case 'abrir': $('#arquivo').click(); break;
+    case 'traducao': {   // escolhe o .ips/.bps/.ups; com jogo aberto aplica nele, senão pede a ROM depois
+      const e = document.createElement('input'); e.type = 'file'; e.accept = '.ips,.bps,.ups,.zip';
+      e.onchange = () => { if (e.files[0]) abrirArquivo(e.files[0]); };
+      e.click(); break;
+    }
     case 'bios': escolherBios(); break;
     case 'boas-vindas': abrirAbertura(); break;
     case 'ab-pular': abPular(); break;
@@ -2578,6 +2696,15 @@ async function acao(a) {
       avisar(pausaAuto ? 'pausa ao sair da janela ligada' : 'pausa ao sair da janela desligada'); break;
     case 'cheia': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
     case 'temas': if ($('#temas').hidden) abrirTemas(); else fecharTemas(); break;
+    case 'visual': if ($('#visual').hidden) abrirVisual(); else fecharVisual(); break;
+    case 'fechar-visual': fecharVisual(); break;
+    case 'vis-zerar': aplicarFiltro('original'); guardarPorSis(); montarVisual(); break;
+    case 'vis-salvar': {
+      const nome = (prompt('Nome do seu jeito (ex.: "Minha TV"):', '') || '').trim().slice(0, 24);
+      if (!nome) break;
+      const l = visMeus().filter((m) => m.nome !== nome); l.push({ nome, v: visual.v });
+      guardar('visualMeus', JSON.stringify(l)); aplicarVisual(visual.v, 'meu:' + nome); montarVisual(); avisar('⭐ "' + nome + '" guardado nas predefinições'); break;
+    }
     case 'showcase': fecharTemas(); iniciarShowcase(3500); break;
     case 'showcase-rapido': fecharTemas(); iniciarShowcase(500); break;
     case 'showcase-parar': pararShowcase(false); break;
@@ -2627,7 +2754,7 @@ document.body.classList.add('vazio');
 carregarMapa();
 montarAjuda();
 tema(ler('tema') || 'cafe');
-aplicarFiltro(filtro);
+aplicarVisual(visual.v, visual.pre);
 marcarAuto();
 marcarSom();
 marcarCacador();

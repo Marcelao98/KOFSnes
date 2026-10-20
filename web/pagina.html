@@ -16,6 +16,7 @@
     <button data-acao="biblioteca">Biblioteca<kbd>Ctrl+L</kbd></button>
     <button data-acao="pasta">Escolher pasta de ROMs…</button>
     <button data-acao="abrir">Adicionar arquivo…<kbd>Ctrl+O</kbd></button>
+    <button data-acao="traducao">Aplicar tradução (patch)…</button>
     <button data-acao="bios">BIOS…</button>
     <button data-acao="estatisticas">📊 Estatísticas</button>
     <hr>
@@ -54,13 +55,13 @@
     <button data-paleta-nes="composite-direct-fbx">NES: TV de tubo</button>
     <button data-paleta-nes="wavebeam">NES: cores vivas</button>
     <hr>
-    <button data-filtro="nitido">Filtro: Nítido</button>
-    <button data-filtro="suave">Filtro: Suave</button>
-    <button data-filtro="crt">Filtro: TV de tubo (CRT)</button>
-    <button data-filtro="fliperama">Filtro: Fliperama</button>
-    <button data-filtro="gameboy">Filtro: Game Boy</button>
-    <button data-filtro="cafe">Filtro: Café (sépia)</button>
-    <button data-filtro="lcd">Filtro: Tela LCD</button>
+    <button data-acao="visual">🎛 Painel de imagem…<kbd>F4</kbd></button>
+    <button data-filtro="original">Filtro: Original</button>
+    <button data-filtro="tv">Filtro: TV de tubo da sala</button>
+    <button data-filtro="fliperama">Filtro: Monitor de fliperama</button>
+    <button data-filtro="locadora">Filtro: Locadora 1996</button>
+    <button data-filtro="gameboy">Filtro: Game Boy tijolão</button>
+    <button data-filtro="hd">Filtro: HD de mentirinha</button>
     <hr>
     <button data-acao="cheia">Tela cheia<kbd>F11</kbd></button>
     <button data-acao="sofa">Modo sofá (tela cheia, controle)</button>
@@ -377,6 +378,19 @@
     <button class="grande sec" data-acao="showcase">▶ Showcase lento: um tema a cada 3,5 s</button>
     <button class="grande sec" data-acao="showcase-rapido">⚡ Showcase rápido: meio segundo por tema</button>
     <p class="dica so-pc">passe o mouse pra experimentar · clique (ou Enter) pra escolher · Esc fecha</p><p class="dica so-cel">toque num tema pra escolher</p>
+  </section>
+
+  <section id="visual" hidden>
+    <div class="titulo-j"><span>🎛 Imagem <small id="vis-nome" class="dica"></small></span><button class="x" data-acao="fechar-visual">×</button></div>
+    <div id="vis-pre"></div>
+    <label class="vis-linha"><input type="checkbox" id="vis-comparar"> Comparar antes | depois <small class="dica">(arraste na imagem)</small></label>
+    <div id="vis-ajustes"></div>
+    <div class="vis-botoes">
+      <button class="grande sec" data-acao="vis-salvar">💾 Salvar como meu jeito…</button>
+      <button class="grande sec" data-acao="vis-zerar">↺ Voltar ao original</button>
+    </div>
+    <label class="vis-linha"><input type="checkbox" id="vis-porsis"> Lembrar um jeito pra cada console</label>
+    <p class="dica so-pc">o jogo continua rodando: mexa e veja na hora · F4 abre e fecha</p>
   </section>
 
   <section id="estatisticas" class="janela" hidden>

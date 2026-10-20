@@ -1519,3 +1519,31 @@ html:not(.celular) .so-cel { display: none !important; }   /* texto só do celul
 .ab-temas button.ativo { border-color: var(--destaque); }
 .ab-dicas { line-height: 1.9; }
 .ab-pular { position: absolute; right: 16px; bottom: 16px; background: transparent; color: var(--fraco); border: 1px solid var(--borda); border-radius: 20px; padding: 6px 14px; cursor: pointer; }
+
+/* ---------------- painel de imagem (gaveta à direita; o jogo continua visível e rodando) ---------------- */
+#visual {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(390px, 92vw); z-index: 5; overflow-y: auto;
+  background: var(--painel2); border-left: 1px solid var(--borda); box-shadow: var(--brilho); padding: 14px 16px; text-align: left;
+}
+body.com-visual #palco { padding-right: min(390px, 92vw); }
+#visual .titulo-j { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 10px; }
+#vis-pre { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 6px; margin-bottom: 10px; }
+#vis-pre button {
+  padding: 8px 6px; border-radius: var(--raio); border: 1px solid var(--borda); background: var(--painel);
+  font-size: 12px; text-align: center; line-height: 1.2; min-height: 42px;
+}
+#vis-pre button.ativo { border-color: var(--destaque); box-shadow: inset 0 0 0 2px var(--destaque); }
+#vis-pre button.meu { border-style: dashed; }
+#vis-pre button:hover { background: var(--sel); }
+.vis-linha { display: flex; gap: 8px; align-items: center; margin: 8px 0; font-size: 13px; }
+#vis-ajustes details { border: 1px solid var(--borda); border-radius: var(--raio); margin: 6px 0; background: var(--painel); }
+#vis-ajustes summary { padding: 8px 10px; cursor: pointer; font-weight: 700; }
+#vis-ajustes summary small { font-weight: 400; color: var(--fraco); margin-left: 6px; }
+.vis-aj { display: grid; grid-template-columns: 1fr 44px; gap: 2px 8px; padding: 4px 10px 8px; align-items: center; font-size: 13px; }
+.vis-aj label { grid-column: 1 / -1; color: var(--fraco); }
+.vis-aj input[type=range] { width: 100%; accent-color: var(--destaque); }
+.vis-aj output { text-align: right; font-variant-numeric: tabular-nums; }
+.vis-aj select { grid-column: 1 / -1; padding: 5px; background: var(--painel2); color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); }
+.vis-botoes .grande { width: 100%; }
+html.celular #visual { top: auto; height: 58%; width: 100%; border-left: 0; border-top: 1px solid var(--borda); }
+html.celular body.com-visual #palco { padding-right: 0; padding-bottom: 58vh; }
