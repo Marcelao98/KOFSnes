@@ -23,6 +23,7 @@ node testes/navegador/home.cjs    $H rom saida/         # Início, Voltar, menu 
 node testes/navegador/bib.cjs     $H x saida/           # biblioteca com 3.000 jogos de mentira
 node testes/navegador/nucleos.cjs dist/web rom.gb rom.nes rom.md rom.sfc [rom.gba]   # núcleos em nucleos/, só sob demanda (PC e celular)
 node testes/navegador/gba.cjs     dist/web rom.gba saida/   # GBA: tela 240x160, L/R no celular, BIOS, save enxuto
+node testes/navegador/capas-wav.cjs dist/web som.gba neogeo.zip mslug.zip   # capas de GBA e Neo Geo + exportar .wav
 node testes/navegador/neogeo.cjs  dist/web neogeo.zip mslug.zip 2020bb.zip 2020bba-split.zip saida/   # Neo Geo com zips FALSOS (testes/neogeo/zip-falso.py)
 ```
 
