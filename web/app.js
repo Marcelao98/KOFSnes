@@ -1611,7 +1611,7 @@ function marcarSel(i) {
 }
 function mostrarInfo() {
   const r = visiveis[selecionada], img = $('#capa-img');
-  if (!r) { $('#info-nome').textContent = 'KOFstation'; $('#info-det').textContent = 'Super Nintendo e Game Boy, feito em Kof'; img.hidden = true; $('#capa-vazia').hidden = false; return; }
+  if (!r) { $('#info-nome').textContent = 'KOFstation'; $('#info-det').textContent = 'Super Nintendo, NES, Game Boy, GBA, Sega e Neo Geo'; img.hidden = true; $('#capa-vazia').hidden = false; return; }
   $('#info-nome').textContent = r.nome;
   if (r.jogo) {
     const n = contagem[r.jogo.id] || 0;
@@ -1807,7 +1807,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) sair(
 const FRASES = {
   cafe: 'Um cafezinho e um clássico?', escuro: 'A noite é uma criança. E o jogo também.', claro: 'Dia bonito pra zerar um jogo.',
   zsnes: 'PRESS START', super16: 'Assopra o cartucho e bora.', portatil: 'Pilhas novas, jogo novo.',
-  atomico: 'Transparente por fora, clássico por dentro.', blast16: 'Processamento a jato. Em Kof.', cinza32: '△ ○ ✕ □ … mas hoje é dia de 16 bits.',
+  atomico: 'Transparente por fora, clássico por dentro.', blast16: 'Processamento a jato.', cinza32: '△ ○ ✕ □ … mas hoje é dia de 16 bits.',
   branco: 'Clique, relaxe, jogue.', laminas: 'Conquista desbloqueada: abriu o KOFstation.', neon: 'INSERT COIN',
   classico98: 'Bem-vindo ao KOFstation 98. Clique em Iniciar… digo, em Jogar.', luna: 'Seu emulador está pronto. Sem clipe de papel.',
   mensageiro: '🟢 KOFstation ficou online.', rosa2004: 'Você tem 1 recado novo: "bora jogar?"', terminal: '> kofnes --jogar_',

@@ -1,4 +1,4 @@
-KOFstation - Super Nintendo, Game Boy, GBA, NES, Sega e Neo Geo, feito em Kof
+KOFstation - Super Nintendo, Game Boy, GBA, NES, Sega e Neo Geo
 
 Dois cliques no KOFnes.exe. Ele abre o emulador numa janela do Microsoft
 Edge (que já vem no Windows 10 e 11), sem barra de endereço.

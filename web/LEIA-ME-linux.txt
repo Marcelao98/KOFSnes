@@ -1,4 +1,4 @@
-KOFstation - Super Nintendo, Game Boy, GBA, NES, Sega e Neo Geo, feito em Kof (Linux)
+KOFstation - Super Nintendo, Game Boy, GBA, NES, Sega e Neo Geo (Linux)
 
 1. Extraia esta pasta onde quiser.
 2. Abra um terminal nela e rode:   ./kofnes.sh

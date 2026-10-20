@@ -1,22 +1,22 @@
 <p align="center">
-  <img src="docs/banner.png" alt="KOFstation: Super Nintendo e Game Boy num lugar só, feito em Kof" width="100%">
+  <img src="docs/banner.png" alt="KOFstation: Super Nintendo, NES, Game Boy, GBA, Sega e Neo Geo num lugar só" width="100%">
 </p>
 
 <p align="center">
-  <img alt="feito em Kof" src="https://img.shields.io/badge/feito%20em-Kof%200.6.3-c08552?style=flat-square&labelColor=2b1d14">
+  <img alt="SNES em Kof" src="https://img.shields.io/badge/SNES%20do%20PC%20em-Kof%200.6.3-c08552?style=flat-square&labelColor=2b1d14">
   <img alt="Windows e Android" src="https://img.shields.io/badge/roda%20em-Windows%20·%20Linux%20·%20Android-d9b99b?style=flat-square&labelColor=2b1d14">
-  <img alt="sistemas" src="https://img.shields.io/badge/sistemas-SNES%20·%20Game%20Boy-c08552?style=flat-square&labelColor=2b1d14">
+  <img alt="sistemas" src="https://img.shields.io/badge/sistemas-SNES%20·%20NES%20·%20GB%20·%20GBA%20·%20Sega%20·%20Neo%20Geo-c08552?style=flat-square&labelColor=2b1d14">
   <img alt="tamanho" src="https://img.shields.io/badge/tamanho-~1,5%20MB-6f4e37?style=flat-square&labelColor=2b1d14">
   <img alt="cputest 649/649" src="https://img.shields.io/badge/cputest-649%2F649-6f4e37?style=flat-square&labelColor=2b1d14">
 </p>
 
 # ☕ KOFstation
 
-**Super Nintendo e Game Boy num lugar só. O Super Nintendo é escrito inteiro em [Kof](https://github.com/KofLang/Kof4j), uma linguagem brasileira com poucos meses de vida; o resto é feito pra facilitar a sua jogatina.**
+**Super Nintendo, NES, Game Boy, GBA, Mega Drive, Master System, Game Gear e Neo Geo num lugar só, pra facilitar a sua jogatina. O Super Nintendo do PC é escrito em [Kof](https://github.com/KofLang/Kof4j), uma linguagem brasileira parceira do projeto; os outros consoles usam núcleos abertos da comunidade (libretro).**
 
-> O projeto começou como **KOFnes**, um emulador só de Super Nintendo. Quando chegou o Game Boy, virou **KOFstation**.
+> O projeto começou como **KOFnes**, um emulador só de Super Nintendo. Quando chegaram os outros consoles, virou **KOFstation**.
 
-Dois cliques no `KOFnes.exe` (no PC) ou no app do **Android** e você cai numa tela de Início bonita, com a sua biblioteca de jogos, capas, savestates com print, rebobinar o tempo, jukebox com osciloscópio, 126 temas e até um caçador de bugs.
+Dois cliques no `KOFstation.exe` (no PC) ou no app do **Android** e você cai numa tela de Início bonita, com a sua biblioteca de jogos, capas, savestates com print, rebobinar o tempo, jukebox com osciloscópio, 126 temas e até um caçador de bugs.
 
 <p align="center">
   <img src="docs/prints/inicio-4-telas.jpg" alt="A tela de Início do KOFstation em quatro situações: primeira vez, jogo pausado, tema Clássico 98 e tema Matrix" width="100%">
