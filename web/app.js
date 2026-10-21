@@ -455,6 +455,7 @@ tela.addEventListener('dblclick', () => acao('cheia'));
 // fila circular de amostras (estéreo intercalado), tocada por um
 // ScriptProcessor; se o navegador não abrir a 32 kHz, reamostra
 let audio = null, no = null, taxa = 1;
+const jkRelogio = { amostra: 0, ctx: 0 };
 const FILA = 1 << 15, fila = new Float32Array(FILA * 2);
 let ini = 0, fim = 0;
 function ligarSom() {
@@ -469,6 +470,8 @@ function ligarSom() {
       const jk = juke.tocando;
       taxa = (jk ? juke.apu.taxa : !snes || !snes.taxaAudio ? 32000 : snes.taxaAudio) / audio.sampleRate;
       if (jk) jukeEncher(Math.ceil(l.length * taxa) + 64);
+      // relógio da jukebox: a amostra que começa este bloco sai no alto-falante em ev.playbackTime (o piano usa isso)
+      if (jk) { jkRelogio.amostra = juke.amostras - ((fim - ini) & (FILA - 1)); jkRelogio.ctx = ev.playbackTime || audio.currentTime; }
       for (let i = 0; i < l.length; i++) {
         if (ini === fim || mudo || (pausado && !jk)) { l[i] = r[i] = 0; continue; }
         l[i] = fila[ini * 2]; r[i] = fila[ini * 2 + 1];
@@ -1076,8 +1079,18 @@ function desenharOndas() {
 // atrasada τ amostras; normalizada pela média acumulada, o primeiro vale abaixo de 0,15 é o período. f = taxa / τ e a
 // nota = 69 + 12·log2(f / 440) (escala logarítmica: cada oitava dobra a frequência). Sem período claro e com volume = ruído
 // (bateria), que vai pra faixa de baixo.
-let notas = [], notasLeg = [], notasT = -1, notasFaixa = [48, 84];
+let notas = [], notasLeg = [], notasT = -1, notasVisto = 0, notasFaixa = [48, 84];
 const NOTAS_SEG = 6;   // segundos de história na tela
+// O som é gerado antes de ser ouvido (fila do app + buffer do ScriptProcessor + placa de som/fone: 100 a 300 ms). O piano
+// desenha no tempo do que está SAINDO no alto-falante: o navegador diz quando cada bloco toca (playbackTime) e que instante
+// a placa está tocando agora (getOutputTimestamp, já com a latência da saída)
+function tempoOuvido(tk) {
+  const gerado = juke.amostras / tk.taxa;
+  if (!audio || !jkRelogio.ctx) return gerado;
+  const ts = audio.getOutputTimestamp ? audio.getOutputTimestamp() : null;
+  const agora = ts && ts.contextTime ? ts.contextTime + (performance.now() - ts.performanceTime) / 1000 : audio.currentTime - (audio.outputLatency || 0);
+  return Math.max(0, Math.min(gerado, jkRelogio.amostra / tk.taxa + (agora - jkRelogio.ctx)));
+}
 function notaDoCanal(tk, v) {
   const o = tk.onda(v), M = o.tam - 1, taxa = o.taxa || tk.taxa, D = Math.max(1, Math.round(taxa / 11025));
   const N = Math.min(512, Math.floor((o.tam - 8) / D)), x = new Float32Array(N);
@@ -1094,24 +1107,24 @@ function notaDoCanal(tk, v) {
     soma += d; dd[t] = soma ? d * t / soma : 1;
     if (tau < 0 && t > 2 && dd[t - 1] < 0.15 && dd[t] > dd[t - 1]) tau = t - 1;
   }
-  if (tau < 0) return { ruido: true, vol: rms };
+  if (tau < 0) return { ruido: true, vol: rms, meio: N * D / 2 / taxa };
   const a = dd[tau - 1], b = dd[tau], c = dd[tau + 1] ?? b, den = a - 2 * b + c;   // vale refinado por parábola
   const f = (taxa / D) / (tau + (den ? (a - c) / (2 * den) : 0));
-  return { nota: 69 + 12 * Math.log2(f / 440), vol: rms };
+  return { nota: 69 + 12 * Math.log2(f / 440), vol: rms, meio: N * D / 2 / taxa };
 }
 function analisarNotas(tk) {
   const t = juke.amostras / tk.taxa;
-  if (t < notasT || t - notasT > 2) notas.forEach((n) => { n.seg = []; n.ultimo = null; });   // música nova ou pulo
+  if (t < notasT || t - notasT > 2) { notas.forEach((n) => { n.seg = []; n.ultimo = null; }); notasVisto = 0; }   // música nova ou pulo
   if (t === notasT) return t;
   notasT = t;
   const m = mudasEfetivas();
   for (let v = 0; v < Math.min(notas.length, tk.canais); v++) {
     const n = notas[v], r = m & (1 << v) ? null : notaDoCanal(tk, v), u = n.ultimo;
     if (!r) { n.ultimo = null; continue; }
-    const tipo = r.ruido ? 'r' : Math.round(r.nota);
-    if (u && u.tipo === tipo && t - u.fim < 0.1) { u.fim = t; u.vol = Math.max(u.vol * 0.97, r.vol); }
-    else { n.ultimo = { tipo, nota: r.ruido ? 0 : r.nota, ini: t, fim: t + 1 / 60, vol: r.vol }; n.seg.push(n.ultimo); }
-    while (n.seg.length && n.seg[0].fim < t - NOTAS_SEG) n.seg.shift();
+    const tipo = r.ruido ? 'r' : Math.round(r.nota), tc = t - r.meio;   // tc: o momento que a janela analisada representa
+    if (u && u.tipo === tipo && tc - u.fim < 0.1) { u.fim = tc; u.vol = Math.max(u.vol * 0.97, r.vol); }
+    else { n.ultimo = { tipo, nota: r.ruido ? 0 : r.nota, ini: tc, fim: tc + 1 / 60, vol: r.vol }; n.seg.push(n.ultimo); }
+    while (n.seg.length && n.seg[0].fim < t - NOTAS_SEG - 1) n.seg.shift();
   }
   return t;
 }
@@ -1122,7 +1135,8 @@ function desenharNotas() {
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const g = cv.getContext('2d'), est = estiloOndas();
   g.clearRect(0, 0, W, H);
-  const t = tk && juke.tocando ? analisarNotas(tk) : Math.max(notasT, 0);
+  if (tk && juke.tocando) { analisarNotas(tk); notasVisto = tempoOuvido(tk); }
+  const t = notasVisto;   // o "agora" da tela = o que está saindo no alto-falante (as notas já geradas vêm chegando pela direita)
   // faixa de notas visível: acompanha a música devagar (mínimo de 2 oitavas)
   let mn = 1e9, mx = -1e9;
   notas.forEach((n) => n.seg.forEach((s) => { if (s.tipo !== 'r') { mn = Math.min(mn, s.nota); mx = Math.max(mx, s.nota); } }));
@@ -1134,7 +1148,7 @@ function desenharNotas() {
   const yDe = (nota) => alto - (nota - n0) * px, agora = W - Math.round(W * 0.12), xDe = (s) => agora - (t - s) * (agora - TEC) / NOTAS_SEG;
   // teclado na esquerda e as linhas das teclas pretas no fundo
   const preta = (k) => [1, 3, 6, 8, 10].includes(((k % 12) + 12) % 12), tocando = {};
-  notas.forEach((n, v) => { if (n.ultimo && n.ultimo.tipo !== 'r' && t - n.ultimo.fim < 0.05) tocando[n.ultimo.tipo] = coresCanal[v]; });
+  notas.forEach((n, v) => { for (const s of n.seg) if (s.tipo !== 'r' && s.ini <= t && t <= s.fim + 0.02) tocando[s.tipo] = coresCanal[v]; });
   for (let k = Math.floor(n0); k <= Math.ceil(n1); k++) {
     const y = yDe(k + 0.5), h = px;
     if (preta(k)) { g.globalAlpha = 0.06; g.fillStyle = corFraca; g.fillRect(TEC, y, W - TEC, h); }
@@ -1147,9 +1161,9 @@ function desenharNotas() {
   notas.forEach((n, v) => {
     const cor = notasLeg[v] && notasLeg[v].classList.contains('apagado') ? corFraca : coresCanal[v] || corFraca;
     for (const s of n.seg) {
-      let x0 = Math.max(TEC, xDe(s.ini)), x1 = Math.min(agora, xDe(s.fim));
-      if (x1 < TEC) continue;
-      const viva = s === n.ultimo && t - s.fim < 0.05, a = Math.min(1, 0.35 + s.vol * 2.2);
+      let x0 = Math.max(TEC, xDe(s.ini)), x1 = Math.min(W, xDe(s.fim));
+      if (x1 < TEC || x0 > W) continue;
+      const viva = s.ini <= t && t <= s.fim + 0.02, a = Math.min(1, 0.35 + s.vol * 2.2);
       let y, h;
       if (s.tipo === 'r') { h = Math.max(3 * dpr, BAT * Math.min(1, s.vol * 4)); y = alto + (BAT - h) / 2; }
       else { h = Math.max(3 * dpr, px * 0.8); y = yDe(s.nota + 0.4); }
@@ -3204,7 +3218,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, notaDoCanal, notas: () => notas, filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, notaDoCanal, notas: () => notas, atrasoNotas: () => (juke.apu ? juke.amostras / juke.apu.taxa - notasVisto : 0), filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },

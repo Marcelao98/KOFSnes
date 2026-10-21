@@ -1,6 +1,6 @@
 // Jukebox, modo 🎹 Notas (piano roll): (1) precisão do detector de nota (YIN) com ondas sintéticas de frequência conhecida,
 // senoide e quadrada (como um pulso de chip 8 bits), em duas taxas, e ruído (tem de virar "bateria"); (2) custo por quadro;
-// (3) uma música da Trilha tocando na jukebox no modo Notas, com prints do PC e do celular.
+// (3) o piano desenha no tempo do que está saindo no alto-falante, não do que foi gerado; (4) uma música da Trilha tocando na jukebox no modo Notas, com prints do PC e do celular.
 //   node testes/navegador/notas.cjs dist/web [prints/]
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const os = require('os'), path = require('path');
@@ -39,6 +39,8 @@ const [,, pasta, saida = os.tmpdir()] = process.argv;
     await q.waitForTimeout(6000);
     const st = await q.evaluate(() => ({ vista: KOFnes.juke().vista, segs: KOFnes.notas().map((n) => n.seg.length), tons: KOFnes.notas().map((n) => n.seg.filter((s) => s.tipo !== 'r').length) }));
     const total = st.segs.reduce((a, x) => a + x, 0);
+    const atrasos = []; for (let i = 0; i < 5; i++) { atrasos.push(await q.evaluate(() => KOFnes.atrasoNotas())); await q.waitForTimeout(200); }
+    conferir(atrasos.every((x) => x > 0.03 && x < 0.6), `${nome}: piano no tempo do alto-falante (o som sai ${atrasos.map((x) => Math.round(x * 1000)).join('/')} ms depois de gerado)`);
     conferir(st.vista === 'notas' && total > 20 && st.tons.filter((x) => x > 3).length >= 3, `${nome}: Tico-Tico no modo Notas (${total} notas; por canal ${st.segs.join(',')})`);
     await q.screenshot({ path: path.join(saida, `notas-${nome}.png`) });
   }
