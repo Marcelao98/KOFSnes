@@ -11717,7 +11717,7 @@ const KofLibretro = (() => {
   // Cada núcleo mora num arquivo próprio do lado do html (nucleos/<núcleo>-<hash>.js; o hash muda quando o núcleo muda)
   // e só é carregado quando abre um jogo daquele console. O juntar.py escreve aqui a lista exata desta versão.
   // É <script src> e não fetch: o navegador bloqueia fetch de arquivo local (file://), script ele deixa.
-  const ARQUIVOS = {"fbneo": "nucleos/fbneo-3ffc717a.js", "fceumm": "nucleos/fceumm-9243119b.js", "gambatte": "nucleos/gambatte-f3b4deb6.js", "genplus": "nucleos/genplus-cd68890e.js", "mgba": "nucleos/mgba-cefd6783.js", "pcsx": "nucleos/pcsx-0ba60e28.js", "violino": "nucleos/violino-306d94e5.js"};
+  const ARQUIVOS = {"fbneo": "nucleos/fbneo-3ffc717a.js", "fceumm": "nucleos/fceumm-9243119b.js", "gambatte": "nucleos/gambatte-f3b4deb6.js", "genplus": "nucleos/genplus-cd68890e.js", "mgba": "nucleos/mgba-cefd6783.js", "pcsx": "nucleos/pcsx-62b1399b.js", "violino": "nucleos/violino-306d94e5.js"};
   const fabrica = (n) => (typeof globalThis['Nucleo_' + n] === 'function' ? globalThis['Nucleo_' + n] : null);
   const disponivel = (sis) => !!(SISTEMAS[sis] && (fabrica(SISTEMAS[sis].nucleo) || ARQUIVOS[SISTEMAS[sis].nucleo]));
   const baixando = {};
@@ -11772,6 +11772,11 @@ const KofLibretro = (() => {
     return f({ print: anotar, printErr: anotar }).then((m) => { m.kofLog = log; instancias.push([nucleo, m]); passarOpcoes(m, nucleo); m._lr_init(); return m; });
   };
   const gravar = (mod, caminho, dados) => {
+    // CD de PlayStation (centenas de MB): direto pro disco virtual, sem cópia (canOwn) e sem passar pela memória do wasm
+    if (mod.FS && dados.length > (8 << 20)) {
+      try { mod.FS.mkdir(caminho.replace(/\/[^/]*$/, '')); } catch (e) { /* já existe */ }
+      try { mod.FS.writeFile(caminho, dados, { canOwn: true }); return 1; } catch (e) { return 0; }
+    }
     const c = caminho + '\0', pc = mod._lr_alloc(c.length), pd = mod._lr_alloc(dados.length);
     for (let i = 0; i < c.length; i++) mod.HEAPU8[pc + i] = c.charCodeAt(i);
     mod.HEAPU8.set(dados, pd); const ok = mod._lr_arquivo(pc, pd, dados.length); mod._free(pc); mod._free(pd);
@@ -13122,7 +13127,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610210004 · e6496f0', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610210634 · 65c185a', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   let b = semCombo(estado());
@@ -13567,13 +13572,50 @@ async function binsDoCue(bytes, soltos = []) {
   }
   return achados;
 }
+// CD de PlayStation sem .cue: o .bin (ou o "(Track 1).bin") aberto sozinho. Reconhece pelo conteúdo (setor cru de CD começa
+// com 00 FF..FF 00; imagem de 2048 tem "CD001" no setor 16), não pela extensão (.bin também é Mega Drive)
+const cdPs1 = (b) => (b.length > 0x9000 && b[0] === 0 && b[11] === 0 && b.subarray(1, 11).every((x) => x === 0xFF))
+  || (b.length > 0x8006 && String.fromCharCode(...b.subarray(0x8001, 0x8006)) === 'CD001');
+const FAIXA = /\s*\(Track (\d+)\)$/i;
+const baseCd = (n) => n.replace(/\.[^.]+$/, '').replace(FAIXA, '');
+const numFaixa = (n) => +((n.replace(/\.[^.]+$/, '').match(FAIXA) || [0, 1])[1]);
+// vários arquivos sem .cue: abre a faixa 1 (os outros vão junto)
+const principal = (fs) => fs.slice().sort((a, b) => numFaixa(a.name) - numFaixa(b.name))[0];
+// monta o .cue que faltou: faixa 1 de dados, as outras de música
+function cueDasFaixas(faixas) {
+  faixas.sort((a, b) => numFaixa(a.nome) - numFaixa(b.nome));
+  const txt = faixas.map((f, i) => {
+    const modo = i ? 'AUDIO' : f.bytes[0] === 0 && f.bytes[1] === 0xFF ? 'MODE' + (f.bytes[15] === 1 ? 1 : 2) + '/2352' : 'MODE1/2048';
+    return `FILE "${f.nome}" BINARY\n  TRACK ${String(i + 1).padStart(2, '0')} ${modo}\n` + (i ? '    INDEX 00 00:00:00\n    INDEX 01 00:02:00\n' : '    INDEX 01 00:00:00\n');
+  }).join('');
+  return new TextEncoder().encode(txt);
+}
+async function abrirCdSolto(nome, bytes, soltos) {
+  const base = baseCd(nome), ehDoCd = (n) => /\.bin$/i.test(n) && baseCd(n).toLowerCase() === base.toLowerCase() && n !== nome;
+  const este = { name: nome, arrayBuffer: async () => bytes.buffer };
+  // tem o .cue de verdade (escolhido junto ou na pasta de ROMs)? então vai por ele
+  let cue = soltos.find((f) => /\.cue$/i.test(f.name) && baseCd(f.name).toLowerCase() === base.toLowerCase()), pasta = null;
+  if (!cue) { pasta = await lerPasta(false).catch(() => []); const it = pasta.find((x) => x.arquivo.toLowerCase() === (base + '.cue').toLowerCase()); if (it) cue = await it.h.getFile(); }
+  if (cue) { await abrirBytes(cue.name, new Uint8Array(await cue.arrayBuffer()), true, await binsDoCue(new Uint8Array(await cue.arrayBuffer()), [este, ...soltos])); return; }
+  // sem .cue: as outras faixas (músicas do CD) que vieram junto ou estão na pasta
+  const faixas = [{ nome, bytes }];
+  for (const f of soltos) if (ehDoCd(f.name)) faixas.push({ nome: f.name, bytes: new Uint8Array(await f.arrayBuffer()) });
+  for (const it of pasta || []) if (ehDoCd(it.arquivo) && !faixas.some((f) => f.nome.toLowerCase() === it.arquivo.toLowerCase())) faixas.push({ nome: it.arquivo, bytes: new Uint8Array(await (await it.h.getFile()).arrayBuffer()) });
+  await abrirBytes(base + '.cue', cueDasFaixas(faixas), true, faixas);
+}
 // a ROM de um jogo da biblioteca: do banco; o CD de PlayStation não fica no banco (até 700 MB): vem da pasta de ROMs
 async function bytesDoJogo(j) {
   const rom = await bdPegar('roms', j.id);
   if (rom) return { bytes: rom };
   if (j.sistema === 'ps1') {
     const it = (await lerPasta(false).catch(() => [])).find((x) => x.arquivo.toLowerCase() === (j.arquivo || '').toLowerCase());
-    if (!it) throw new Error('o CD desse jogo de PlayStation não fica guardado dentro do app: deixe ele na pasta de ROMs ou abra o arquivo de novo');
+    if (!it) {
+      const base = baseCd(j.arquivo || '').toLowerCase(), pasta = await lerPasta(false).catch(() => []);
+      const faixas = [];
+      for (const x of pasta) if (/\.bin$/i.test(x.arquivo) && baseCd(x.arquivo).toLowerCase() === base) faixas.push({ nome: x.arquivo, bytes: new Uint8Array(await (await x.h.getFile()).arrayBuffer()) });
+      if (faixas.length) return { bytes: cueDasFaixas(faixas), extras: faixas };
+      throw new Error('o CD desse jogo de PlayStation não fica guardado dentro do app: deixe ele na pasta de ROMs ou abra o arquivo de novo');
+    }
     const bytes = new Uint8Array(await (await it.h.getFile()).arrayBuffer());
     return { bytes, extras: /\.cue$/i.test(j.arquivo) ? await binsDoCue(bytes) : [] };
   }
@@ -13583,6 +13625,7 @@ async function abrirArquivo(arq, soltos = []) {
   try {
     let nome = arq.name, bytes = new Uint8Array(await arq.arrayBuffer());
     if (/\.cue$/i.test(nome) && SIS_ATIVOS.includes('ps1')) { await abrirBytes(nome, bytes, true, await binsDoCue(bytes, soltos)); return; }
+    if (/\.(bin|img)$/i.test(nome) && SIS_ATIVOS.includes('ps1') && cdPs1(bytes)) { await abrirCdSolto(nome, bytes, soltos); return; }
     // zip pelo nome ou pelos primeiros bytes ("PK"): o seletor do Android às vezes entrega o arquivo sem a extensão
     const ehZip = /\.zip$/i.test(nome) || (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 3 && bytes[3] === 4);
     if (ehZip && !neoGeo(nome)) {
@@ -13807,7 +13850,7 @@ async function mostrarEstat() {
 $('#arquivo').multiple = true;   // PlayStation: dá pra escolher o .cue junto com os .bin
 $('#arquivo').addEventListener('change', (e) => {
   const fs = [...e.target.files], cue = fs.find((f) => /\.cue$/i.test(f.name));
-  if (cue) abrirArquivo(cue, fs); else if (fs[0]) abrirArquivo(fs[0]);
+  if (cue) abrirArquivo(cue, fs); else if (fs[0]) abrirArquivo(principal(fs), fs);
   e.target.value = '';
 });
 addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('arrastando'); });
@@ -13821,7 +13864,7 @@ addEventListener('drop', (e) => {
   if (pt && rm) { (async () => aplicarPatch(pt.name, new Uint8Array(await pt.arrayBuffer()), { nome: rm.name, bytes: new Uint8Array(await rm.arrayBuffer()) }))().catch((er) => avisar(er.message, 5000)); return; }
   const cue = fs.find((f) => /\.cue$/i.test(f.name));
   if (cue) { abrirArquivo(cue, fs); return; }
-  if (fs[0]) abrirArquivo(fs[0]);
+  if (fs[0]) abrirArquivo(principal(fs), fs);
 });
 
 // ---------------- continuar de onde parou ----------------
@@ -13962,7 +14005,7 @@ function lerPasta(pedir, forcar) {
       const cues = l.filter((r) => /\.cue$/i.test(r.nome)).map((r) => r.nome.replace(/\.cue$/i, '').toLowerCase());
       pastaCache = l.map((r) => {
         const nome = r.nome.replace(/\.[^.]+$/, '');
-        const faixa = /\.bin$/i.test(r.nome) && cues.some((c) => nome.toLowerCase().startsWith(c));
+        const faixa = /\.bin$/i.test(r.nome) && (cues.some((c) => nome.toLowerCase().startsWith(c)) || numFaixa(r.nome) > 1);
         return { nome, arquivo: r.nome, h: r.h, ext: r.nome.split('.').pop().toUpperCase(), chave: normal(nome), variante: VARIANTE.test(nome), faixa };
       });
       return pastaCache;

@@ -1,5 +1,5 @@
 // PlayStation (PCSX-ReARMed): abre um executável de PS1 (.exe), um CD em .cue + .bin escolhidos juntos e um .cue sozinho
-// (o app pede o .bin), no PC e no celular. Confere tela, quadros, cores, savestate, que o CD não vai pro banco e os nomes
+// (o app pede o .bin), um .bin sozinho, no PC e no celular. Confere tela, quadros, cores, savestate, que o CD não vai pro banco e os nomes
 // ✕ ○ □ △ L1 R1 no controle do celular.
 //   node testes/navegador/ps1.cjs dist/web Cube.exe "Cubo de Teste.cue" "Cubo de Teste.bin" [prints/]
 // Use só programa LIVRE (ex.: os testes do PeterLemon/PSX) ou um CD montado com eles (genisoimage + SYSTEM.CNF).
@@ -34,6 +34,10 @@ const [,, pasta, exe, cue, bin, saida = os.tmpdir()] = process.argv;
     conferir(s && s.nucleo === 'pcsx' && s.titulo === path.basename(cue, '.cue') && s.quadros > 30 && s.cores > 30, `${nome}: CD em .cue + .bin roda ${JSON.stringify(s)}`);
     const noBanco = await p.evaluate(() => new Promise((ok) => { const q = indexedDB.open('kofnes'); q.onsuccess = () => { const t = q.result.transaction('roms').objectStore('roms').getAllKeys(); t.onsuccess = () => ok(t.result.filter((k) => /Cubo de Teste/.test(k)).length); }; }));
     conferir(noBanco === 0, `${nome}: o CD não foi guardado no banco (${noBanco})`);
+    // .bin sozinho (sem .cue): reconhecido como CD de PS1 pelo conteúdo, não como Mega Drive
+    await p.setInputFiles('#arquivo', bin); await p.waitForTimeout(3500);
+    s = await estado(p);
+    conferir(s && s.nucleo === 'pcsx' && s.titulo === path.basename(bin, '.bin') && s.quadros > 30, `${nome}: .bin sozinho abre como CD de PS1 ${JSON.stringify(s)}`);
     // 3) .cue sozinho: o app pede o .bin
     if (!cel) {
       await p.setInputFiles('#arquivo', exe); await p.waitForTimeout(2500);

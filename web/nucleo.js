@@ -157,6 +157,11 @@ const KofLibretro = (() => {
     return f({ print: anotar, printErr: anotar }).then((m) => { m.kofLog = log; instancias.push([nucleo, m]); passarOpcoes(m, nucleo); m._lr_init(); return m; });
   };
   const gravar = (mod, caminho, dados) => {
+    // CD de PlayStation (centenas de MB): direto pro disco virtual, sem cópia (canOwn) e sem passar pela memória do wasm
+    if (mod.FS && dados.length > (8 << 20)) {
+      try { mod.FS.mkdir(caminho.replace(/\/[^/]*$/, '')); } catch (e) { /* já existe */ }
+      try { mod.FS.writeFile(caminho, dados, { canOwn: true }); return 1; } catch (e) { return 0; }
+    }
     const c = caminho + '\0', pc = mod._lr_alloc(c.length), pd = mod._lr_alloc(dados.length);
     for (let i = 0; i < c.length; i++) mod.HEAPU8[pc + i] = c.charCodeAt(i);
     mod.HEAPU8.set(dados, pd); const ok = mod._lr_arquivo(pc, pd, dados.length); mod._free(pc); mod._free(pd);

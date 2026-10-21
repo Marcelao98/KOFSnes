@@ -75,6 +75,8 @@ construir() {
                 && emmake make -j"$(nproc)" platform=emscripten SUBSET=neogeo EXTERNAL_ZLIB=0) ;;   # generate-files: lista de drivers só do Neo Geo
   esac
   local O="$T/obj-$nome"; rm -rf "$O"; mkdir -p "$O"
+  # PlayStation: o CD (até 700 MB) vai do JS direto pro disco virtual (FS.writeFile sem cópia), sem passar pela memória do wasm
+  local RT_EXTRA=""; [ "$nome" = pcsx ] && RT_EXTRA=",FS"
   local INC="-I$(dirname "$bc") -I$lc/include -I$lc -I$dir"
   em++ -O3 -DNDEBUG -std=c++11 $INC -c "$AQUI/ponte.cpp" -o "$O/ponte.o"
   # o .bc do emscripten vem sem o libretro-common (STATIC_LINKING): compila aqui o que existir na cópia do núcleo
@@ -89,7 +91,7 @@ construir() {
   F=$F,_lr_arquivo,_lr_apagar,_lr_var,_lr_canais,_lr_sonda,_lr_mudas,_lr_onda,_lr_onda_pos,_lr_onda_pos_c,_lr_reset,_lr_state_size,_lr_state_save,_lr_state_load,_lr_mem_ptr,_lr_mem_size,_malloc,_free
   em++ -O3 ${EXTRA_LD:-} "$O"/*.o "$bc" -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=67108864 \
     -s MODULARIZE=1 -s EXPORT_NAME="Nucleo_$nome" -s ENVIRONMENT=web,node -s SINGLE_FILE=1 \
-    -s EXPORTED_RUNTIME_METHODS=ccall,HEAPU8,HEAPF64,stringToUTF8,lengthBytesUTF8 -s EXPORTED_FUNCTIONS=$F \
+    -s EXPORTED_RUNTIME_METHODS=ccall,HEAPU8,HEAPF64,stringToUTF8,lengthBytesUTF8${RT_EXTRA:-} -s EXPORTED_FUNCTIONS=$F \
     -o "$AQUI/saida/$nome.js"
   ls -l "$AQUI/saida/$nome.js"
   # Neo Geo: a lista dos jogos (nomes e CRCs) que o app usa pra reconhecer o zip sai do mesmo FBNeo
