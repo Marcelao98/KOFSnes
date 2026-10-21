@@ -374,9 +374,67 @@ void main() {
   const ESCOLHA = new Set(AJUSTES.filter((a) => a[7]).map((a) => a[0]));
   const num = (x) => (Number.isInteger(+x) ? (+x).toFixed(1) : String(+x));
   const chave = (v) => ORDEM.map((k) => (ESCOLHA.has(k) ? 'e' + (+v[k]) : +v[k] === PADRAO[k] ? '-' : '+')).join('');
-  const fonte = (v) => FRAG0.replace('/*{{DEFINES}}*/', ORDEM.map((k, i) => `#define ${k.toUpperCase()} `
+  const montar = (v) => FRAG0.replace('/*{{DEFINES}}*/', ORDEM.map((k, i) => `#define ${k.toUpperCase()} `
     + (ESCOLHA.has(k) ? num(v[k]) : +v[k] === PADRAO[k] ? num(PADRAO[k]) : `p[${i >> 2}].${'xyzw'[i & 3]}`)).join('\n'));
-  const FRAG = fonte(PADRAO);
+  // Poda: o compilador do PC apaga sozinho o código desligado, mas placa de vídeo de celular às vezes não aceita (ou desenha
+  // preto) o shader inteiro. Então o código que não vai rodar sai antes: if com condição constante falsa some, o verdadeiro
+  // fica só com o corpo (e um "return" verdadeiro corta o resto do bloco), e função que ninguém chama sai também.
+  function podar(src) {
+    src = src.replace(/\/\/[^\n]*/g, '');
+    const val = {};
+    for (const m of src.matchAll(/^#define (\w+) (-?[\d.]+)$/gm)) val[m[1]] = parseFloat(m[2]);
+    const lado = (t) => (/^-?(\d+\.?\d*|\.\d+)$/.test(t) ? parseFloat(t) : t in val ? val[t] : NaN);
+    const comparar = (t) => {
+      const m = t.trim().match(/^([\w.]+)\s*(<=|>=|==|!=|<|>)\s*([\w.-]+)$/); if (!m) return null;
+      const x = lado(m[1]), y = lado(m[3]); if (isNaN(x) || isNaN(y)) return null;
+      return { '<': x < y, '>': x > y, '<=': x <= y, '>=': x >= y, '==': x === y, '!=': x !== y }[m[2]];
+    };
+    const avaliar = (c) => {   // só "A > 0." ligados por || ou && (sem misturar); outra coisa = não sabe (null)
+      const ou = c.split('||'), e = c.split('&&');
+      if (ou.length > 1 && e.length > 1) return null;
+      const r = (ou.length > 1 ? ou : e).map(comparar);
+      if (r.includes(null)) return null;
+      return ou.length > 1 ? r.includes(true) : !r.includes(false);
+    };
+    const fecha = (i, abre, fechaC) => { for (let d = 0; i < src.length; i++) { if (src[i] === abre) d++; else if (src[i] === fechaC && --d === 0) return i; } return -1; };
+    const comando = (i) => {   // [início, fim) de um comando: bloco {…} ou até o ';'
+      while (/\s/.test(src[i])) i++;
+      if (src[i] === '{') return [i, fecha(i, '{', '}') + 1];
+      for (let j = i, d = 0; j < src.length; j++) { if (src[j] === '(') d++; else if (src[j] === ')') d--; else if (src[j] === ';' && !d) return [i, j + 1]; }
+      return [i, src.length];
+    };
+    const re = /\bif\s*\(/g;
+    for (let m; (m = re.exec(src)); ) {
+      const ini = m.index, pa = src.indexOf('(', ini), pf = fecha(pa, '(', ')');
+      const v = avaliar(src.slice(pa + 1, pf));
+      if (v === null) continue;
+      const [ci, cf] = comando(pf + 1);
+      let fim = cf, senao = '';
+      const depois = src.slice(cf).match(/^\s*else\b/);
+      if (depois) { const [ei, ef] = comando(cf + depois[0].length); senao = src.slice(ei, ef); fim = ef; }
+      let novo = v ? src.slice(ci, cf) : senao;
+      if (v && /^return\b/.test(novo)) {   // return que sempre acontece: o resto do bloco nunca roda
+        let d = 0, j = fim;
+        for (; j < src.length; j++) { if (src[j] === '{') d++; else if (src[j] === '}') { if (d === 0) break; d--; } }
+        fim = j; novo += '\n';
+      }
+      src = src.slice(0, ini) + novo + src.slice(fim);
+      re.lastIndex = ini;
+    }
+    // funções que sobraram sem ninguém chamando
+    for (let mudou = true; mudou; ) {
+      mudou = false;
+      for (const m of [...src.matchAll(/^(?:vec[234]|float|bool|int|mat[234])\s+(\w+)\s*\(/gm)]) {
+        const usos = src.match(new RegExp('\\b' + m[1] + '\\s*\\(', 'g')).length;
+        if (usos > 1) continue;
+        const ab = src.indexOf('{', m.index), fim = fecha(ab, '{', '}');
+        src = src.slice(0, m.index) + src.slice(fim + 1); mudou = true; break;
+      }
+    }
+    return src.replace(/\n\s*\n+/g, '\n');
+  }
+  const fonte = (v) => podar(montar(v));
+  const FRAG = montar(PADRAO);
   const vetor = (v) => { const a = new Float32Array(52); ORDEM.forEach((k, i) => { a[i] = v[k] !== undefined ? +v[k] : PADRAO[k]; }); return a; };
   const animado = (v) => ['vhs', 'chiado', 'tremor', 'composto', 'filme', 'vazamento', 'neon', 'foraDoAr', 'rolagem', 'interferencia', 'glitch', 'onda'].some((k) => v[k] > 0);
   return { AJUSTES, PADRAO, PREDEF, ANTIGO, FRAG, fonte, chave, valores, vetor, animado };

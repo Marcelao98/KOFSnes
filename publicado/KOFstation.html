@@ -11247,9 +11247,67 @@ void main() {
   const ESCOLHA = new Set(AJUSTES.filter((a) => a[7]).map((a) => a[0]));
   const num = (x) => (Number.isInteger(+x) ? (+x).toFixed(1) : String(+x));
   const chave = (v) => ORDEM.map((k) => (ESCOLHA.has(k) ? 'e' + (+v[k]) : +v[k] === PADRAO[k] ? '-' : '+')).join('');
-  const fonte = (v) => FRAG0.replace('/*{{DEFINES}}*/', ORDEM.map((k, i) => `#define ${k.toUpperCase()} `
+  const montar = (v) => FRAG0.replace('/*{{DEFINES}}*/', ORDEM.map((k, i) => `#define ${k.toUpperCase()} `
     + (ESCOLHA.has(k) ? num(v[k]) : +v[k] === PADRAO[k] ? num(PADRAO[k]) : `p[${i >> 2}].${'xyzw'[i & 3]}`)).join('\n'));
-  const FRAG = fonte(PADRAO);
+  // Poda: o compilador do PC apaga sozinho o código desligado, mas placa de vídeo de celular às vezes não aceita (ou desenha
+  // preto) o shader inteiro. Então o código que não vai rodar sai antes: if com condição constante falsa some, o verdadeiro
+  // fica só com o corpo (e um "return" verdadeiro corta o resto do bloco), e função que ninguém chama sai também.
+  function podar(src) {
+    src = src.replace(/\/\/[^\n]*/g, '');
+    const val = {};
+    for (const m of src.matchAll(/^#define (\w+) (-?[\d.]+)$/gm)) val[m[1]] = parseFloat(m[2]);
+    const lado = (t) => (/^-?(\d+\.?\d*|\.\d+)$/.test(t) ? parseFloat(t) : t in val ? val[t] : NaN);
+    const comparar = (t) => {
+      const m = t.trim().match(/^([\w.]+)\s*(<=|>=|==|!=|<|>)\s*([\w.-]+)$/); if (!m) return null;
+      const x = lado(m[1]), y = lado(m[3]); if (isNaN(x) || isNaN(y)) return null;
+      return { '<': x < y, '>': x > y, '<=': x <= y, '>=': x >= y, '==': x === y, '!=': x !== y }[m[2]];
+    };
+    const avaliar = (c) => {   // só "A > 0." ligados por || ou && (sem misturar); outra coisa = não sabe (null)
+      const ou = c.split('||'), e = c.split('&&');
+      if (ou.length > 1 && e.length > 1) return null;
+      const r = (ou.length > 1 ? ou : e).map(comparar);
+      if (r.includes(null)) return null;
+      return ou.length > 1 ? r.includes(true) : !r.includes(false);
+    };
+    const fecha = (i, abre, fechaC) => { for (let d = 0; i < src.length; i++) { if (src[i] === abre) d++; else if (src[i] === fechaC && --d === 0) return i; } return -1; };
+    const comando = (i) => {   // [início, fim) de um comando: bloco {…} ou até o ';'
+      while (/\s/.test(src[i])) i++;
+      if (src[i] === '{') return [i, fecha(i, '{', '}') + 1];
+      for (let j = i, d = 0; j < src.length; j++) { if (src[j] === '(') d++; else if (src[j] === ')') d--; else if (src[j] === ';' && !d) return [i, j + 1]; }
+      return [i, src.length];
+    };
+    const re = /\bif\s*\(/g;
+    for (let m; (m = re.exec(src)); ) {
+      const ini = m.index, pa = src.indexOf('(', ini), pf = fecha(pa, '(', ')');
+      const v = avaliar(src.slice(pa + 1, pf));
+      if (v === null) continue;
+      const [ci, cf] = comando(pf + 1);
+      let fim = cf, senao = '';
+      const depois = src.slice(cf).match(/^\s*else\b/);
+      if (depois) { const [ei, ef] = comando(cf + depois[0].length); senao = src.slice(ei, ef); fim = ef; }
+      let novo = v ? src.slice(ci, cf) : senao;
+      if (v && /^return\b/.test(novo)) {   // return que sempre acontece: o resto do bloco nunca roda
+        let d = 0, j = fim;
+        for (; j < src.length; j++) { if (src[j] === '{') d++; else if (src[j] === '}') { if (d === 0) break; d--; } }
+        fim = j; novo += '\n';
+      }
+      src = src.slice(0, ini) + novo + src.slice(fim);
+      re.lastIndex = ini;
+    }
+    // funções que sobraram sem ninguém chamando
+    for (let mudou = true; mudou; ) {
+      mudou = false;
+      for (const m of [...src.matchAll(/^(?:vec[234]|float|bool|int|mat[234])\s+(\w+)\s*\(/gm)]) {
+        const usos = src.match(new RegExp('\\b' + m[1] + '\\s*\\(', 'g')).length;
+        if (usos > 1) continue;
+        const ab = src.indexOf('{', m.index), fim = fecha(ab, '{', '}');
+        src = src.slice(0, m.index) + src.slice(fim + 1); mudou = true; break;
+      }
+    }
+    return src.replace(/\n\s*\n+/g, '\n');
+  }
+  const fonte = (v) => podar(montar(v));
+  const FRAG = montar(PADRAO);
   const vetor = (v) => { const a = new Float32Array(52); ORDEM.forEach((k, i) => { a[i] = v[k] !== undefined ? +v[k] : PADRAO[k]; }); return a; };
   const animado = (v) => ['vhs', 'chiado', 'tremor', 'composto', 'filme', 'vazamento', 'neon', 'foraDoAr', 'rolagem', 'interferencia', 'glitch', 'onda'].some((k) => v[k] > 0);
   return { AJUSTES, PADRAO, PREDEF, ANTIGO, FRAG, fonte, chave, valores, vetor, animado };
@@ -12122,26 +12180,30 @@ const glProgs = {};   // um programa por combinação de efeitos ligados (chave 
 let glVert = null;
 // Shader simples (só a imagem) de reserva: alguns celulares não compilam o do painel ou desenham tudo preto com ele
 const FRAG_SIMPLES = 'precision mediump float; uniform sampler2D t; varying vec2 uv; void main() { gl_FragColor = vec4(texture2D(t, uv).rgb, 1.); }';
-let glSimples = false, glMotivo = '';
+// cada combinação de filtro tem o seu shader: se uma falhar no aparelho, só ela cai pra imagem simples (as outras seguem)
+const glRuins = new Set(), glBons = new Set();
+let glChave = '', glMotivo = '', glConferir = 3;
 function glFalhou(motivo) {
-  if (glSimples) return;
-  glSimples = true; glMotivo = motivo; glU = {};
-  console.warn('shader do painel de imagem desligado:', motivo);
-  avisar('🖼 esse aparelho não aceitou os filtros de imagem: usando a imagem simples' + (motivo ? ' (' + motivo.slice(0, 80) + ')' : ''), 6000);
+  if (glRuins.has(glChave)) return;
+  glRuins.add(glChave); glMotivo = motivo; glU = {};
+  console.warn('filtro de imagem desligado nesse aparelho:', glChave, motivo);
+  avisar('🖼 esse filtro não roda nesse aparelho: usando a imagem simples' + (motivo ? ' (' + motivo.slice(0, 80) + ')' : ''), 6000);
   glPrograma(visual.v);
 }
 function glPrograma(v) {
-  const k = glSimples ? 'simples' : KofVisual.chave(v);
+  glChave = KofVisual.chave(v);
+  const simples = glRuins.has(glChave), k = simples ? 'simples' : glChave;
+  if (!simples && !glBons.has(glChave)) glConferir = 3;   // shader novo: confere nos primeiros quadros
   if (!glProgs[k]) {
     let erro = '';
     const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS) && !gl.isContextLost()) erro = erro || gl.getShaderInfoLog(s) || 'não compilou'; return s; };
     if (!glVert) glVert = sombra(gl.VERTEX_SHADER, `attribute vec2 p; varying vec2 uv;
     void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`);
     const prog = gl.createProgram();
-    gl.attachShader(prog, glVert); gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, glSimples ? FRAG_SIMPLES : KofVisual.fonte(v)));
+    gl.attachShader(prog, glVert); gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, simples ? FRAG_SIMPLES : KofVisual.fonte(v)));
     gl.bindAttribLocation(prog, 0, 'p'); gl.linkProgram(prog);
     if (!erro && !gl.getProgramParameter(prog, gl.LINK_STATUS) && !gl.isContextLost()) erro = gl.getProgramInfoLog(prog) || 'não ligou';
-    if (erro && !glSimples) { glFalhou(erro.trim()); return; }
+    if (erro && !simples) { glFalhou(erro.trim()); return; }
     const u = { prog };
     for (const n of ['t', 'tp', 'tela', 'u', 'p']) u[n] = gl.getUniformLocation(prog, n);
     glProgs[k] = u;
@@ -12182,11 +12244,10 @@ function pintar(novo) {
   const agora = performance.now(), liga = visual.v.ligarTv > 0.5 ? Math.min(1, (agora - ligaIni) / 650) : 1;
   gl.uniform4f(glU.u, (agora / 1000) % 1000, divisao, liga, pausado && snes && !rapidoAberto && telaAtual() === 'jogo' ? 1 : 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  if (novo && !glSimples && glConferir > 0) conferirTela();
+  if (novo && glConferir > 0 && !glRuins.has(glChave)) conferirTela();
 }
 // alguns drivers de celular "compilam" o shader grande mas desenham preto: nos primeiros quadros com imagem, lê uns pixels
 // da tela; jogo com imagem e tela toda preta = troca pro shader simples
-let glConferir = 3;
 function conferirTela() {
   if (performance.now() - ligaIni < 1200) return;   // o efeito "ligar a TV" começa preto de propósito
   const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight, c = new Uint8Array(4);
@@ -12195,7 +12256,7 @@ function conferirTela() {
     if (!(px[Math.floor(telaA * y / 8) * telaL + Math.floor(telaL * x / 8)] & 0xFFFFFF)) continue;   // ali o jogo é preto mesmo
     esperados++;
     gl.readPixels(Math.floor(W * x / 8), Math.floor(H * (8 - y) / 8), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, c);
-    if (c[0] | c[1] | c[2]) { glConferir = 0; return; }   // apareceu imagem: o shader funciona
+    if (c[0] | c[1] | c[2]) { glConferir = 0; glBons.add(glChave); return; }   // apareceu imagem: o shader funciona
   }
   if (esperados < 5) return;   // quadro quase todo preto: não dá pra saber
   glConferir--;
@@ -13168,7 +13229,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610211302 · 425a13c', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610211324 · b79d978', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   let b = semCombo(estado());
@@ -15176,7 +15237,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },

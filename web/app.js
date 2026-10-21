@@ -41,26 +41,30 @@ const glProgs = {};   // um programa por combinação de efeitos ligados (chave 
 let glVert = null;
 // Shader simples (só a imagem) de reserva: alguns celulares não compilam o do painel ou desenham tudo preto com ele
 const FRAG_SIMPLES = 'precision mediump float; uniform sampler2D t; varying vec2 uv; void main() { gl_FragColor = vec4(texture2D(t, uv).rgb, 1.); }';
-let glSimples = false, glMotivo = '';
+// cada combinação de filtro tem o seu shader: se uma falhar no aparelho, só ela cai pra imagem simples (as outras seguem)
+const glRuins = new Set(), glBons = new Set();
+let glChave = '', glMotivo = '', glConferir = 3;
 function glFalhou(motivo) {
-  if (glSimples) return;
-  glSimples = true; glMotivo = motivo; glU = {};
-  console.warn('shader do painel de imagem desligado:', motivo);
-  avisar('🖼 esse aparelho não aceitou os filtros de imagem: usando a imagem simples' + (motivo ? ' (' + motivo.slice(0, 80) + ')' : ''), 6000);
+  if (glRuins.has(glChave)) return;
+  glRuins.add(glChave); glMotivo = motivo; glU = {};
+  console.warn('filtro de imagem desligado nesse aparelho:', glChave, motivo);
+  avisar('🖼 esse filtro não roda nesse aparelho: usando a imagem simples' + (motivo ? ' (' + motivo.slice(0, 80) + ')' : ''), 6000);
   glPrograma(visual.v);
 }
 function glPrograma(v) {
-  const k = glSimples ? 'simples' : KofVisual.chave(v);
+  glChave = KofVisual.chave(v);
+  const simples = glRuins.has(glChave), k = simples ? 'simples' : glChave;
+  if (!simples && !glBons.has(glChave)) glConferir = 3;   // shader novo: confere nos primeiros quadros
   if (!glProgs[k]) {
     let erro = '';
     const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS) && !gl.isContextLost()) erro = erro || gl.getShaderInfoLog(s) || 'não compilou'; return s; };
     if (!glVert) glVert = sombra(gl.VERTEX_SHADER, `attribute vec2 p; varying vec2 uv;
     void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`);
     const prog = gl.createProgram();
-    gl.attachShader(prog, glVert); gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, glSimples ? FRAG_SIMPLES : KofVisual.fonte(v)));
+    gl.attachShader(prog, glVert); gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, simples ? FRAG_SIMPLES : KofVisual.fonte(v)));
     gl.bindAttribLocation(prog, 0, 'p'); gl.linkProgram(prog);
     if (!erro && !gl.getProgramParameter(prog, gl.LINK_STATUS) && !gl.isContextLost()) erro = gl.getProgramInfoLog(prog) || 'não ligou';
-    if (erro && !glSimples) { glFalhou(erro.trim()); return; }
+    if (erro && !simples) { glFalhou(erro.trim()); return; }
     const u = { prog };
     for (const n of ['t', 'tp', 'tela', 'u', 'p']) u[n] = gl.getUniformLocation(prog, n);
     glProgs[k] = u;
@@ -101,11 +105,10 @@ function pintar(novo) {
   const agora = performance.now(), liga = visual.v.ligarTv > 0.5 ? Math.min(1, (agora - ligaIni) / 650) : 1;
   gl.uniform4f(glU.u, (agora / 1000) % 1000, divisao, liga, pausado && snes && !rapidoAberto && telaAtual() === 'jogo' ? 1 : 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  if (novo && !glSimples && glConferir > 0) conferirTela();
+  if (novo && glConferir > 0 && !glRuins.has(glChave)) conferirTela();
 }
 // alguns drivers de celular "compilam" o shader grande mas desenham preto: nos primeiros quadros com imagem, lê uns pixels
 // da tela; jogo com imagem e tela toda preta = troca pro shader simples
-let glConferir = 3;
 function conferirTela() {
   if (performance.now() - ligaIni < 1200) return;   // o efeito "ligar a TV" começa preto de propósito
   const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight, c = new Uint8Array(4);
@@ -114,7 +117,7 @@ function conferirTela() {
     if (!(px[Math.floor(telaA * y / 8) * telaL + Math.floor(telaL * x / 8)] & 0xFFFFFF)) continue;   // ali o jogo é preto mesmo
     esperados++;
     gl.readPixels(Math.floor(W * x / 8), Math.floor(H * (8 - y) / 8), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, c);
-    if (c[0] | c[1] | c[2]) { glConferir = 0; return; }   // apareceu imagem: o shader funciona
+    if (c[0] | c[1] | c[2]) { glConferir = 0; glBons.add(glChave); return; }   // apareceu imagem: o shader funciona
   }
   if (esperados < 5) return;   // quadro quase todo preto: não dá pra saber
   glConferir--;
@@ -3095,7 +3098,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
