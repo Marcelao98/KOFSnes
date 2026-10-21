@@ -231,7 +231,7 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > (até 700 MB): a biblioteca reabre pela pasta de ROMs (`bytesDoJogo`). `.cue` = `binsDoCue` (acha os .bin nos arquivos
 > escolhidos/arrastados juntos, na pasta ou pergunta; `#arquivo` aceita vários). Os .bin de um .cue não aparecem como jogo de
 > Mega Drive na biblioteca (`faixa`). BIOS opcional (scph5501.bin etc., 512 KB; sem ela o PCSX usa a BIOS imitada). Rebobinar
-> desligado no PS1 (estado de ~4,4 MB). Controle: ✕ ○ □ △ = B A Y X, L1/R1 = L/R (L2/R2 e analógico ainda não). Capas:
+> desligado no PS1 (estado de ~4,4 MB). Controle: ✕ ○ □ △ = B A Y X, L1/R1 = L/R, L2/R2 = bits livres 0x0008/0x0004 do registrador (teclas E/R, gatilhos 6/7 do controle; zerados fora do PS1 em `rodarQuadro`; ids 12/13 no `LIGACAO`). Falta: analógico, L2/R2 no controle de toque e a jukebox do PS1 (sonda do SPU). Capas:
 > `Sony_-_PlayStation`. Teste: `testes/navegador/ps1.cjs` com o Cube.exe do PeterLemon/PSX e um CD montado com ele
 > (genisoimage + SYSTEM.CNF `BOOT = cdrom:\CUBE.EXE;1` + .cue MODE1/2048).
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)

@@ -488,6 +488,7 @@ const BOTOES_SNES = [
   ['Esquerda', 0x0200, 'ArrowLeft'], ['Direita', 0x0100, 'ArrowRight'],
   ['B', 0x8000, 'KeyZ'], ['A', 0x0080, 'KeyX'], ['Y', 0x4000, 'KeyA'], ['X', 0x0040, 'KeyS'],
   ['L', 0x0020, 'KeyQ'], ['R', 0x0010, 'KeyW'], ['Start', 0x1000, 'Enter'], ['Select', 0x2000, 'ShiftLeft'],
+  ['L2', 0x0008, 'KeyE'], ['R2', 0x0004, 'KeyR'],   // só o PlayStation usa (bits livres do registrador do SNES)
 ];
 // atalhos do emulador: não podem virar botão do jogo
 const RESERVADAS = ['Escape', 'Tab', 'Backspace', 'F7', 'F9', 'F1', 'F2', 'F5', 'F6', 'F8', 'F11', 'KeyP', 'KeyM', 'Minus', 'Equal', 'NumpadSubtract', 'NumpadAdd'];
@@ -571,7 +572,7 @@ function montarAjuda() {
 }
 // controle "standard" (Xbox/USB): A,B,X,Y na posição do SNES
 const BOTOES = [[0, 0x8000], [1, 0x0080], [2, 0x4000], [3, 0x0040], [4, 0x0020], [5, 0x0010],
-  [8, 0x2000], [9, 0x1000], [12, 0x0800], [13, 0x0400], [14, 0x0200], [15, 0x0100]];
+  [6, 0x0008], [7, 0x0004], [8, 0x2000], [9, 0x1000], [12, 0x0800], [13, 0x0400], [14, 0x0200], [15, 0x0100]];   // 6/7 = gatilhos (L2/R2 do PS1)
 let teclado = 0, turbo = false;
 let toque = 0;   // botões apertados na tela de toque (celular)
 function estado() {
@@ -1051,7 +1052,8 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 const VERSAO = '{{VERSAO}}', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
-  const b = semCombo(estado());
+  let b = semCombo(estado());
+  if (snes.sistema !== 'ps1') b &= ~0x000C;   // L2/R2: no SNES esses bits identificam o controle e têm de ficar zerados
   snes.pad[0] = b; snes.runFrame();
   if (marcoBug) { marcoBug.entradas.push(b); if (marcoBug.entradas.length >= 600) novoMarco(); }
 }
