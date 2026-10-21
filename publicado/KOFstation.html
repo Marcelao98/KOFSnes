@@ -12120,15 +12120,28 @@ const ctx = gl ? null : tela.getContext('2d', { alpha: false });
 let glTex = [], glVez = 0, glU = {}, divisao = 0, ligaIni = -1e9;
 const glProgs = {};   // um programa por combinação de efeitos ligados (chave do KofVisual), compilado na primeira vez
 let glVert = null;
+// Shader simples (só a imagem) de reserva: alguns celulares não compilam o do painel ou desenham tudo preto com ele
+const FRAG_SIMPLES = 'precision mediump float; uniform sampler2D t; varying vec2 uv; void main() { gl_FragColor = vec4(texture2D(t, uv).rgb, 1.); }';
+let glSimples = false, glMotivo = '';
+function glFalhou(motivo) {
+  if (glSimples) return;
+  glSimples = true; glMotivo = motivo; glU = {};
+  console.warn('shader do painel de imagem desligado:', motivo);
+  avisar('🖼 esse aparelho não aceitou os filtros de imagem: usando a imagem simples' + (motivo ? ' (' + motivo.slice(0, 80) + ')' : ''), 6000);
+  glPrograma(visual.v);
+}
 function glPrograma(v) {
-  const k = KofVisual.chave(v);
+  const k = glSimples ? 'simples' : KofVisual.chave(v);
   if (!glProgs[k]) {
-    const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s)); return s; };
+    let erro = '';
+    const sombra = (tipo, fonte) => { const s = gl.createShader(tipo); gl.shaderSource(s, fonte); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS) && !gl.isContextLost()) erro = erro || gl.getShaderInfoLog(s) || 'não compilou'; return s; };
     if (!glVert) glVert = sombra(gl.VERTEX_SHADER, `attribute vec2 p; varying vec2 uv;
     void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`);
     const prog = gl.createProgram();
-    gl.attachShader(prog, glVert); gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, KofVisual.fonte(v)));
+    gl.attachShader(prog, glVert); gl.attachShader(prog, sombra(gl.FRAGMENT_SHADER, glSimples ? FRAG_SIMPLES : KofVisual.fonte(v)));
     gl.bindAttribLocation(prog, 0, 'p'); gl.linkProgram(prog);
+    if (!erro && !gl.getProgramParameter(prog, gl.LINK_STATUS) && !gl.isContextLost()) erro = gl.getProgramInfoLog(prog) || 'não ligou';
+    if (erro && !glSimples) { glFalhou(erro.trim()); return; }
     const u = { prog };
     for (const n of ['t', 'tp', 'tela', 'u', 'p']) u[n] = gl.getUniformLocation(prog, n);
     glProgs[k] = u;
@@ -12169,6 +12182,24 @@ function pintar(novo) {
   const agora = performance.now(), liga = visual.v.ligarTv > 0.5 ? Math.min(1, (agora - ligaIni) / 650) : 1;
   gl.uniform4f(glU.u, (agora / 1000) % 1000, divisao, liga, pausado && snes && !rapidoAberto && telaAtual() === 'jogo' ? 1 : 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  if (novo && !glSimples && glConferir > 0) conferirTela();
+}
+// alguns drivers de celular "compilam" o shader grande mas desenham preto: nos primeiros quadros com imagem, lê uns pixels
+// da tela; jogo com imagem e tela toda preta = troca pro shader simples
+let glConferir = 3;
+function conferirTela() {
+  if (performance.now() - ligaIni < 1200) return;   // o efeito "ligar a TV" começa preto de propósito
+  const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight, c = new Uint8Array(4);
+  let esperados = 0;
+  for (let y = 1; y < 8; y++) for (let x = 1; x < 8; x++) {
+    if (!(px[Math.floor(telaA * y / 8) * telaL + Math.floor(telaL * x / 8)] & 0xFFFFFF)) continue;   // ali o jogo é preto mesmo
+    esperados++;
+    gl.readPixels(Math.floor(W * x / 8), Math.floor(H * (8 - y) / 8), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, c);
+    if (c[0] | c[1] | c[2]) { glConferir = 0; return; }   // apareceu imagem: o shader funciona
+  }
+  if (esperados < 5) return;   // quadro quase todo preto: não dá pra saber
+  glConferir--;
+  if (!glConferir) glFalhou('a tela ficou preta');
 }
 // filmadora: "▶ PLAY" e a data no canto, por cima do jogo (texto da página, não do shader)
 function marcarFilmadora() {
@@ -13137,7 +13168,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610211207 · 51c07b5', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610211249 · 924e865', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   let b = semCombo(estado());

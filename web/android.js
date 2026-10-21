@@ -5,7 +5,7 @@
   const html = document.documentElement;
   html.classList.add('celular');
   const MODELOS = [['classico', 'Clássico SNES'], ['moderno', 'Moderno'], ['minimo', 'Minimalista'], ['arcade', 'Arcade'], ['portatil', 'Portátil'], ['tema', 'Segue o tema']];
-  const BITS = { A: 0x0080, B: 0x8000, X: 0x0040, Y: 0x4000, L: 0x0020, R: 0x0010, Start: 0x1000, Select: 0x2000 };
+  const BITS = { A: 0x0080, B: 0x8000, X: 0x0040, Y: 0x4000, L: 0x0020, R: 0x0010, L2: 0x0008, R2: 0x0004, Start: 0x1000, Select: 0x2000 };
   const num = (k, p, min, max) => { const v = parseFloat(ler(k)); return isFinite(v) ? Math.min(max, Math.max(min, v)) : p; };
   const cfg = {
     modelo: MODELOS.some(([k]) => k === ler('ctlModelo')) ? ler('ctlModelo') : 'classico',
@@ -17,7 +17,7 @@
     const el = (cls, b, txt, extra) => { const d = document.createElement('div'); d.className = 'cb ' + cls; if (b) d.dataset.b = b; if (txt) d.textContent = txt; if (extra) d.setAttribute('role', 'button'); return d; };
     const dpad = el('dpad', 'dpad'); dpad.dataset.dir = '';
     for (const c of ['h', 'v', 'u', 'd', 'l', 'r', 'k']) { const i = document.createElement('i'); i.className = c; dpad.appendChild(i); }
-    raiz.append(dpad, el('shoulder', 'L', 'L'), el('shoulder', 'R', 'R'), el('pill', 'Select', 'SELECT'), el('pill', 'Start', 'START'),
+    raiz.append(dpad, el('shoulder', 'L', 'L'), el('shoulder', 'R', 'R'), el('shoulder', 'L2', 'L2'), el('shoulder', 'R2', 'R2'), el('pill', 'Select', 'SELECT'), el('pill', 'Start', 'START'),
       el('face', 'Y', 'Y'), el('face', 'X', 'X'), el('face', 'B', 'B'), el('face', 'A', 'A'),
       el('menu', 'menu', '☰'), el('rew', 'rew', '⏪'), el('turbo', 'turbo', '⏩'));
   }

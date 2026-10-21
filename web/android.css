@@ -235,3 +235,16 @@ html.celular body.canhoto[data-sis="md"] #ctl [data-b="A"], html.celular body.ca
 }
 /* Master System e Game Gear não têm Select */
 html.celular body[data-sis="sms"] #ctl [data-b="Select"], html.celular body[data-sis="gg"] #ctl [data-b="Select"] { display: none; }
+
+/* PlayStation: L2 e R2 (gatilhos de trás) logo abaixo do L1/R1; nos outros consoles não aparecem */
+#ctl [data-b="L2"], #ctl [data-b="R2"] { display: none; --w: calc(var(--u) * 24); --h: calc(var(--u) * 10); --y: 23.5%; }
+html.celular body[data-sis="ps1"] #ctl [data-b="L2"], html.celular body[data-sis="ps1"] #ctl [data-b="R2"] { display: grid; }
+#ctl [data-b="L2"] { --x: 13%; } #ctl [data-b="R2"] { --x: 87%; }
+body.canhoto #ctl [data-b="L2"] { --x: 87%; } body.canhoto #ctl [data-b="R2"] { --x: 13%; }
+@media (orientation: landscape) {   /* deitado: L1 e L2 lado a lado no canto (embaixo ficam ⏪ ☰ ⏩) */
+  html.celular body.cel-jogo[data-sis="ps1"] #ctl .shoulder { --w: calc(var(--u) * 18); --h: calc(var(--u) * 12); --y: 9%; }
+  html.celular body.cel-jogo[data-sis="ps1"] #ctl [data-b="L"] { --x: calc(var(--u) * 10); } html.celular body.cel-jogo[data-sis="ps1"] #ctl [data-b="L2"] { --x: calc(var(--u) * 30); }
+  html.celular body.cel-jogo[data-sis="ps1"] #ctl [data-b="R"] { --x: calc(100% - var(--u) * 10); } html.celular body.cel-jogo[data-sis="ps1"] #ctl [data-b="R2"] { --x: calc(100% - var(--u) * 30); }
+  html.celular body.cel-jogo.canhoto[data-sis="ps1"] #ctl [data-b="L"] { --x: calc(100% - var(--u) * 10); } html.celular body.cel-jogo.canhoto[data-sis="ps1"] #ctl [data-b="L2"] { --x: calc(100% - var(--u) * 30); }
+  html.celular body.cel-jogo.canhoto[data-sis="ps1"] #ctl [data-b="R"] { --x: calc(var(--u) * 10); } html.celular body.cel-jogo.canhoto[data-sis="ps1"] #ctl [data-b="R2"] { --x: calc(var(--u) * 30); }
+}
