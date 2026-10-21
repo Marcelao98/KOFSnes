@@ -234,6 +234,13 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > desligado no PS1 (estado de ~4,4 MB). Controle: ✕ ○ □ △ = B A Y X, L1/R1 = L/R, L2/R2 = bits livres 0x0008/0x0004 do registrador (teclas E/R, gatilhos 6/7 do controle; zerados fora do PS1 em `rodarQuadro`; ids 12/13 no `LIGACAO`). Falta: analógico, L2/R2 no controle de toque e a jukebox do PS1 (sonda do SPU). Capas:
 > `Sony_-_PlayStation`. Teste: `testes/navegador/ps1.cjs` com o Cube.exe do PeterLemon/PSX e um CD montado com ele
 > (genisoimage + SYSTEM.CNF `BOOT = cdrom:\CUBE.EXE;1` + .cue MODE1/2048).
+> **PS1 (21/10, publicado):** CD grande vai pro MEMFS por `FS.writeFile` com `canOwn` (pcsx exporta `FS`, `RT_EXTRA` no
+> construir.sh), sem passar pelo heap do wasm. `.bin` sozinho = CD pelo conteúdo (`cdPs1`), usa o .cue do lado ou monta um
+> (`cueDasFaixas`, faixas "(Track N)"). Zip com CD (`cdDoZip`/`itensDoZip`) lido do Blob aos poucos; o registro guarda `zip`.
+> APK: escolha múltipla vem no ClipData (MainActivity). Pular quadros: ponte guarda o `SET_AUDIO_BUFFER_STATUS_CALLBACK`,
+> app põe `snes.atrasado/ocupacao` antes de cada quadro, `lr_audio_status`; PS1 com `frameskip_type=auto`. Celular: reverb
+> desligado e `psxclock=45` (quadro ~22% mais rápido; o gargalo é a CPU interpretada, não o desenho). Crash travou no celular
+> antes disso; o próximo passo, se ainda picotar, é o núcleo num Web Worker.
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
 > **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso

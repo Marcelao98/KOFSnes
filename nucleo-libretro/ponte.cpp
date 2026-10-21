@@ -49,6 +49,7 @@ static void guardarAv(const struct retro_system_av_info* i) {
 }
 
 static inline uint32_t de5(uint32_t v) { return (v << 3) | (v >> 2); }
+static retro_audio_buffer_status_callback_t statusAudio = nullptr;
 static void video(const void* dados, unsigned w, unsigned h, size_t pitch) {
     if (!dados) return;                 // quadro repetido (CAN_DUPE): mantém o anterior
     if ((size_t)w * h > (size_t)maxL * maxA) return;
@@ -99,6 +100,9 @@ static bool ambiente(unsigned cmd, void* dado) {
     case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY: *(const char**)dado = "/sistema"; return true;
     case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY: *(const char**)dado = "/"; return true;
     case RETRO_ENVIRONMENT_GET_CAN_DUPE: *(bool*)dado = true; return true;
+    // pular quadro quando atrasa (PCSX "auto"): o núcleo pergunta como está o áudio; o JS avisa pelo lr_audio_status
+    case RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK:
+        statusAudio = dado ? ((const struct retro_audio_buffer_status_callback*)dado)->callback : nullptr; return true;
 #ifdef RETRO_ENVIRONMENT_GET_GAME_INFO_EXT
     case RETRO_ENVIRONMENT_GET_GAME_INFO_EXT: *(const struct retro_game_info_ext**)dado = &jogoExt; return jogoExt.data != nullptr;
     case RETRO_ENVIRONMENT_SET_CONTENT_INFO_OVERRIDE: return true;
@@ -207,6 +211,12 @@ EMSCRIPTEN_KEEPALIVE double* lr_info() {
 EMSCRIPTEN_KEEPALIVE void lr_run(int n, int copia) {
     copiar = copia;
     for (int i = 0; i < n; i++) { audioQuadros = 0; retro_run(); }
+}
+// o app diz antes de cada quadro se está atrasado (fila de som acabando): o núcleo que pediu pode pular o desenho do quadro
+EMSCRIPTEN_KEEPALIVE int lr_audio_status(int ocupacao, int atrasado) {
+    if (!statusAudio) return 0;
+    statusAudio(true, (unsigned)ocupacao, atrasado != 0);
+    return 1;
 }
 EMSCRIPTEN_KEEPALIVE void lr_unload() { retro_unload_game(); }
 EMSCRIPTEN_KEEPALIVE void lr_reset() { retro_reset(); }

@@ -54,7 +54,9 @@ const KofLibretro = (() => {
     // PlayStation (PCSX-ReARMed): o CD fica no disco virtual /jogos enquanto o jogo roda (o núcleo lê o CD aos poucos).
     // .cue precisa dos .bin junto (o app procura na pasta, nos arquivos soltos juntos ou pergunta). BIOS opcional: sem ela o
     // PCSX imita a BIOS (muitos jogos rodam; com a de verdade roda mais). Botões: ✕ ○ □ △ = B A Y X do SNES, L1/R1 = L/R
-    ps1: { nome: 'PlayStation', curto: 'PS1', ext: ['cue', 'chd', 'pbp', 'iso', 'exe'], nucleo: 'pcsx', largura: 320, altura: 240, dinamico: true, tv43: true, caminho: true,
+    ps1: { nome: 'PlayStation', curto: 'PS1', ext: ['cue', 'chd', 'pbp', 'iso', 'exe'], nucleo: 'pcsx',
+      // atrasou (celular fraco, jogo 3D): pula o desenho de até 3 quadros seguidos em vez de picotar o som
+      opcoes: { pcsx_rearmed_frameskip_type: 'auto', pcsx_rearmed_frameskip_interval: '3' }, largura: 320, altura: 240, dinamico: true, tv43: true, caminho: true,
       botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'X', 'Y', 'L', 'R', 'Start', 'Select'], musica: false, minimo: 16, grande: true,   // o .cue é só um texto pequeno
       bios: ['scph5501.bin', 'scph1001.bin', 'scph7001.bin', 'scph5500.bin', 'scph5502.bin', 'scph101.bin', 'scph7502.bin', 'psxonpsp660.bin'].map((arquivo) => ({ arquivo, tamanho: 524288, opcional: true })),
       canais: [] },
@@ -302,6 +304,7 @@ const KofLibretro = (() => {
     runFrame() {
       const mod = this.mod;
       mod._lr_pad(mascara(this.pad[0]));
+      if (mod._lr_audio_status && this.atrasado !== undefined) mod._lr_audio_status(this.ocupacao | 0, this.atrasado ? 1 : 0);   // o app diz se está atrasado
       mod._lr_run(1, 1);
       this.quadros++;
       let w = mod._lr_w(), h = mod._lr_h();

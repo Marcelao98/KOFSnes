@@ -1,5 +1,5 @@
-versao=202610210733
-tamanho=979701
+versao=202610211207
+tamanho=981910
 lancador=7
 tamanho_exe=95232
 lancador_linux=2
@@ -9,5 +9,5 @@ nucleo=fceumm-9243119b.js:1559435
 nucleo=gambatte-f3b4deb6.js:872073
 nucleo=genplus-cd68890e.js:3775899
 nucleo=mgba-cefd6783.js:1329989
-nucleo=pcsx-62b1399b.js:1282186
+nucleo=pcsx-ab9e5865.js:1282436
 nucleo=violino-306d94e5.js:1327057

@@ -11669,7 +11669,9 @@ const KofLibretro = (() => {
     // PlayStation (PCSX-ReARMed): o CD fica no disco virtual /jogos enquanto o jogo roda (o núcleo lê o CD aos poucos).
     // .cue precisa dos .bin junto (o app procura na pasta, nos arquivos soltos juntos ou pergunta). BIOS opcional: sem ela o
     // PCSX imita a BIOS (muitos jogos rodam; com a de verdade roda mais). Botões: ✕ ○ □ △ = B A Y X do SNES, L1/R1 = L/R
-    ps1: { nome: 'PlayStation', curto: 'PS1', ext: ['cue', 'chd', 'pbp', 'iso', 'exe'], nucleo: 'pcsx', largura: 320, altura: 240, dinamico: true, tv43: true, caminho: true,
+    ps1: { nome: 'PlayStation', curto: 'PS1', ext: ['cue', 'chd', 'pbp', 'iso', 'exe'], nucleo: 'pcsx',
+      // atrasou (celular fraco, jogo 3D): pula o desenho de até 3 quadros seguidos em vez de picotar o som
+      opcoes: { pcsx_rearmed_frameskip_type: 'auto', pcsx_rearmed_frameskip_interval: '3' }, largura: 320, altura: 240, dinamico: true, tv43: true, caminho: true,
       botoes: ['Cima', 'Baixo', 'Esquerda', 'Direita', 'A', 'B', 'X', 'Y', 'L', 'R', 'Start', 'Select'], musica: false, minimo: 16, grande: true,   // o .cue é só um texto pequeno
       bios: ['scph5501.bin', 'scph1001.bin', 'scph7001.bin', 'scph5500.bin', 'scph5502.bin', 'scph101.bin', 'scph7502.bin', 'psxonpsp660.bin'].map((arquivo) => ({ arquivo, tamanho: 524288, opcional: true })),
       canais: [] },
@@ -11717,7 +11719,7 @@ const KofLibretro = (() => {
   // Cada núcleo mora num arquivo próprio do lado do html (nucleos/<núcleo>-<hash>.js; o hash muda quando o núcleo muda)
   // e só é carregado quando abre um jogo daquele console. O juntar.py escreve aqui a lista exata desta versão.
   // É <script src> e não fetch: o navegador bloqueia fetch de arquivo local (file://), script ele deixa.
-  const ARQUIVOS = {"fbneo": "nucleos/fbneo-3ffc717a.js", "fceumm": "nucleos/fceumm-9243119b.js", "gambatte": "nucleos/gambatte-f3b4deb6.js", "genplus": "nucleos/genplus-cd68890e.js", "mgba": "nucleos/mgba-cefd6783.js", "pcsx": "nucleos/pcsx-62b1399b.js", "violino": "nucleos/violino-306d94e5.js"};
+  const ARQUIVOS = {"fbneo": "nucleos/fbneo-3ffc717a.js", "fceumm": "nucleos/fceumm-9243119b.js", "gambatte": "nucleos/gambatte-f3b4deb6.js", "genplus": "nucleos/genplus-cd68890e.js", "mgba": "nucleos/mgba-cefd6783.js", "pcsx": "nucleos/pcsx-ab9e5865.js", "violino": "nucleos/violino-306d94e5.js"};
   const fabrica = (n) => (typeof globalThis['Nucleo_' + n] === 'function' ? globalThis['Nucleo_' + n] : null);
   const disponivel = (sis) => !!(SISTEMAS[sis] && (fabrica(SISTEMAS[sis].nucleo) || ARQUIVOS[SISTEMAS[sis].nucleo]));
   const baixando = {};
@@ -11917,6 +11919,7 @@ const KofLibretro = (() => {
     runFrame() {
       const mod = this.mod;
       mod._lr_pad(mascara(this.pad[0]));
+      if (mod._lr_audio_status && this.atrasado !== undefined) mod._lr_audio_status(this.ocupacao | 0, this.atrasado ? 1 : 0);   // o app diz se está atrasado
       mod._lr_run(1, 1);
       this.quadros++;
       let w = mod._lr_w(), h = mod._lr_h();
@@ -12558,6 +12561,9 @@ function empurrarSom() {
 
 // celular: o KOFnes-android.html liga esta classe (controle virtual na tela, núcleos libretro, sem textos de teclado)
 const CELULAR = document.documentElement.classList.contains('celular');
+// celular: PlayStation mais leve. Sem o eco do som e com o processador do PS1 a 45% em vez de 57% (o quadro sai ~22% mais
+// rápido; cena muito pesada pode ficar um pouco lenta, como no console). O pular quadros (nucleo.js) vale pra todos
+if (CELULAR && typeof KofLibretro !== 'undefined') KofLibretro.opcao('pcsx', { pcsx_rearmed_spu_reverb: 'disabled', pcsx_rearmed_psxclock: '45' });
 
 // ---------------- controles ----------------
 // botões do SNES: nome, bit no registrador do controle e tecla padrão
@@ -12751,6 +12757,10 @@ function laco(t) {
       vezes = 4; sobra = 0;
     } else {
       while (sobra >= QUADRO_MS && vezes < 4) {
+        // atrasado = ainda deve um quadro depois deste ou o som está acabando: o núcleo que sabe (PS1) pula o desenho
+        const naFila = (fim - ini) & (FILA - 1), alvo = (snes.taxaAudio || 32000) * 0.15;
+        snes.atrasado = sobra >= 2 * QUADRO_MS || (!!audio && audio.state === 'running' && naFila < alvo * 0.2);
+        snes.ocupacao = Math.min(100, Math.round(naFila * 100 / alvo));
         rodarQuadro(); empurrarSom(); sobra -= QUADRO_MS; vezes++;
       }
     }
@@ -13127,7 +13137,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610210733 · 6fc829e', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610211207 · 51c07b5', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   let b = semCombo(estado());
@@ -13261,36 +13271,40 @@ function terminarRebobinar() {
 }
 
 // ---------------- ROMs ----------------
-// os arquivos de dentro do zip, cada um descomprimido só quando pedem (CD de PlayStation: .cue + vários .bin)
-function itensDoZip(buf) {
-  const v = new DataView(buf), u8 = new Uint8Array(buf), itens = [];
+// os arquivos de dentro do zip, cada um descomprimido só quando pedem (CD de PlayStation: .cue + vários .bin). Lê direto do
+// arquivo (Blob), aos poucos: o zip inteiro nunca vai pra memória, só o que sai dele (no celular, 300 MB a menos)
+async function itensDoZip(blob) {
+  const ini = Math.max(0, blob.size - 65557), fim = new DataView(await blob.slice(ini).arrayBuffer());
   let e = -1;
-  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) {
-    if (v.getUint32(i, true) === 0x06054b50) { e = i; break; }
-  }
+  for (let i = fim.byteLength - 22; i >= 0; i--) if (fim.getUint32(i, true) === 0x06054b50) { e = i; break; }
   if (e < 0) throw new Error('zip inválido');
-  let p = v.getUint32(e + 16, true);
-  const total = v.getUint16(e + 10, true);
-  for (let k = 0; k < total; k++) {
+  const total = fim.getUint16(e + 10, true), tamDir = fim.getUint32(e + 12, true), ofsDir = fim.getUint32(e + 16, true);
+  const dir = await blob.slice(ofsDir, ofsDir + tamDir).arrayBuffer(), v = new DataView(dir), u8 = new Uint8Array(dir), itens = [];
+  let p = 0;
+  for (let k = 0; k < total && p + 46 <= dir.byteLength; k++) {
     const metodo = v.getUint16(p + 10, true), comp = v.getUint32(p + 20, true), tam = v.getUint32(p + 24, true);
     const nl = v.getUint16(p + 28, true), xl = v.getUint16(p + 30, true), cl = v.getUint16(p + 32, true), loc = v.getUint32(p + 42, true);
     const nome = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl)).replace(/^.*[\\/]/, '');
     p += 46 + nl + xl + cl;
     if (!nome) continue;
     const ler = async () => {
-      const dados = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true), bruto = u8.subarray(dados, dados + comp);
-      if (metodo === 0) return bruto.slice();
+      const h = new DataView(await blob.slice(loc, loc + 30).arrayBuffer()), dados = loc + 30 + h.getUint16(26, true) + h.getUint16(28, true);
+      const parte = blob.slice(dados, dados + comp);
+      if (metodo === 0) return new Uint8Array(await parte.arrayBuffer());
       if (metodo !== 8) throw new Error('zip com compressão não suportada');
-      return new Uint8Array(await new Response(new Blob([bruto]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+      // descomprime direto no espaço final (sem juntar pedaços e copiar de novo no fim)
+      const saida = new Uint8Array(tam), r = parte.stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
+      for (let o = 0; ;) { const { done, value } = await r.read(); if (done) break; saida.set(value, o); o += value.length; }
+      return saida;
     };
     itens.push({ name: nome, size: tam, arrayBuffer: async () => (await ler()).buffer });
   }
   return itens;
 }
 // zip com CD de PlayStation dentro: devolve o arquivo principal (.cue, .chd... ou a faixa 1) e todos os outros
-function cdDoZip(buf) {
+async function cdDoZip(blob) {
   if (!SIS_ATIVOS.includes('ps1')) return null;
-  let itens; try { itens = itensDoZip(buf); } catch (e) { return null; }
+  let itens; try { itens = await itensDoZip(blob); } catch (e) { return null; }
   const p = itens.find((f) => /\.cue$/i.test(f.name)) || itens.find((f) => /\.(chd|pbp|iso)$/i.test(f.name));
   if (p) return { arq: p, itens };
   const bins = itens.filter((f) => /\.(bin|img)$/i.test(f.name) && f.size > (16 << 20));   // ROM de Mega Drive não passa de uns 10 MB
@@ -13645,7 +13659,7 @@ async function bytesDoJogo(j) {
   if (j.sistema === 'ps1') {
     // veio de um zip: abre o zip da pasta de novo
     const z = j.zip && (await lerPasta(false).catch(() => [])).find((x) => x.arquivo.toLowerCase() === j.zip.toLowerCase());
-    const cd = z && cdDoZip(await (await z.h.getFile()).arrayBuffer());
+    const cd = z && await cdDoZip(await z.h.getFile());
     if (cd) {
       const bytes = new Uint8Array(await cd.arq.arrayBuffer());
       if (/\.cue$/i.test(cd.arq.name)) return { bytes, extras: await binsDoCue(bytes, cd.itens) };
@@ -13667,12 +13681,11 @@ async function bytesDoJogo(j) {
 }
 async function abrirArquivo(arq, soltos = []) {
   try {
-    let nome = arq.name, bytes = new Uint8Array(await arq.arrayBuffer());
-    if (/\.cue$/i.test(nome) && SIS_ATIVOS.includes('ps1')) { await abrirBytes(nome, bytes, true, await binsDoCue(bytes, soltos)); return; }
-    if (/\.(bin|img)$/i.test(nome) && SIS_ATIVOS.includes('ps1') && cdPs1(bytes)) { await abrirCdSolto(nome, bytes, soltos); return; }
-    // zip pelo nome ou pelos primeiros bytes ("PK"): o seletor do Android às vezes entrega o arquivo sem a extensão
-    const ehZip = /\.zip$/i.test(nome) || (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 3 && bytes[3] === 4);
-    const cd = ehZip && !neoGeo(nome) && cdDoZip(bytes.buffer);
+    let nome = arq.name;
+    // zip (pelo nome ou pelos primeiros bytes "PK") com CD de PlayStation: abre direto do arquivo, sem ler o zip inteiro
+    const cab = arq.slice ? new Uint8Array(await arq.slice(0, 4).arrayBuffer()) : new Uint8Array(4);   // item de dentro de um zip não tem slice
+    const pareceZip = /\.zip$/i.test(nome) || (cab[0] === 0x50 && cab[1] === 0x4B && cab[2] === 3 && cab[3] === 4);
+    const cd = pareceZip && !neoGeo(nome) && !!arq.slice && await cdDoZip(arq);
     if (cd) {
       avisar('abrindo o CD de dentro do zip…', 3000);
       const antes = jogoId;
@@ -13680,6 +13693,11 @@ async function abrirArquivo(arq, soltos = []) {
       if (jogoId !== antes && snes && snes.sistema === 'ps1') try { await bdMudarJogo(jogoId, (j) => j && Object.assign(j, { zip: nome })); } catch (e) { /* sem banco */ }
       return;
     }
+    let bytes = new Uint8Array(await arq.arrayBuffer());
+    if (/\.cue$/i.test(nome) && SIS_ATIVOS.includes('ps1')) { await abrirBytes(nome, bytes, true, await binsDoCue(bytes, soltos)); return; }
+    if (/\.(bin|img)$/i.test(nome) && SIS_ATIVOS.includes('ps1') && cdPs1(bytes)) { await abrirCdSolto(nome, bytes, soltos); return; }
+    // zip pelo nome ou pelos primeiros bytes ("PK"): o seletor do Android às vezes entrega o arquivo sem a extensão
+    const ehZip = /\.zip$/i.test(nome) || (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 3 && bytes[3] === 4);
     if (ehZip && !neoGeo(nome)) {
       // zip de Neo Geo com outro nome ("King of Fighters 98.zip"): reconhece pelo conteúdo e passa a usar o nome do set
       const set = SIS_ATIVOS.includes('neogeo') && KofLibretro.setNeoGeoDoZip(bytes);
