@@ -252,6 +252,10 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > (`assets/versao.txt`). **`CASCA` no MainActivity.java: SUBIR sempre que mudar o Java**; publicado com casca maior = o app
 > pede pra baixar o APK novo (`android/apk/KOFstation.apk` na main) e não baixa a página. `publicar.sh` gera
 > `publicado/android/` e copia todos os núcleos do celular (inclui o Snes9x) pra `publicado/nucleos/`.
+> **Ideia aprovada pra depois: "jogar pelo PC" no celular.** O celular escolhe: rodar o jogo nele mesmo (como hoje) ou
+> usar o KOFstation do PC (o PC emula e transmite imagem+som por WebRTC; o celular manda os botões por DataChannel;
+> conexão por QR code, com o KOFstation.exe fazendo a apresentação na rede de casa, nada vai pra internet). Etapas:
+> (1) transmissão com conexão manual, (2) QR + exe, (3) som, qualidade automática, reconectar.
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
 > **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso
