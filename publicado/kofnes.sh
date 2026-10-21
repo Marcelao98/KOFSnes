@@ -10,7 +10,7 @@
 # Os núcleos (Game Boy, NES, Sega...) moram em nucleos/<núcleo>-<hash>.js; o versao.txt lista cada um
 # ("nucleo=<arquivo>:<tamanho>") e o que falta é baixado antes de trocar o html. Um "fonte.txt" do lado
 # do script (ou KOFNES_URL) troca o endereço de onde baixa (pra testar uma branch).
-LANCADOR=2
+LANCADOR=3
 BASE="${KOFNES_URL:-https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado}"
 
 eu="$(readlink -f "$0" 2>/dev/null || printf '%s' "$0")"
@@ -57,10 +57,8 @@ EOF
     exit 0 ;;
 esac
 
-if [ ! -f "$html" ]; then
-    avisar "não achei o KOFnes.html do lado do kofnes.sh. Extraia a pasta inteira antes de abrir."
-    exit 1
-fi
+# primeira vez (só o kofnes.sh na pasta, baixado pela página de download): o atualizador baixa a página e os núcleos
+[ -f "$html" ] || echo "Baixando o KOFstation pela primeira vez (uns 20 MB, com todos os consoles)..."
 
 # ---------------- atualizador ----------------
 # lê "campo=número" de um versao.txt (0 se não tem)
@@ -141,6 +139,10 @@ if [ ! -e "$dir/nao-atualizar" ]; then
     [ "$(tamanho "$log")" -gt 32768 ] 2>/dev/null && : >"$log"   # o registro guarda só as últimas aberturas
     anotar "---- abrindo"
     atualizar
+fi
+if [ ! -f "$html" ]; then
+    avisar "não consegui baixar o KOFstation. Na primeira vez ele precisa de internet (e de curl ou wget): confira e abra de novo. O que aconteceu fica no $(basename "$log")."
+    exit 1
 fi
 
 # ---------------- navegador ----------------

@@ -1,4 +1,4 @@
-versao=202610211600
+versao=202610211952
 casca=2
 html=KOFnes-android.html:1045172
 nucleo=fbneo-3ffc717a.js:8120825

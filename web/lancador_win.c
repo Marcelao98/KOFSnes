@@ -34,7 +34,7 @@
 #include <stdarg.h>
 #include <time.h>
 
-#define LANCADOR 7
+#define LANCADOR 8
 #define GITHUB L"raw.githubusercontent.com"
 #define MAX_NUCLEOS 32
 #ifndef WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
@@ -431,6 +431,14 @@ static int acharNavegador(const wchar_t *exe, wchar_t *saida, DWORD tam) {
     return 0;
 }
 
+// aviso da primeira vez (o lançador fecha ele sozinho quando o download acaba)
+static DWORD WINAPI avisoPrimeiraVez(LPVOID nada) {
+    (void)nada;
+    MessageBoxW(NULL, L"Baixando o KOFstation pela primeira vez (uns 20 MB, com todos os consoles).\n\n"
+                      L"A janela do jogo abre sozinha quando terminar.", L"KOFstation", MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND);
+    return 0;
+}
+
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
     (void)inst; (void)prev; (void)cmd; (void)show;
     wchar_t dir[MAX_PATH], html[MAX_PATH], url[MAX_PATH * 3], nav[MAX_PATH];
@@ -452,11 +460,9 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
     if (_wcsicmp(wcsrchr(eu, L'\\') ? wcsrchr(eu, L'\\') + 1 : eu, L"KOFnes.exe") == 0
             && GetFileAttributesW(novoExe) == INVALID_FILE_ATTRIBUTES && MoveFileW(eu, novoExe)) wcscat(renomeou, L"KOFnes.exe → KOFstation.exe");
     if (GetFileAttributesW(html) == INVALID_FILE_ATTRIBUTES) wcscpy(html, antigoHtml);   // não deu pra renomear: usa o antigo
-    if (GetFileAttributesW(html) == INVALID_FILE_ATTRIBUTES) {
-        MessageBoxW(NULL, L"Não achei o KOFstation.html do lado do KOFstation.exe.\n"
-                          L"Extraia a pasta inteira antes de abrir.", L"KOFstation", MB_ICONERROR);
-        return 1;
-    }
+    // primeira vez (só o .exe na pasta, baixado pela página de download): o atualizador baixa a página e os núcleos
+    // antes de abrir, com um aviso na tela enquanto isso
+    int semHtml = GetFileAttributesW(html) == INVALID_FILE_ATTRIBUTES;
 
     // atualizador: até 8 s pra saber se tem versão nova; se tiver, até mais 30 s pra
     // baixar. Passou disso, abre o jogo e termina o download por trás.
@@ -481,6 +487,14 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
         at.abriu = 0;
         lerFonte(dir);
         t = CreateThread(NULL, 0, atualizar, &at, 0, NULL);
+        if (semHtml) {
+            anotar("primeira vez: sem o KOFstation.html na pasta, baixando tudo antes de abrir");
+            HANDLE aviso = CreateThread(NULL, 0, avisoPrimeiraVez, NULL, 0, NULL);
+            if (t) WaitForSingleObject(t, 600000);
+            HWND w = FindWindowW(L"#32770", L"KOFstation");
+            if (w) PostMessageW(w, WM_CLOSE, 0, 0);
+            if (aviso) { WaitForSingleObject(aviso, 2000); CloseHandle(aviso); }
+        }
         // sem pressa: rede lenta não pode fazer o lançador desistir de atualizar
         if (t && WaitForSingleObject(t, 15000) == WAIT_TIMEOUT) {
             anotar("a verificação passou de 15 s (%s)", at.baixando ? "já baixando" : "ainda procurando");
@@ -489,6 +503,12 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show) {
     }
     // a atualização pode ter criado o KOFstation.html agora (pasta que ainda tinha só o antigo)
     { wchar_t h2[MAX_PATH]; swprintf(h2, MAX_PATH, L"%ls\\KOFstation.html", dir); if (GetFileAttributesW(h2) != INVALID_FILE_ATTRIBUTES) wcscpy(html, h2); }
+    if (GetFileAttributesW(html) == INVALID_FILE_ATTRIBUTES) {
+        if (registro) { anotar("sem o KOFstation.html: não abriu"); fclose(registro); }
+        MessageBoxW(NULL, L"Não consegui baixar o KOFstation.\n\nNa primeira vez ele precisa de internet: confira a conexão e abra de novo. "
+                          L"(O que aconteceu fica anotado no atualizacao.log, do lado do KOFstation.exe.)", L"KOFstation", MB_ICONERROR);
+        return 1;
+    }
     if (UrlCreateFromPathW(html, url, &n, 0) != S_OK) return 1;
     InterlockedExchange(&at.abriu, 1);
 

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baixar o KOFstation</title>
+<meta name="description" content="KOFstation: Super Nintendo, NES, Game Boy, GBA, Mega Drive, Neo Geo e PlayStation num lugar só. Baixe pra Windows, Linux e Android.">
+<style>
+  :root {
+    --fundo: #1e140e; --painel: #2b1d14; --painel2: #3a2819; --texto: #f4e2cd; --fraco: #c4a588; --destaque: #c08552;
+    --borda: #5a3e2a; --botao: #c08552; --botao-texto: #1e140e; --sombra: 0 10px 30px #0007;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --fundo: #f6ece1; --painel: #fffaf4; --painel2: #f1e3d3; --texto: #2b1d14; --fraco: #6f4e37; --destaque: #9a5f2f;
+      --borda: #e0c9b0; --botao: #8a5228; --botao-texto: #fff8f0; --sombra: 0 10px 30px #6f4e3726; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fundo); color: var(--texto); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--destaque); }
+  .pagina { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+  .banner { width: 100%; border-radius: 18px; display: block; box-shadow: var(--sombra); }
+  h1 { font-size: clamp(26px, 5vw, 38px); margin: 28px 0 6px; text-align: center; }
+  .sub { text-align: center; color: var(--fraco); margin: 0 auto 26px; max-width: 680px; }
+  .baixar { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .cartao { background: var(--painel); border: 1px solid var(--borda); border-radius: 16px; padding: 20px; box-shadow: var(--sombra); display: flex; flex-direction: column; gap: 10px; }
+  .cartao h2 { margin: 0; font-size: 21px; display: flex; align-items: center; gap: 10px; }
+  .cartao h2 span { font-size: 28px; }
+  .cartao p { margin: 0; color: var(--fraco); font-size: 14.5px; }
+  .botao { display: block; text-align: center; background: var(--botao); color: var(--botao-texto); text-decoration: none; font-weight: 700;
+    padding: 12px 14px; border-radius: 12px; margin-top: auto; }
+  .botao:hover { filter: brightness(1.08); }
+  code { background: var(--painel2); border: 1px solid var(--borda); border-radius: 6px; padding: 1px 6px; font-size: 13px; word-break: break-all; }
+  .comando { display: block; padding: 8px 10px; }
+  h3 { font-size: 22px; margin: 40px 0 12px; }
+  ol { padding-left: 22px; } ol li { margin: 6px 0; }
+  .prints { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .prints figure { margin: 0; background: var(--painel); border: 1px solid var(--borda); border-radius: 14px; overflow: hidden; }
+  .prints img { width: 100%; display: block; }
+  .prints figcaption { padding: 8px 12px; color: var(--fraco); font-size: 14px; }
+  .aviso { background: var(--painel2); border: 1px solid var(--borda); border-left: 4px solid var(--destaque); border-radius: 10px; padding: 12px 16px; margin-top: 18px; font-size: 14.5px; }
+  footer { margin-top: 40px; text-align: center; color: var(--fraco); font-size: 14px; }
+</style>
+</head>
+<body>
+<main class="pagina">
+  <img class="banner" src="banner.png" alt="KOFstation: Super Nintendo, NES, Game Boy, GBA, Mega Drive, Neo Geo e PlayStation num lugar só">
+  <h1>Baixe o KOFstation</h1>
+  <p class="sub">Super Nintendo, NES, Game Boy, GBA, Mega Drive, Master System, Game Gear, Neo Geo e PlayStation num lugar só.
+    De graça, sem propaganda, e ele se atualiza sozinho.</p>
+
+  <section class="baixar">
+    <div class="cartao">
+      <h2><span>🪟</span> Windows</h2>
+      <p>Um arquivo só, de 95 KB. Coloque numa pasta sua (Documentos, por exemplo) e dê dois cliques: na primeira vez ele baixa o resto sozinho (uns 20 MB).</p>
+      <a class="botao" href="https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado/KOFstation.exe">Baixar KOFstation.exe</a>
+      <p>Se o Windows disser <i>"o Windows protegeu o computador"</i>: <b>Mais informações → Executar assim mesmo</b> (o programa não tem assinatura paga).</p>
+    </div>
+    <div class="cartao">
+      <h2><span>🤖</span> Android</h2>
+      <p>App com controle na tela, em pé ou deitado. Se atualiza sozinho. O Android vai pedir pra permitir instalar apps de fora da Play Store.</p>
+      <a class="botao" href="https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/android/apk/KOFstation.apk">Baixar KOFstation.apk</a>
+      <p>No celular o PlayStation ainda não está otimizado (jogos 3D travam); os outros consoles rodam bem.</p>
+    </div>
+    <div class="cartao">
+      <h2><span>🐧</span> Linux</h2>
+      <p>Um script que roda em qualquer distro; precisa de um navegador Chromium (Chrome, Chromium, Edge, Brave). No terminal, dentro de uma pasta sua:</p>
+      <code class="comando">curl -LO https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado/kofnes.sh && sh kofnes.sh</code>
+      <p>Na primeira vez ele baixa o resto. Depois, <code>sh kofnes.sh --instalar</code> põe no menu de aplicativos.</p>
+    </div>
+  </section>
+
+  <div class="aviso">⚖️ O KOFstation <b>não vem com jogos</b> nem ensina onde baixar. Use cópias dos seus próprios cartuchos e CDs.
+    Neo Geo precisa da sua BIOS (<code>neogeo.zip</code>); GBA e PlayStation funcionam sem BIOS.</div>
+
+  <h3>Como começar</h3>
+  <ol>
+    <li>Abra o KOFstation e vá em <b>Escolher pasta de ROMs</b> (ou arraste um jogo pra janela).</li>
+    <li>Escolha o jogo na <b>Biblioteca</b>. Da próxima vez ele aparece no Início pra continuar de onde parou.</li>
+    <li>Explore: <b>F4</b> abre o painel de imagem (TV de tubo, Game Boy, filmadora...), <b>Imagem → Galeria de molduras</b>, 126 temas e a jukebox com piano.</li>
+  </ol>
+
+  <h3>Por dentro</h3>
+  <div class="prints">
+    <figure><img src="prints/inicio-4-telas.jpg" alt="Tela de Início do KOFstation em quatro situações"><figcaption>Início: primeira vez, jogo pausado e dois temas</figcaption></figure>
+    <figure><img src="prints/filtros.jpg" alt="O mesmo jogo com seis filtros de imagem"><figcaption>Painel de imagem: 15 filtros e 15 efeitos</figcaption></figure>
+    <figure><img src="prints/molduras.jpg" alt="Quatro molduras: TV de madeira, fliperama, TV da vó e mesa de boteco"><figcaption>Galeria de molduras</figcaption></figure>
+    <figure><img src="prints/jukebox.jpg" alt="Jukebox no modo Notas, com um piano mostrando as notas de cada canal"><figcaption>Jukebox: o piano mostra as notas de cada canal do chip de som</figcaption></figure>
+    <figure><img src="prints/celular.jpg" alt="O KOFstation no celular: Início, Super Nintendo e PlayStation com controle na tela"><figcaption>No celular, com controle na tela</figcaption></figure>
+    <figure><img src="prints/inicio-temas.jpg" alt="A tela de Início em oito temas"><figcaption>126 temas</figcaption></figure>
+  </div>
+
+  <footer>
+    Feito no Brasil por Marcelo, com o Super Nintendo do PC escrito em <a href="https://github.com/KofLang/Kof4j">Kof</a>, a linguagem brasileira da Mel Santos.<br>
+    Código e detalhes: <a href="https://github.com/Marcelao98/KOFSnes">github.com/Marcelao98/KOFSnes</a> ·
+    Prints feitos com demos de teste livres (<a href="https://github.com/PeterLemon/SNES">PeterLemon</a>) e a trilha do próprio KOFstation.
+  </footer>
+</main>
+</body>
+</html>

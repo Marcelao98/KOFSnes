@@ -256,6 +256,12 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > usar o KOFstation do PC (o PC emula e transmite imagem+som por WebRTC; o celular manda os botões por DataChannel;
 > conexão por QR code, com o KOFstation.exe fazendo a apresentação na rede de casa, nada vai pra internet). Etapas:
 > (1) transmissão com conexão manual, (2) QR + exe, (3) som, qualidade automática, reconectar.
+> **Download (21/10):** página `docs/index.html` (GitHub Pages: o Marcelo liga em Settings → Pages → main /docs; a API de
+> Pages é bloqueada pra sessão) com links raw: `publicado/KOFstation.exe` sozinho (**lançador 8**: sem o html na pasta, mostra
+> um aviso e baixa página + núcleos antes de abrir; sem internet, avisa e sai), `android/apk/KOFstation.apk` e o comando do
+> `kofnes.sh` (**LANCADOR=3**, mesma coisa). Testado no Wine e no sh com servidor local. README e prints refeitos SÓ com
+> conteúdo livre (PeterLemon Mode7 Perspective/RotZoom, Cube do PS1, Trilha): jogo ou capa comercial NÃO entra em print.
+> Script dos prints: refazer com Playwright (KOFnes.mudarTema/aplicarFiltro/mudarMoldura + juntar com PIL).
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
 > **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso
