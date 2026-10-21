@@ -1183,6 +1183,41 @@ function terminarRebobinar() {
 }
 
 // ---------------- ROMs ----------------
+// os arquivos de dentro do zip, cada um descomprimido só quando pedem (CD de PlayStation: .cue + vários .bin)
+function itensDoZip(buf) {
+  const v = new DataView(buf), u8 = new Uint8Array(buf), itens = [];
+  let e = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) {
+    if (v.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  }
+  if (e < 0) throw new Error('zip inválido');
+  let p = v.getUint32(e + 16, true);
+  const total = v.getUint16(e + 10, true);
+  for (let k = 0; k < total; k++) {
+    const metodo = v.getUint16(p + 10, true), comp = v.getUint32(p + 20, true), tam = v.getUint32(p + 24, true);
+    const nl = v.getUint16(p + 28, true), xl = v.getUint16(p + 30, true), cl = v.getUint16(p + 32, true), loc = v.getUint32(p + 42, true);
+    const nome = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl)).replace(/^.*[\\/]/, '');
+    p += 46 + nl + xl + cl;
+    if (!nome) continue;
+    const ler = async () => {
+      const dados = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true), bruto = u8.subarray(dados, dados + comp);
+      if (metodo === 0) return bruto.slice();
+      if (metodo !== 8) throw new Error('zip com compressão não suportada');
+      return new Uint8Array(await new Response(new Blob([bruto]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+    };
+    itens.push({ name: nome, size: tam, arrayBuffer: async () => (await ler()).buffer });
+  }
+  return itens;
+}
+// zip com CD de PlayStation dentro: devolve o arquivo principal (.cue, .chd... ou a faixa 1) e todos os outros
+function cdDoZip(buf) {
+  if (!SIS_ATIVOS.includes('ps1')) return null;
+  let itens; try { itens = itensDoZip(buf); } catch (e) { return null; }
+  const p = itens.find((f) => /\.cue$/i.test(f.name)) || itens.find((f) => /\.(chd|pbp|iso)$/i.test(f.name));
+  if (p) return { arq: p, itens };
+  const bins = itens.filter((f) => /\.(bin|img)$/i.test(f.name) && f.size > (16 << 20));   // ROM de Mega Drive não passa de uns 10 MB
+  return bins.length ? { arq: principal(bins), itens } : null;
+}
 async function lerZip(buf, filtro = EXT_ROM) {
   const v = new DataView(buf), u8 = new Uint8Array(buf);
   let e = -1;
@@ -1530,6 +1565,15 @@ async function bytesDoJogo(j) {
   const rom = await bdPegar('roms', j.id);
   if (rom) return { bytes: rom };
   if (j.sistema === 'ps1') {
+    // veio de um zip: abre o zip da pasta de novo
+    const z = j.zip && (await lerPasta(false).catch(() => [])).find((x) => x.arquivo.toLowerCase() === j.zip.toLowerCase());
+    const cd = z && cdDoZip(await (await z.h.getFile()).arrayBuffer());
+    if (cd) {
+      const bytes = new Uint8Array(await cd.arq.arrayBuffer());
+      if (/\.cue$/i.test(cd.arq.name)) return { bytes, extras: await binsDoCue(bytes, cd.itens) };
+      if (/\.(bin|img)$/i.test(cd.arq.name)) { const faixas = []; for (const f of cd.itens) if (baseCd(f.name).toLowerCase() === baseCd(cd.arq.name).toLowerCase() && /\.(bin|img)$/i.test(f.name)) faixas.push({ nome: f.name, bytes: f === cd.arq ? bytes : new Uint8Array(await f.arrayBuffer()) }); return { bytes: cueDasFaixas(faixas), extras: faixas }; }
+      return { bytes };
+    }
     const it = (await lerPasta(false).catch(() => [])).find((x) => x.arquivo.toLowerCase() === (j.arquivo || '').toLowerCase());
     if (!it) {
       const base = baseCd(j.arquivo || '').toLowerCase(), pasta = await lerPasta(false).catch(() => []);
@@ -1550,6 +1594,14 @@ async function abrirArquivo(arq, soltos = []) {
     if (/\.(bin|img)$/i.test(nome) && SIS_ATIVOS.includes('ps1') && cdPs1(bytes)) { await abrirCdSolto(nome, bytes, soltos); return; }
     // zip pelo nome ou pelos primeiros bytes ("PK"): o seletor do Android às vezes entrega o arquivo sem a extensão
     const ehZip = /\.zip$/i.test(nome) || (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 3 && bytes[3] === 4);
+    const cd = ehZip && !neoGeo(nome) && cdDoZip(bytes.buffer);
+    if (cd) {
+      avisar('abrindo o CD de dentro do zip…', 3000);
+      const antes = jogoId;
+      await abrirArquivo(cd.arq, cd.itens);
+      if (jogoId !== antes && snes && snes.sistema === 'ps1') try { await bdMudarJogo(jogoId, (j) => j && Object.assign(j, { zip: nome })); } catch (e) { /* sem banco */ }
+      return;
+    }
     if (ehZip && !neoGeo(nome)) {
       // zip de Neo Geo com outro nome ("King of Fighters 98.zip"): reconhece pelo conteúdo e passa a usar o nome do set
       const set = SIS_ATIVOS.includes('neogeo') && KofLibretro.setNeoGeoDoZip(bytes);

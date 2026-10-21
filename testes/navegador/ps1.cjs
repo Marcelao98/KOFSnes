@@ -1,11 +1,12 @@
 // PlayStation (PCSX-ReARMed): abre um executável de PS1 (.exe), um CD em .cue + .bin escolhidos juntos e um .cue sozinho
 // (o app pede o .bin), um .bin sozinho, no PC e no celular. Confere tela, quadros, cores, savestate, que o CD não vai pro banco e os nomes
 // ✕ ○ □ △ L1 R1 no controle do celular.
-//   node testes/navegador/ps1.cjs dist/web Cube.exe "Cubo de Teste.cue" "Cubo de Teste.bin" [prints/]
+//   node testes/navegador/ps1.cjs dist/web Cube.exe "Cubo de Teste.cue" "Cubo de Teste.bin" [prints/] [cubo.zip]
+// (cubo.zip = o .cue e o .bin dentro de um zip: zip -j cubo.zip "Cubo de Teste.cue" "Cubo de Teste.bin")
 // Use só programa LIVRE (ex.: os testes do PeterLemon/PSX) ou um CD montado com eles (genisoimage + SYSTEM.CNF).
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const os = require('os'), path = require('path');
-const [,, pasta, exe, cue, bin, saida = os.tmpdir()] = process.argv;
+const [,, pasta, exe, cue, bin, saida = os.tmpdir(), zip] = process.argv;
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const falhas = [];
@@ -38,6 +39,11 @@ const [,, pasta, exe, cue, bin, saida = os.tmpdir()] = process.argv;
     await p.setInputFiles('#arquivo', bin); await p.waitForTimeout(3500);
     s = await estado(p);
     conferir(s && s.nucleo === 'pcsx' && s.titulo === path.basename(bin, '.bin') && s.quadros > 30, `${nome}: .bin sozinho abre como CD de PS1 ${JSON.stringify(s)}`);
+    if (zip) {
+      await p.setInputFiles('#arquivo', zip); await p.waitForTimeout(3500);
+      s = await estado(p);
+      conferir(s && s.nucleo === 'pcsx' && s.titulo === path.basename(cue, '.cue') && s.quadros > 30, `${nome}: CD dentro de um zip roda ${JSON.stringify(s)}`);
+    }
     // 3) .cue sozinho: o app pede o .bin
     if (!cel) {
       await p.setInputFiles('#arquivo', exe); await p.waitForTimeout(2500);

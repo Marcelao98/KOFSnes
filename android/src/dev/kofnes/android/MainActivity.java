@@ -2,6 +2,7 @@ package dev.kofnes.android;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -164,6 +165,18 @@ public class MainActivity extends Activity {
         super.onActivityResult(pedido, resultado, dados);
         if (pedido == PEDIDO_ARQUIVO && escolha != null) {
             Uri[] r = WebChromeClient.FileChooserParams.parseResult(resultado, dados);
+            // vários arquivos (o .cue com os .bin do CD de PlayStation) vêm no ClipData, que o parseResult ignora
+            if (resultado == RESULT_OK && dados != null && dados.getClipData() != null && dados.getClipData().getItemCount() > 0) {
+                ClipData c = dados.getClipData();
+                r = new Uri[c.getItemCount()];
+                for (int k = 0; k < r.length; k++) r[k] = c.getItemAt(k).getUri();
+            }
+            // vários arquivos (o .cue com os .bin do CD de PlayStation) vêm no ClipData, que o parseResult ignora
+            if (resultado == RESULT_OK && dados != null && dados.getClipData() != null && dados.getClipData().getItemCount() > 0) {
+                ClipData c = dados.getClipData();
+                r = new Uri[c.getItemCount()];
+                for (int k = 0; k < r.length; k++) r[k] = c.getItemAt(k).getUri();
+            }
             escolha.onReceiveValue(r);
             escolha = null;
         } else if (pedido == PEDIDO_SALVAR) {
