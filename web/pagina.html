@@ -346,12 +346,13 @@
           <button class="x" data-acao="jk-repetir" title="repetir esta música pra sempre">🔁</button>
         </div>
         <div class="jk-vista">
-          <button class="sec" data-acao="jk-vista-capa" title="capa e barras dos canais">🖼 Capa</button><button class="sec" data-acao="jk-vista-ondas" title="osciloscópio: a forma da onda de cada canal">〰 Ondas</button>
+          <button class="sec" data-acao="jk-vista-capa" title="capa e barras dos canais">🖼 Capa</button><button class="sec" data-acao="jk-vista-ondas" title="osciloscópio: a forma da onda de cada canal">〰 Ondas</button><button class="sec" data-acao="jk-vista-notas" title="piano: as notas de cada canal passando">🎹 Notas</button>
           <select id="jk-estilo" title="estilo das ondas"><option value="">estilo do tema</option><option value="fio">Fio</option><option value="neon">Neon</option><option value="preenchido">Preenchido</option><option value="pixel">Pixel</option></select>
         </div>
         <div id="jk-vozes" title="os canais do chip de som: clique pra silenciar um"></div>
         <p class="dica" id="jk-vozes-dica">as 8 vozes do chip de som · <span class="so-pc">clique</span><span class="so-cel">toque</span> numa pra silenciar</p>
         <div id="jk-ondas" hidden></div>
+        <div id="jk-notas" hidden><canvas></canvas><div id="jk-notas-leg"></div></div>
       </div>
       <div class="jk-lado">
         <ul id="jk-lista"></ul>

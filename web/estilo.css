@@ -506,6 +506,12 @@ body:not([data-moldura="nenhuma"]) #tela { box-shadow: none; border: 0; }
 .jk.ondas .jk-tocando { align-items: stretch; }
 .jk.ondas .jk-tocando h2, .jk.ondas .jk-tocando > .dica, .jk.ondas .jk-controles { align-self: center; }
 #jk-ondas { flex: 1; width: 100%; min-height: 260px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: minmax(56px, 1fr); gap: 8px; margin-top: 6px; }
+#jk-notas { flex: 1; width: 100%; min-height: 260px; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+#jk-notas canvas { flex: 1; width: 100%; min-height: 200px; background: var(--painel2); border: 1px solid var(--borda); border-radius: var(--raio); }
+#jk-notas-leg { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.jk-nota-canal { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; font-size: 12px; background: var(--painel2); color: var(--texto); border: 1px solid var(--borda); border-radius: 999px; }
+.jk-nota-canal i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.jk-nota-canal.apagado { opacity: .5; text-decoration: line-through; }
 .jk-canal { position: relative; background: var(--painel2); border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; transition: opacity .2s; }
 .jk-canal canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .jk-canal-rot { position: absolute; left: 8px; top: 5px; display: flex; gap: 8px; align-items: baseline; pointer-events: none; text-align: left; }
@@ -530,7 +536,7 @@ body:not([data-moldura="nenhuma"]) #tela { box-shadow: none; border: 0; }
 .jk-acoes .x { font-size: 14px; }
 #st-juke { display: flex; align-items: center; gap: 4px; }
 #st-juke .x { font-size: 13px; color: inherit; }
-@media (max-width: 760px) { .jk, .jk.ondas { grid-template-columns: 1fr; grid-auto-rows: auto; align-content: start; overflow-y: auto; } .jk-tocando, .jk-lado { overflow: visible; min-height: auto; } .jk-capa { width: 140px; height: 140px; } #jk-ondas { flex: none; min-height: 0; grid-template-columns: 1fr; grid-auto-rows: 72px; } }
+@media (max-width: 760px) { .jk, .jk.ondas { grid-template-columns: 1fr; grid-auto-rows: auto; align-content: start; overflow-y: auto; } .jk-tocando, .jk-lado { overflow: visible; min-height: auto; } .jk-capa { width: 140px; height: 140px; } #jk-ondas { flex: none; min-height: 0; grid-template-columns: 1fr; grid-auto-rows: 72px; } #jk-notas { flex: none; } #jk-notas canvas { flex: none; height: 260px; } }
 #bib-estado { margin: 6px 2px 0; font-size: 12px; }
 /* sofá: cada linha da grade tem a altura do cartão. Sem isto, com muitos jogos a
    grade (altura fixa) espremia os cartões até sumirem (item com overflow:hidden

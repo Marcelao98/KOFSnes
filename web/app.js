@@ -964,7 +964,7 @@ function montarJuke() {
 }
 // ---------- osciloscópio (modo "Ondas" da jukebox) ----------
 // uma faixa por canal com a forma da onda parada (gatilho na subida), no estilo do tema; Mudo e Solo em cada faixa
-let jkVista = ler('jkVista') === 'ondas' ? 'ondas' : 'capa', jkEstilo = ler('jkEstilo') || '';
+let jkVista = ['ondas', 'notas'].includes(ler('jkVista')) ? ler('jkVista') : 'capa', jkEstilo = ler('jkEstilo') || '';
 const ESTILO_TEMA = { portatil: 'pixel', terminal: 'neon', neon: 'neon', vapor: 'neon', cinza32: 'pixel', zsnes: 'pixel', super16: 'pixel', latte: 'preenchido', claro: 'preenchido', branco: 'preenchido', cappuccino: 'preenchido', cafe: 'fio', espresso: 'fio' };
 function estiloOndas() {
   if (jkEstilo) return jkEstilo;
@@ -995,6 +995,15 @@ function montarOndas(nomes) {
     return { el: d, cv: d.querySelector('canvas'), v };
   });
   el.classList.toggle('poucos', nomes.length <= 4);
+  // legenda do modo Notas: um botão por canal na cor dele (toque = mudo, de novo = volta)
+  const leg = $('#jk-notas-leg'); leg.textContent = '';
+  notasLeg = nomes.map((nm, v) => {
+    const b = document.createElement('button'); b.className = 'jk-nota-canal'; b.title = 'silenciar ' + nm;
+    b.innerHTML = '<i></i>'; b.append(nm);
+    b.onclick = () => { juke.mudas ^= 1 << v; if (juke.solo === v) juke.solo = -1; aplicarMudas(); montarJuke(); };
+    leg.appendChild(b); return b;
+  });
+  notas = nomes.map(() => ({ seg: [], ultimo: null })); notasT = -1;
   coresOndas();
 }
 let coresCanal = [], corFraca = '#888', corBorda = '#444';
@@ -1006,7 +1015,8 @@ function coresOndas() {
 }
 function marcarOndas() {
   const jk = $('#jukebox .jk'), ondas = jkVista === 'ondas';
-  jk.classList.toggle('ondas', ondas); $('#jk-ondas').hidden = !ondas;
+  jk.classList.toggle('ondas', jkVista !== 'capa'); $('#jk-ondas').hidden = !ondas; $('#jk-notas').hidden = jkVista !== 'notas';
+  notasLeg.forEach((b, v) => { const ouve = !(mudasEfetivas() & (1 << v)); b.classList.toggle('apagado', !ouve); b.querySelector('i').style.background = ouve ? coresCanal[v] || corFraca : corFraca; });
   document.querySelectorAll('[data-acao^="jk-vista-"]').forEach((b) => b.classList.toggle('ativo', b.dataset.acao === 'jk-vista-' + jkVista));
   $('#jk-estilo').value = jkEstilo;
   const m = mudasEfetivas();
@@ -1060,6 +1070,100 @@ function desenharOndas() {
     g.stroke(); g.shadowBlur = 0;
   }
 }
+// ---------- piano roll (modo "Notas" da jukebox) ----------
+// Cada canal vira retângulos: altura = a nota, comprimento = quanto ela durou, brilho = volume. A nota sai da forma de
+// onda do canal pelo método YIN (o dos afinadores): d(τ) = Σ (x[j] − x[j+τ])², a diferença da onda com ela mesma
+// atrasada τ amostras; normalizada pela média acumulada, o primeiro vale abaixo de 0,15 é o período. f = taxa / τ e a
+// nota = 69 + 12·log2(f / 440) (escala logarítmica: cada oitava dobra a frequência). Sem período claro e com volume = ruído
+// (bateria), que vai pra faixa de baixo.
+let notas = [], notasLeg = [], notasT = -1, notasFaixa = [48, 84];
+const NOTAS_SEG = 6;   // segundos de história na tela
+function notaDoCanal(tk, v) {
+  const o = tk.onda(v), M = o.tam - 1, taxa = o.taxa || tk.taxa, D = Math.max(1, Math.round(taxa / 11025));
+  const N = Math.min(512, Math.floor((o.tam - 8) / D)), x = new Float32Array(N);
+  let media = 0;
+  for (let i = 0; i < N; i++) { let s = 0; for (let k = 0; k < D; k++) s += o.buf[o.base + ((o.pos - 1 - i * D - k) & M)]; x[i] = s / D * o.escala; media += x[i]; }
+  media /= N; let rms = 0;
+  for (let i = 0; i < N; i++) { x[i] -= media; rms += x[i] * x[i]; }
+  rms = Math.sqrt(rms / N);
+  if (rms < 0.01) return null;                              // silêncio
+  const W = N >> 1, dd = new Float32Array(W);
+  let soma = 0, tau = -1;
+  for (let t = 1; t < W; t++) {
+    let d = 0; for (let j = 0; j < W; j++) { const e = x[j] - x[j + t]; d += e * e; }
+    soma += d; dd[t] = soma ? d * t / soma : 1;
+    if (tau < 0 && t > 2 && dd[t - 1] < 0.15 && dd[t] > dd[t - 1]) tau = t - 1;
+  }
+  if (tau < 0) return { ruido: true, vol: rms };
+  const a = dd[tau - 1], b = dd[tau], c = dd[tau + 1] ?? b, den = a - 2 * b + c;   // vale refinado por parábola
+  const f = (taxa / D) / (tau + (den ? (a - c) / (2 * den) : 0));
+  return { nota: 69 + 12 * Math.log2(f / 440), vol: rms };
+}
+function analisarNotas(tk) {
+  const t = juke.amostras / tk.taxa;
+  if (t < notasT || t - notasT > 2) notas.forEach((n) => { n.seg = []; n.ultimo = null; });   // música nova ou pulo
+  if (t === notasT) return t;
+  notasT = t;
+  const m = mudasEfetivas();
+  for (let v = 0; v < Math.min(notas.length, tk.canais); v++) {
+    const n = notas[v], r = m & (1 << v) ? null : notaDoCanal(tk, v), u = n.ultimo;
+    if (!r) { n.ultimo = null; continue; }
+    const tipo = r.ruido ? 'r' : Math.round(r.nota);
+    if (u && u.tipo === tipo && t - u.fim < 0.1) { u.fim = t; u.vol = Math.max(u.vol * 0.97, r.vol); }
+    else { n.ultimo = { tipo, nota: r.ruido ? 0 : r.nota, ini: t, fim: t + 1 / 60, vol: r.vol }; n.seg.push(n.ultimo); }
+    while (n.seg.length && n.seg[0].fim < t - NOTAS_SEG) n.seg.shift();
+  }
+  return t;
+}
+function desenharNotas() {
+  const tk = juke.apu, cv = $('#jk-notas canvas'), dpr = window.devicePixelRatio || 1;
+  const W = Math.round(cv.clientWidth * dpr), H = Math.round(cv.clientHeight * dpr);
+  if (!W || !H) return;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const g = cv.getContext('2d'), est = estiloOndas();
+  g.clearRect(0, 0, W, H);
+  const t = tk && juke.tocando ? analisarNotas(tk) : Math.max(notasT, 0);
+  // faixa de notas visível: acompanha a música devagar (mínimo de 2 oitavas)
+  let mn = 1e9, mx = -1e9;
+  notas.forEach((n) => n.seg.forEach((s) => { if (s.tipo !== 'r') { mn = Math.min(mn, s.nota); mx = Math.max(mx, s.nota); } }));
+  if (mn < 1e9) {
+    const meio = (mn + mx) / 2, alc = Math.max(24, mx - mn + 6);
+    notasFaixa[0] += (meio - alc / 2 - notasFaixa[0]) * 0.05; notasFaixa[1] += (meio + alc / 2 - notasFaixa[1]) * 0.05;
+  }
+  const TEC = Math.round(34 * dpr), BAT = Math.round(H * 0.12), alto = H - BAT, [n0, n1] = notasFaixa, px = alto / (n1 - n0);
+  const yDe = (nota) => alto - (nota - n0) * px, agora = W - Math.round(W * 0.12), xDe = (s) => agora - (t - s) * (agora - TEC) / NOTAS_SEG;
+  // teclado na esquerda e as linhas das teclas pretas no fundo
+  const preta = (k) => [1, 3, 6, 8, 10].includes(((k % 12) + 12) % 12), tocando = {};
+  notas.forEach((n, v) => { if (n.ultimo && n.ultimo.tipo !== 'r' && t - n.ultimo.fim < 0.05) tocando[n.ultimo.tipo] = coresCanal[v]; });
+  for (let k = Math.floor(n0); k <= Math.ceil(n1); k++) {
+    const y = yDe(k + 0.5), h = px;
+    if (preta(k)) { g.globalAlpha = 0.06; g.fillStyle = corFraca; g.fillRect(TEC, y, W - TEC, h); }
+    g.globalAlpha = 1; g.fillStyle = tocando[k] || (preta(k) ? '#222' : '#eee'); g.fillRect(0, y, preta(k) ? TEC * 0.62 : TEC, h - (preta(k) ? 0 : 1));
+    if (((k % 12) + 12) % 12 === 0 && px > 5 * dpr) { g.fillStyle = '#666'; g.font = `${Math.round(Math.min(px, 10 * dpr))}px sans-serif`; g.fillText('C' + (Math.floor(k / 12) - 1), TEC * 0.66, y + h * 0.8); }
+  }
+  g.globalAlpha = 0.5; g.fillStyle = corBorda; g.fillRect(TEC, alto, W - TEC, 1); g.fillRect(agora, 0, Math.max(1, dpr), H); g.globalAlpha = 1;
+  // as notas de cada canal
+  const bl = Math.max(2, Math.round(4 * dpr));
+  notas.forEach((n, v) => {
+    const cor = notasLeg[v] && notasLeg[v].classList.contains('apagado') ? corFraca : coresCanal[v] || corFraca;
+    for (const s of n.seg) {
+      let x0 = Math.max(TEC, xDe(s.ini)), x1 = Math.min(agora, xDe(s.fim));
+      if (x1 < TEC) continue;
+      const viva = s === n.ultimo && t - s.fim < 0.05, a = Math.min(1, 0.35 + s.vol * 2.2);
+      let y, h;
+      if (s.tipo === 'r') { h = Math.max(3 * dpr, BAT * Math.min(1, s.vol * 4)); y = alto + (BAT - h) / 2; }
+      else { h = Math.max(3 * dpr, px * 0.8); y = yDe(s.nota + 0.4); }
+      if (est === 'pixel') { x0 = Math.floor(x0 / bl) * bl; x1 = Math.ceil(x1 / bl) * bl; y = Math.round(y / bl) * bl; h = Math.max(bl, Math.round(h / bl) * bl); }
+      g.globalAlpha = viva ? 1 : a * 0.85;
+      if (viva && est !== 'pixel') { g.shadowColor = cor; g.shadowBlur = (est === 'neon' ? 18 : 8) * dpr; }
+      g.fillStyle = cor;
+      if (est === 'fio') { g.strokeStyle = cor; g.lineWidth = 1.4 * dpr; g.globalAlpha *= 0.45; g.fillRect(x0, y, Math.max(2, x1 - x0), h); g.globalAlpha = viva ? 1 : a; g.strokeRect(x0, y, Math.max(2, x1 - x0), h); }
+      else g.fillRect(x0, y, Math.max(2, x1 - x0), h);
+      g.shadowBlur = 0;
+    }
+  });
+  g.globalAlpha = 1;
+}
 $('#jk-estilo').addEventListener('change', (e) => { jkEstilo = e.target.value; guardar('jkEstilo', jkEstilo); coresOndas(); });
 // os canais ao vivo: no SNES a barra é o envelope (ENVX) de cada voz; nos outros, o pico da onda do canal
 function nivelCanal(tk, v) {
@@ -1073,6 +1177,7 @@ function desenharVozes() {
   requestAnimationFrame(desenharVozes);
   const tk = juke.apu && juke.tocando ? juke.apu : null;
   if (jkVista === 'ondas') desenharOndas();
+  else if (jkVista === 'notas') desenharNotas();
   else [...$('#jk-vozes').children].forEach((b, v) => { b.firstChild.style.height = (tk ? Math.min(100, nivelCanal(tk, v) * 100) : 0) + '%'; });
   const f = juke.lista[juke.atual], t = juke.amostras / (juke.apu ? juke.apu.taxa : 32000);
   $('#jk-tempo').textContent = f ? mmss(t) + (juke.repetir ? ' · repetindo' : ' / ' + mmss((f.segundos || PADRAO_SEG) + (f.fadeMs || PADRAO_FADE) / 1000)) : '';
@@ -3005,6 +3110,7 @@ async function acao(a) {
     case 'jk-tocar': jukeAlternar(); break;
     case 'jk-vista-capa': mudarVistaJuke('capa'); break;
     case 'jk-vista-ondas': mudarVistaJuke('ondas'); break;
+    case 'jk-vista-notas': mudarVistaJuke('notas'); break;
     case 'jk-prox': jukeProxima(1); break;
     case 'jk-ant': jukeProxima(-1); break;
     case 'jk-aleatorio': juke.aleatorio = !juke.aleatorio; montarJuke(); break;
@@ -3098,7 +3204,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, notaDoCanal, notas: () => notas, filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
