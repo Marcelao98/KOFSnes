@@ -18,6 +18,8 @@ find "$W/src" -name '*.java' -exec sed -i "s/@VERSAO_NOME@/$NOME/" {} +
 cp "$HTML" "$W/assets/index.html"
 # núcleos (nucleos/<núcleo>-<hash>.js): o html carrega cada um só quando abre um jogo daquele console
 cp -r "$RAIZ/dist/web/nucleos" "$W/assets/"
+# versão da página que vai dentro (o Atualizador compara com a publicada em publicado/android/versao.txt)
+grep '^versao=' "$RAIZ/dist/web/versao.txt" > "$W/assets/versao.txt"
 # ícone (vários tamanhos a partir do ícone do KOFnes)
 python3 - "$RAIZ/dist/web/KOFnes.png" "$W/res" <<'PY'
 import os, sys

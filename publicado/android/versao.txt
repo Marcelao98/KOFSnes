@@ -1,0 +1,11 @@
+versao=202610211302
+casca=2
+html=KOFnes-android.html:1030058
+nucleo=fbneo-3ffc717a.js:8120825
+nucleo=fceumm-9243119b.js:1559435
+nucleo=gambatte-f3b4deb6.js:872073
+nucleo=genplus-cd68890e.js:3775899
+nucleo=mgba-cefd6783.js:1329989
+nucleo=pcsx-ab9e5865.js:1282436
+nucleo=snes9x-e205bc90.js:4101685
+nucleo=violino-306d94e5.js:1327057

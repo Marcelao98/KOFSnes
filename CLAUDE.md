@@ -245,6 +245,13 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > Plano combinado: branch `ps1-nativo`, só no APK: PCSX-ReARMed nativo (NDK, recompilador ARM64 + GPU NEON), imagem numa
 > superfície nativa por baixo da WebView, som nativo, botões pela ponte `KOFnesApk`; resto em WebAssembly. Primeiro passo:
 > ver se o NDK instala no container.
+> **APK se atualiza sozinho (21/10, publicado):** `android/src/.../Atualizador.java` (sem Android dentro, testável:
+> `testes/android/teste-atualizador.sh`) lê `publicado/android/versao.txt` (`versao=`, `casca=`, `html=`, `nucleo=`),
+> baixa pra `files/web/baixando` → `pronta` (núcleo que já existe é copiado), e na abertura seguinte `pronta` vira `atual`
+> e a `servir()` da Activity lê de lá (cai pros assets se faltar arquivo). APK mais novo que a versão baixada = vale o APK
+> (`assets/versao.txt`). **`CASCA` no MainActivity.java: SUBIR sempre que mudar o Java**; publicado com casca maior = o app
+> pede pra baixar o APK novo (`android/apk/KOFstation.apk` na main) e não baixa a página. `publicar.sh` gera
+> `publicado/android/` e copia todos os núcleos do celular (inclui o Snes9x) pra `publicado/nucleos/`.
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
 > **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso

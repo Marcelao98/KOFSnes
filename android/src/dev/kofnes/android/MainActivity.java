@@ -1,6 +1,8 @@
 package dev.kofnes.android;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
@@ -22,6 +24,8 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,11 +34,17 @@ import java.io.OutputStream;
  * KOFnes no Android: uma WebView em tela cheia que abre o KOFnes-android.html guardado dentro do app
  * (assets/index.html), servido em https://appassets.androidplatform.net/ pra a página ter um endereço seguro
  * (IndexedDB, crypto, WebAssembly). Faz só o que a página não consegue sozinha: escolher arquivo (ROM, .spc),
- * salvar arquivo (pacote de bug, .spc exportado) e abrir links no navegador.
+ * salvar arquivo (pacote de bug, .spc exportado) e abrir links no navegador. Também se atualiza sozinho (Atualizador):
+ * a página e os núcleos novos vêm do GitHub e valem na abertura seguinte, sem reinstalar o APK.
  */
 public class MainActivity extends Activity {
     private static final String HOST = "appassets.androidplatform.net";
     private static final int PEDIDO_ARQUIVO = 1, PEDIDO_SALVAR = 2;
+    // sobe a cada mudança neste Java: página publicada com casca maior pede APK novo (ela pode usar algo que esta não tem)
+    static final int CASCA = 2;
+    private static final String FONTE = "https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado/";
+    private static final String APK = "https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/android/apk/KOFstation.apk";
+    private File raizWeb;   // pasta da versão baixada (null = a que veio dentro do APK)
 
     private WebView web;
     private ValueCallback<Uri[]> escolha;
@@ -118,14 +128,35 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
+        final Atualizador at = new Atualizador(new File(getFilesDir(), "web"), FONTE, CASCA, new Atualizador.Embutidos() {
+            public InputStream abrir(String nome) throws IOException { return getAssets().open(nome); }
+        });
+        raizWeb = at.raiz();
         if (b == null) web.loadUrl("https://" + HOST + "/index.html");
         else web.restoreState(b);
+        new Thread(new Runnable() {
+            public void run() {
+                final int r = at.atualizar(raizWeb);
+                android.util.Log.d("KOFnes", "atualização: " + r + " " + at.erro);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        if (isFinishing()) return;
+                        if (r == Atualizador.NOVA) Toast.makeText(MainActivity.this, "KOFstation atualizado: a versão nova abre na próxima vez", Toast.LENGTH_LONG).show();
+                        else if (r == Atualizador.CASCA_NOVA) new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("KOFstation novo").setMessage("Essa atualização precisa instalar o app de novo (seus jogos e saves continuam). Baixar agora?")
+                                .setPositiveButton("Baixar", new DialogInterface.OnClickListener() { public void onClick(DialogInterface d, int w) { abrirFora(APK); } })
+                                .setNegativeButton("Depois", null).show();
+                    }
+                });
+            }
+        }).start();
     }
 
     private WebResourceResponse servir(String caminho) {
         String nome = (caminho == null || caminho.equals("/") || caminho.isEmpty()) ? "index.html" : caminho.substring(1);
         try {
-            InputStream in = getAssets().open(nome);
+            File f = raizWeb == null || nome.contains("..") ? null : new File(raizWeb, nome);
+            InputStream in = f != null && f.isFile() ? new FileInputStream(f) : getAssets().open(nome);   // a versão baixada, senão a do APK
             String mime = nome.endsWith(".html") ? "text/html" : nome.endsWith(".js") ? "application/javascript"
                     : nome.endsWith(".png") ? "image/png" : nome.endsWith(".webmanifest") ? "application/manifest+json" : "application/octet-stream";
             return new WebResourceResponse(mime, "utf-8", in);
@@ -165,12 +196,6 @@ public class MainActivity extends Activity {
         super.onActivityResult(pedido, resultado, dados);
         if (pedido == PEDIDO_ARQUIVO && escolha != null) {
             Uri[] r = WebChromeClient.FileChooserParams.parseResult(resultado, dados);
-            // vários arquivos (o .cue com os .bin do CD de PlayStation) vêm no ClipData, que o parseResult ignora
-            if (resultado == RESULT_OK && dados != null && dados.getClipData() != null && dados.getClipData().getItemCount() > 0) {
-                ClipData c = dados.getClipData();
-                r = new Uri[c.getItemCount()];
-                for (int k = 0; k < r.length; k++) r[k] = c.getItemAt(k).getUri();
-            }
             // vários arquivos (o .cue com os .bin do CD de PlayStation) vêm no ClipData, que o parseResult ignora
             if (resultado == RESULT_OK && dados != null && dados.getClipData() != null && dados.getClipData().getItemCount() > 0) {
                 ClipData c = dados.getClipData();
