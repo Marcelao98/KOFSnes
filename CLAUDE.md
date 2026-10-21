@@ -241,6 +241,10 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > app põe `snes.atrasado/ocupacao` antes de cada quadro, `lr_audio_status`; PS1 com `frameskip_type=auto`. Celular: reverb
 > desligado e `psxclock=45` (quadro ~22% mais rápido; o gargalo é a CPU interpretada, não o desenho). Crash travou no celular
 > antes disso; o próximo passo, se ainda picotar, é o núcleo num Web Worker.
+> **PS1 no celular: ADIADO (21/10, pedido do Marcelo).** No PC roda liso; no celular (Crash) picota mesmo com os ajustes.
+> Plano combinado: branch `ps1-nativo`, só no APK: PCSX-ReARMed nativo (NDK, recompilador ARM64 + GPU NEON), imagem numa
+> superfície nativa por baixo da WebView, som nativo, botões pela ponte `KOFnesApk`; resto em WebAssembly. Primeiro passo:
+> ver se o NDK instala no container.
 ## Pendências (atualizado 17/10; ver a nota de 20/10 logo abaixo)
 
 > **20/10:** conferido no git: as branches `temas-menu` (126 temas, busca, categorias, Café) e `atualizador-wininet` (aviso
