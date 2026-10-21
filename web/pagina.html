@@ -352,7 +352,10 @@
         <div id="jk-vozes" title="os canais do chip de som: clique pra silenciar um"></div>
         <p class="dica" id="jk-vozes-dica">as 8 vozes do chip de som · <span class="so-pc">clique</span><span class="so-cel">toque</span> numa pra silenciar</p>
         <div id="jk-ondas" hidden></div>
-        <div id="jk-notas" hidden><canvas></canvas><div id="jk-notas-leg"></div></div>
+        <div id="jk-notas" hidden><canvas></canvas><div id="jk-notas-leg"></div>
+          <label class="jk-sinc" title="cada fone e caixa de som tem o seu atraso: ajuste até a tecla acender junto com o som (vale pra todas as músicas neste aparelho)">⏱ sincronia do piano
+            <button class="x" data-sinc="-10" title="piano 10 ms mais cedo">−</button><input id="jk-sinc" type="range" min="-500" max="500" step="10"><button class="x" data-sinc="10" title="piano 10 ms mais tarde">+</button>
+            <output id="jk-sinc-v"></output></label></div>
       </div>
       <div class="jk-lado">
         <ul id="jk-lista"></ul>

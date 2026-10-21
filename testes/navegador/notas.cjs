@@ -41,6 +41,10 @@ const [,, pasta, saida = os.tmpdir()] = process.argv;
     const total = st.segs.reduce((a, x) => a + x, 0);
     const atrasos = []; for (let i = 0; i < 5; i++) { atrasos.push(await q.evaluate(() => KOFnes.atrasoNotas())); await q.waitForTimeout(200); }
     conferir(atrasos.every((x) => x > 0.03 && x < 0.6), `${nome}: piano no tempo do alto-falante (o som sai ${atrasos.map((x) => Math.round(x * 1000)).join('/')} ms depois de gerado)`);
+    await q.evaluate(() => KOFnes.mudarSinc(200)); await q.waitForTimeout(300);
+    const com = await q.evaluate(() => KOFnes.atrasoNotas()), rot = await q.evaluate(() => document.querySelector('#jk-sinc-v').textContent);
+    conferir(Math.abs(com - atrasos[4] - 0.2) < 0.08 && /\+200 ms/.test(rot), `${nome}: sincronia +200 ms atrasa o piano (${Math.round(com * 1000)} ms, "${rot}")`);
+    await q.evaluate(() => KOFnes.mudarSinc(0));
     conferir(st.vista === 'notas' && total > 20 && st.tons.filter((x) => x > 3).length >= 3, `${nome}: Tico-Tico no modo Notas (${total} notas; por canal ${st.segs.join(',')})`);
     await q.screenshot({ path: path.join(saida, `notas-${nome}.png`) });
   }

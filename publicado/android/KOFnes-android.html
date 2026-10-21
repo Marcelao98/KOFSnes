@@ -523,6 +523,9 @@ body:not([data-moldura="nenhuma"]) #tela { box-shadow: none; border: 0; }
 #jk-notas-leg { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .jk-nota-canal { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; font-size: 12px; background: var(--painel2); color: var(--texto); border: 1px solid var(--borda); border-radius: 999px; }
 .jk-nota-canal i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.jk-sinc { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--fraco); flex-wrap: wrap; }
+.jk-sinc input { width: min(220px, 45vw); accent-color: var(--destaque); }
+.jk-sinc output { min-width: 92px; font-variant-numeric: tabular-nums; color: var(--texto); }
 .jk-nota-canal.apagado { opacity: .5; text-decoration: line-through; }
 .jk-canal { position: relative; background: var(--painel2); border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; transition: opacity .2s; }
 .jk-canal canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -2115,7 +2118,10 @@ body.canhoto #ctl [data-b="L2"] { --x: 87%; } body.canhoto #ctl [data-b="R2"] { 
         <div id="jk-vozes" title="os canais do chip de som: clique pra silenciar um"></div>
         <p class="dica" id="jk-vozes-dica">as 8 vozes do chip de som · <span class="so-pc">clique</span><span class="so-cel">toque</span> numa pra silenciar</p>
         <div id="jk-ondas" hidden></div>
-        <div id="jk-notas" hidden><canvas></canvas><div id="jk-notas-leg"></div></div>
+        <div id="jk-notas" hidden><canvas></canvas><div id="jk-notas-leg"></div>
+          <label class="jk-sinc" title="cada fone e caixa de som tem o seu atraso: ajuste até a tecla acender junto com o som (vale pra todas as músicas neste aparelho)">⏱ sincronia do piano
+            <button class="x" data-sinc="-10" title="piano 10 ms mais cedo">−</button><input id="jk-sinc" type="range" min="-500" max="500" step="10"><button class="x" data-sinc="10" title="piano 10 ms mais tarde">+</button>
+            <output id="jk-sinc-v"></output></label></div>
       </div>
       <div class="jk-lado">
         <ul id="jk-lista"></ul>
@@ -13480,6 +13486,16 @@ function desenharOndas() {
 // nota = 69 + 12·log2(f / 440) (escala logarítmica: cada oitava dobra a frequência). Sem período claro e com volume = ruído
 // (bateria), que vai pra faixa de baixo.
 let notas = [], notasLeg = [], notasT = -1, notasVisto = 0, notasFaixa = [48, 84];
+// sincronia manual (ms): o que o navegador não sabe do atraso do fone/caixa de som. Positivo = o piano vem mais tarde
+let notasSinc = Math.max(-500, Math.min(500, +(ler('notasSinc') || 0)));
+function marcarSinc() {
+  $('#jk-sinc').value = notasSinc;
+  $('#jk-sinc-v').textContent = notasSinc === 0 ? '0 ms' : (notasSinc > 0 ? '+' : '−') + Math.abs(notasSinc) + ' ms ' + (notasSinc > 0 ? '(mais tarde)' : '(mais cedo)');
+}
+function mudarSinc(v) { notasSinc = Math.max(-500, Math.min(500, Math.round(v / 10) * 10)); guardar('notasSinc', notasSinc); marcarSinc(); }
+$('#jk-sinc').addEventListener('input', (e) => mudarSinc(+e.target.value));
+document.querySelectorAll('[data-sinc]').forEach((b) => { b.onclick = (e) => { e.preventDefault(); mudarSinc(notasSinc + +b.dataset.sinc); }; });
+marcarSinc();
 const NOTAS_SEG = 6;   // segundos de história na tela
 // O som é gerado antes de ser ouvido (fila do app + buffer do ScriptProcessor + placa de som/fone: 100 a 300 ms). O piano
 // desenha no tempo do que está SAINDO no alto-falante: o navegador diz quando cada bloco toca (playbackTime) e que instante
@@ -13535,7 +13551,7 @@ function desenharNotas() {
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const g = cv.getContext('2d'), est = estiloOndas();
   g.clearRect(0, 0, W, H);
-  if (tk && juke.tocando) { analisarNotas(tk); notasVisto = tempoOuvido(tk); }
+  if (tk && juke.tocando) { analisarNotas(tk); notasVisto = Math.max(0, tempoOuvido(tk) - notasSinc / 1000); }
   const t = notasVisto;   // o "agora" da tela = o que está saindo no alto-falante (as notas já geradas vêm chegando pela direita)
   // faixa de notas visível: acompanha a música devagar (mínimo de 2 oitavas)
   let mn = 1e9, mx = -1e9;
@@ -13609,7 +13625,7 @@ $('#arquivo-spc').addEventListener('change', (e) => { if (e.target.files.length)
 // estado (um marco) e anota os botões de cada quadro dali pra frente. O pacote
 // do bug leva o marco anterior + os botões até agora: rodando de novo, o
 // núcleo (determinístico) chega no mesmo lugar, quadro a quadro.
-const VERSAO = '202610211536 · 8631b19', REPO = 'Marcelao98/KOFSnes';
+const VERSAO = '202610211600 · bb71cbf', REPO = 'Marcelao98/KOFSnes';
 let cacador = ler('cacador') !== '0', marcoBugAnt = null, marcoBug = null, romAtual = null;
 function rodarQuadro() {
   let b = semCombo(estado());
@@ -15618,7 +15634,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, notaDoCanal, notas: () => notas, atrasoNotas: () => (juke.apu ? juke.amostras / juke.apu.taxa - notasVisto : 0), filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, notaDoCanal, notas: () => notas, atrasoNotas: () => (juke.apu ? juke.amostras / juke.apu.taxa - notasVisto : 0), mudarSinc, filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },

@@ -1080,6 +1080,16 @@ function desenharOndas() {
 // nota = 69 + 12·log2(f / 440) (escala logarítmica: cada oitava dobra a frequência). Sem período claro e com volume = ruído
 // (bateria), que vai pra faixa de baixo.
 let notas = [], notasLeg = [], notasT = -1, notasVisto = 0, notasFaixa = [48, 84];
+// sincronia manual (ms): o que o navegador não sabe do atraso do fone/caixa de som. Positivo = o piano vem mais tarde
+let notasSinc = Math.max(-500, Math.min(500, +(ler('notasSinc') || 0)));
+function marcarSinc() {
+  $('#jk-sinc').value = notasSinc;
+  $('#jk-sinc-v').textContent = notasSinc === 0 ? '0 ms' : (notasSinc > 0 ? '+' : '−') + Math.abs(notasSinc) + ' ms ' + (notasSinc > 0 ? '(mais tarde)' : '(mais cedo)');
+}
+function mudarSinc(v) { notasSinc = Math.max(-500, Math.min(500, Math.round(v / 10) * 10)); guardar('notasSinc', notasSinc); marcarSinc(); }
+$('#jk-sinc').addEventListener('input', (e) => mudarSinc(+e.target.value));
+document.querySelectorAll('[data-sinc]').forEach((b) => { b.onclick = (e) => { e.preventDefault(); mudarSinc(notasSinc + +b.dataset.sinc); }; });
+marcarSinc();
 const NOTAS_SEG = 6;   // segundos de história na tela
 // O som é gerado antes de ser ouvido (fila do app + buffer do ScriptProcessor + placa de som/fone: 100 a 300 ms). O piano
 // desenha no tempo do que está SAINDO no alto-falante: o navegador diz quando cada bloco toca (playbackTime) e que instante
@@ -1135,7 +1145,7 @@ function desenharNotas() {
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const g = cv.getContext('2d'), est = estiloOndas();
   g.clearRect(0, 0, W, H);
-  if (tk && juke.tocando) { analisarNotas(tk); notasVisto = tempoOuvido(tk); }
+  if (tk && juke.tocando) { analisarNotas(tk); notasVisto = Math.max(0, tempoOuvido(tk) - notasSinc / 1000); }
   const t = notasVisto;   // o "agora" da tela = o que está saindo no alto-falante (as notas já geradas vêm chegando pela direita)
   // faixa de notas visível: acompanha a música devagar (mínimo de 2 oitavas)
   let mn = 1e9, mx = -1e9;
@@ -3218,7 +3228,7 @@ ajustarEscala();
 if (!temPasta) document.querySelectorAll('[data-acao="pasta"], [data-acao="reler-pasta"]').forEach((b) => { b.hidden = true; });
 if (sofa) mostrarBiblioteca(false); else abrirHome();
 primeiraVez();
-window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, notaDoCanal, notas: () => notas, atrasoNotas: () => (juke.apu ? juke.amostras / juke.apu.taxa - notasVisto : 0), filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
+window.KOFnes = { imagemTeste: (rgba, l, a) => { imagemTeste = true; document.body.classList.remove('vazio'); tamanhoTela(l, a); px.set(new Uint32Array(Uint8Array.from(rgba).buffer)); pintar(true); pintar(true); ajustarEscala(); }, mudarMoldura, abrirArquivo, estado: () => ({ snes: !!snes, pausado, romNome, jogoId }), nucleo: () => snes, botoes: () => estado(), mapa: () => mapa, filtro: () => filtro, aplicarFiltro, notaDoCanal, notas: () => notas, atrasoNotas: () => (juke.apu ? juke.amostras / juke.apu.taxa - notasVisto : 0), mudarSinc, filtrosRuins: () => glRuins.size, auto: () => autoSalvar, webgl: !!gl,
   // pros testes: lista falsa de n jogos (mede a biblioteca) e uma quebra de mentira no núcleo
   testeLista: (n, nomes) => { fecharJanelas(); itens = Array.from({ length: n }, (_, i) => { const nome = nomes ? nomes[i % nomes.length] + (i >= nomes.length ? ' #' + i : '') : 'Jogo de teste ' + i; return { nome, ext: 'SFC', chave: normal(nome), variante: VARIANTE.test(nome) }; }); $('#biblioteca').hidden = false; const t0 = performance.now(); montarLista(); const t1 = performance.now(); for (let k = 0; k < 30; k++) listaTecla({ code: 'ArrowDown', preventDefault() {}, target: null, key: '' }); return { montar: Math.round(t1 - t0), trintaSetas: Math.round(performance.now() - t1) }; },
   forcarErro: () => { const r = snes.runFrame; snes.runFrame = () => { snes.runFrame = r; throw new Error('quebra de teste'); }; },
