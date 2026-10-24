@@ -18,11 +18,11 @@
 
 Dois cliques no `KOFstation.exe` (no PC) ou no app do **Android** e você cai numa tela de Início bonita, com a sua biblioteca de jogos, capas, savestates com print, rebobinar o tempo, jukebox com osciloscópio e piano, 126 temas, painel de filtros e efeitos, 15 molduras, traduções por patch e até um caçador de bugs.
 
-<h3 align="center">⬇️ <a href="https://marcelao98.github.io/KOFSnes/">Página de download</a></h3>
+<h3 align="center">⬇️ <a href="https://marcelao98.github.io/KOFStation/">Página de download</a></h3>
 
 <p align="center">
-  <a href="https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado/KOFstation.exe"><b>🪟 Windows</b> (KOFstation.exe, 95 KB)</a> ·
-  <a href="https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/android/apk/KOFstation.apk"><b>🤖 Android</b> (KOFstation.apk)</a> ·
+  <a href="https://raw.githubusercontent.com/Marcelao98/KOFStation/main/publicado/KOFstation.exe"><b>🪟 Windows</b> (KOFstation.exe, 95 KB)</a> ·
+  <a href="https://raw.githubusercontent.com/Marcelao98/KOFStation/main/android/apk/KOFstation.apk"><b>🤖 Android</b> (KOFstation.apk)</a> ·
   <a href="#-como-jogar"><b>🐧 Linux</b> (kofnes.sh)</a>
 </p>
 
@@ -103,16 +103,16 @@ A galeria deixa você experimentar passando o mouse e escolher com um clique:
 
 ## 🎮 Como jogar
 
-1. Baixe o [**`KOFstation.exe`**](https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado/KOFstation.exe) (95 KB) e coloque numa pasta sua (Documentos, Área de Trabalho), **não** em *Arquivos de Programas*.
+1. Baixe o [**`KOFstation.exe`**](https://raw.githubusercontent.com/Marcelao98/KOFStation/main/publicado/KOFstation.exe) (95 KB) e coloque numa pasta sua (Documentos, Área de Trabalho), **não** em *Arquivos de Programas*.
 2. Dois cliques nele. Na primeira vez ele baixa o resto sozinho (uns 20 MB, com todos os consoles) e abre o emulador numa janela do Microsoft Edge (que já vem no Windows 10 e 11), sem barra de endereço.
 3. **Arquivo → Escolher pasta de ROMs** e pronto: a lista aparece dentro do emulador (`Ctrl+L`). Ou arraste um jogo pra janela. De PlayStation: o `.cue` junto com os `.bin`, um `.bin` sozinho, um `.chd` ou o `.zip` com eles; esses ficam na pasta de ROMs (não são copiados pra dentro do app).
 
-**No Android:** instale o [`KOFstation.apk`](https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/android/apk/KOFstation.apk) (fora da Play Store: o Android vai pedir pra permitir instalar de fonte desconhecida) e toque em **Abrir uma ROM**.
+**No Android:** instale o [`KOFstation.apk`](https://raw.githubusercontent.com/Marcelao98/KOFStation/main/android/apk/KOFstation.apk) (fora da Play Store: o Android vai pedir pra permitir instalar de fonte desconhecida) e toque em **Abrir uma ROM**.
 
 **No Linux** (qualquer distro, com um navegador Chromium: Chrome, Chromium, Edge, Brave), dentro de uma pasta sua:
 
 ```bash
-curl -LO https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado/kofnes.sh && sh kofnes.sh
+curl -LO https://raw.githubusercontent.com/Marcelao98/KOFStation/main/publicado/kofnes.sh && sh kofnes.sh
 sh kofnes.sh --instalar   # opcional: põe no menu de aplicativos
 ```
 
