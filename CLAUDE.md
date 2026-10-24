@@ -245,6 +245,18 @@ app/, empacotar/, nativo/  versões antigas: Java (instalador) e nativa Linux s�
 > Plano combinado: branch `ps1-nativo`, só no APK: PCSX-ReARMed nativo (NDK, recompilador ARM64 + GPU NEON), imagem numa
 > superfície nativa por baixo da WebView, som nativo, botões pela ponte `KOFnesApk`; resto em WebAssembly. Primeiro passo:
 > ver se o NDK instala no container.
+> **PS1 nativo (branch `ps1-nativo`, 24/10, NÃO publicado, falta o Marcelo testar no celular):** sem NDK (dl.google.com e
+> buildbot.libretro.com bloqueados). Núcleo = PCSX-ReARMed ARM64 já compilado (ari64 + NEON) do **LemuroidCores**
+> (github.com/Swordfish90/LemuroidCores, commit fee2e824, GPL-2; baixado pelo git em `android/nativo/construir.sh`, vai no
+> APK como `lib/arm64-v8a/libretro.so`, que é o SONAME dele). Ponte `android/nativo/kofps1.c` (~200 linhas, JNI, buffers
+> diretos de imagem RGBA e som; cartão de memória = SAVE_RAM gravado em `ps1-saves/<jogo>.mcd`), compilada com o clang do
+> Ubuntu `--target=aarch64-linux-android24 -nostdlib` + stubs de libc/liblog + `inc/` (jni.h do JDK, libretro.h).
+> Java: `Ps1.java` (só os nativos, testável) e `Ps1Jogo.java` (copia o CD dos URIs escolhidos ou extrai o zip pra
+> `files/ps1-cd`, thread de emulação no ritmo do AudioTrack, SurfaceView por cima da área do jogo; sem `ps1Pad` por 250 ms =
+> pausa e some). Página: `android.js` (`PS1N`, `ps1NativoArquivo` antes de ler o arquivo, `ps1Fachada` = núcleo de fachada
+> com lr/serializar pela ponte, `nucleo: 'pcsx-nativo'`). `CASCA = 3`. Testes: `testes/android/ps1-nativo.sh` (a ponte
+> compilada pro Linux com o PCSX do Linux, interpretador: lightrec briga com a JVM) e `testes/android/ps1-fachada.cjs`.
+> Sem filtros/molduras no PS1 nativo (a imagem não passa pelo WebGL).
 > **APK se atualiza sozinho (21/10, publicado):** `android/src/.../Atualizador.java` (sem Android dentro, testável:
 > `testes/android/teste-atualizador.sh`) lê `publicado/android/versao.txt` (`versao=`, `casca=`, `html=`, `nucleo=`),
 > baixa pra `files/web/baixando` → `pronta` (núcleo que já existe é copiado), e na abertura seguinte `pronta` vira `atual`

@@ -1736,6 +1736,7 @@ async function abrirCdSolto(nome, bytes, soltos) {
 }
 // a ROM de um jogo da biblioteca: do banco; o CD de PlayStation não fica no banco (até 700 MB): vem da pasta de ROMs
 async function bytesDoJogo(j) {
+  if (j.sistema === 'ps1' && typeof ps1NativoJogo === 'function' && PS1N) return ps1NativoJogo(j.arquivo);
   const rom = await bdPegar('roms', j.id);
   if (rom) return { bytes: rom };
   if (j.sistema === 'ps1') {
@@ -1763,6 +1764,7 @@ async function bytesDoJogo(j) {
 }
 async function abrirArquivo(arq, soltos = []) {
   try {
+    if (typeof ps1NativoArquivo === 'function' && await ps1NativoArquivo(arq)) return;   // APK: CD de PS1 vai pro núcleo nativo
     let nome = arq.name;
     // zip (pelo nome ou pelos primeiros bytes "PK") com CD de PlayStation: abre direto do arquivo, sem ler o zip inteiro
     const cab = arq.slice ? new Uint8Array(await arq.slice(0, 4).arrayBuffer()) : new Uint8Array(4);   // item de dentro de um zip não tem slice
@@ -1842,6 +1844,8 @@ const biosProntas = carregarBios().catch(() => {});
 async function novoNucleo(bytes, sis, nome, extras) {
   if (sis === 'snes' && !CELULAR && typeof KofNucleo !== 'undefined') return new KofNucleo.Snes(Int32Array.from(bytes));
   await biosProntas;
+  if (snes && snes.nativo && !(extras && extras.nativo)) KOFnesApk.ps1Fechar();   // saiu do PS1 nativo pra outro jogo
+  if (sis === 'ps1' && extras && extras.nativo) return extras.nativo;
   if (sis === 'ps1') return KofLibretro.criar(bytes, nome, extras || []);
   if (sis !== 'neogeo') return KofLibretro.criar(bytes, sis);
   return KofLibretro.criar(bytes, nome, await zipsDoPai(nome));

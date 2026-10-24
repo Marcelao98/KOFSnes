@@ -223,3 +223,51 @@
   }
   document.querySelectorAll('.n-temas').forEach((e) => { e.textContent = TODOS_TEMAS.length; });
 })();
+
+// ---------- PlayStation nativo (só no APK, celular ARM64) ----------
+// O PCSX-ReARMed compilado pra ARM64, com o recompilador, roda no Java (Ps1Jogo): a imagem vai pra uma tela nativa por cima
+// da área do jogo e o som sai direto. Aqui fica só uma "fachada" com a cara de núcleo que o app conhece: ela manda os
+// botões a cada quadro (que é também o sinal de "jogando"; parou = menu aberto, a tela nativa some), a posição da área do
+// jogo, o volume e o savestate. O CD nem passa pelo JavaScript: o Java copia direto dos arquivos escolhidos.
+var PS1N = !!(window.KOFnesApk && KOFnesApk.ps1Nativo && KOFnesApk.ps1Nativo());
+function ps1NativoAbrir(nome) {
+  return new Promise((ok, falha) => {
+    window.__ps1Pronto = (r) => { window.__ps1Pronto = null; if (r && r.erro) falha(new Error(r.erro)); else ok(r); };
+    KOFnesApk.ps1Abrir(nome);
+  });
+}
+const ps1Marca = (nome) => new TextEncoder().encode(('PS1 nativo ' + nome).padEnd(16)).slice(0, 16);   // o "arquivo" que o app guarda
+async function ps1NativoJogo(nome) {   // da biblioteca: o Java reabre o último CD que copiou
+  const r = await ps1NativoAbrir(nome);
+  return { bytes: ps1Marca(r.principal), extras: { nativo: ps1Fachada(r) } };
+}
+async function ps1NativoArquivo(arq) {
+  if (!PS1N || !arq || !arq.name) return false;
+  const n = arq.name.toLowerCase();
+  let cd = /\.(cue|chd|pbp|iso|img|exe)$/.test(n);
+  if (!cd && n.endsWith('.bin') && arq.slice) cd = cdPs1(new Uint8Array(await arq.slice(0, 0x9000).arrayBuffer()));
+  if (!cd && n.endsWith('.zip') && arq.slice) cd = !!(await cdDoZip(arq));
+  if (!cd) return false;
+  avisar('💿 preparando o CD do PlayStation…', 30000);
+  const r = await ps1NativoAbrir(arq.name);
+  await abrirBytes(r.principal, ps1Marca(r.principal), true, { nativo: ps1Fachada(r) });
+  avisar('💿 PlayStation nativo', 1500);
+  return true;
+}
+function ps1Fachada(r) {
+  const area = () => { const q = $('#tela').getBoundingClientRect(); KOFnesApk.ps1Area(q.left, q.top, q.width, q.height); };
+  return {
+    sistema: 'ps1', nucleo: 'pcsx-nativo', lr: true, nativo: true, largura: 320, altura: 240, proporcao: 4 / 3,
+    fps: r.fps || 59.94, taxaAudio: 32000, rgba: new Uint32Array(320 * 240), quadros: 0, pad: [0],
+    apu: { dsp: { outCount: 0, outBuf: new Int16Array(4) } },
+    cart: { title: r.principal.replace(/\.[^.]+$/, ''), hasSram: () => false, sram: new Uint8Array(0) },
+    runFrame() {
+      if (this.quadros++ % 30 === 0) { area(); KOFnesApk.ps1Volume(mudo ? 0 : volume / 100); }
+      KOFnesApk.ps1Pad(KofLibretro.mascara(this.pad[0]));
+    },
+    reset() { KOFnesApk.ps1Reiniciar(); },
+    serializar() { const t = atob(KOFnesApk.ps1Estado()), u = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; },
+    desserializar(u) { let t = ''; for (let i = 0; i < u.length; i += 0x8000) t += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return KOFnesApk.ps1CarregarEstado(btoa(t)); },
+  };
+}
+

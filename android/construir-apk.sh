@@ -33,6 +33,11 @@ javac --release 8 -Xlint:-options -cp "$ANDROID_JAR" -d "$W/classes" $(find "$W/
 dalvik-exchange --dex --min-sdk-version=24 --output="$W/classes.dex" "$W/classes" 2>&1 | grep -v "^Picked up" || true
 aapt package -f -M "$W/AndroidManifest.xml" -S "$W/res" -A "$W/assets" -I "$ANDROID_JAR" --min-sdk-version 24 --target-sdk-version 34 -F "$W/base.apk"
 (cd "$W" && aapt add base.apk classes.dex >/dev/null)
+# PlayStation nativo (android/nativo/construir.sh): a ponte e o PCSX-ReARMed pra ARM64 vão em lib/arm64-v8a/
+if [ -f "$AQUI/nativo/lib/arm64-v8a/libkofps1.so" ]; then
+  mkdir -p "$W/lib/arm64-v8a" && cp "$AQUI/nativo/lib/arm64-v8a/"*.so "$W/lib/arm64-v8a/"
+  (cd "$W" && aapt add base.apk lib/arm64-v8a/libkofps1.so lib/arm64-v8a/libretro.so >/dev/null)
+fi
 zipalign -f -p 4 "$W/base.apk" "$W/alinhado.apk"
 KS="$AQUI/kofnes-teste.keystore"
 [ -f "$KS" ] || keytool -genkeypair -keystore "$KS" -storepass kofnes-teste -keypass kofnes-teste -alias kofnes -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=KOFnes teste, O=KOFnes, C=BR" 2>&1 | grep -v "^Picked up" || true

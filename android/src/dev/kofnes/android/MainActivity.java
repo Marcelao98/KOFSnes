@@ -21,6 +21,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
@@ -41,7 +42,7 @@ public class MainActivity extends Activity {
     private static final String HOST = "appassets.androidplatform.net";
     private static final int PEDIDO_ARQUIVO = 1, PEDIDO_SALVAR = 2;
     // sobe a cada mudança neste Java: página publicada com casca maior pede APK novo (ela pode usar algo que esta não tem)
-    static final int CASCA = 2;
+    static final int CASCA = 3;
     private static final String FONTE = "https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/publicado/";
     private static final String APK = "https://raw.githubusercontent.com/Marcelao98/KOFSnes/main/android/apk/KOFstation.apk";
     private File raizWeb;   // pasta da versão baixada (null = a que veio dentro do APK)
@@ -49,13 +50,17 @@ public class MainActivity extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> escolha;
     private byte[] paraSalvar;
+    private Ps1Jogo ps1;   // PlayStation nativo (null = a ponte não carregou: o app usa o WebAssembly)
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         web = new WebView(this);
-        setContentView(web);
+        FrameLayout raiz = new FrameLayout(this);
+        raiz.addView(web);
+        setContentView(raiz);
+        if (Ps1.carregar(null)) ps1 = new Ps1Jogo(this, raiz);
         web.setBackgroundColor(0xFF000000);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -189,6 +194,40 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String versao() { return "@VERSAO_NOME@"; }
+
+        // ---- PlayStation nativo (Ps1Jogo): a página chama no lugar do núcleo em WebAssembly ----
+        @JavascriptInterface
+        public boolean ps1Nativo() { return ps1 != null; }
+
+        /** Prepara o CD e abre; a resposta (JSON) chega em window.__ps1Pronto, porque copiar 500 MB demora. */
+        @JavascriptInterface
+        public void ps1Abrir(final String nome) {
+            new Thread(new Runnable() { public void run() {
+                final String r = ps1.abrir(nome);
+                runOnUiThread(new Runnable() { public void run() { web.evaluateJavascript("window.__ps1Pronto && window.__ps1Pronto(" + r + ")", null); } });
+            } }).start();
+        }
+
+        @JavascriptInterface
+        public void ps1Pad(int botoes) { ps1.sinal(botoes); }
+
+        @JavascriptInterface
+        public void ps1Area(float x, float y, float w, float h) { ps1.area(x, y, w, h); }
+
+        @JavascriptInterface
+        public void ps1Fechar() { ps1.fechar(); }
+
+        @JavascriptInterface
+        public void ps1Reiniciar() { ps1.reiniciar(); }
+
+        @JavascriptInterface
+        public void ps1Volume(float v) { ps1.volume(v); }
+
+        @JavascriptInterface
+        public String ps1Estado() { return ps1.estado(); }
+
+        @JavascriptInterface
+        public boolean ps1CarregarEstado(String b64) { return ps1.carregarEstado(b64); }
     }
 
     @Override
@@ -202,6 +241,7 @@ public class MainActivity extends Activity {
                 r = new Uri[c.getItemCount()];
                 for (int k = 0; k < r.length; k++) r[k] = c.getItemAt(k).getUri();
             }
+            if (ps1 != null && r != null) ps1.ultimaEscolha = r;   // o PS1 nativo copia o CD direto dos arquivos escolhidos
             escolha.onReceiveValue(r);
             escolha = null;
         } else if (pedido == PEDIDO_SALVAR) {
@@ -231,7 +271,7 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onPause() { super.onPause(); web.onPause(); }
+    protected void onPause() { super.onPause(); web.onPause(); if (ps1 != null) ps1.pausar(); }
 
     @Override
     protected void onResume() { super.onResume(); web.onResume(); imersivo(); }

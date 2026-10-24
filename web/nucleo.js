@@ -460,6 +460,6 @@ const KofLibretro = (() => {
       fechar() { mod._lr_sonda(0); this.mudas(0); },
     };
   }
-  return { criar, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, bios, temBios, sistemaDaBios, setNeoGeo, setNeoGeoDoZip, NEOGEO, SISTEMAS, EXTENSOES, ARQUIVOS };
+  return { criar, mascara, iniciar, titulo, sistemaDe, disponivel, tocador, opcao, bios, temBios, sistemaDaBios, setNeoGeo, setNeoGeoDoZip, NEOGEO, SISTEMAS, EXTENSOES, ARQUIVOS };
 })();
 if (typeof module !== 'undefined') module.exports = KofLibretro;
