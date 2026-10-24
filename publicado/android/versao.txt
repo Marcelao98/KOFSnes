@@ -1,6 +1,6 @@
-versao=202610211952
-casca=2
-html=KOFnes-android.html:1045172
+versao=202610241806
+casca=3
+html=KOFnes-android.html:1049278
 nucleo=fbneo-3ffc717a.js:8120825
 nucleo=fceumm-9243119b.js:1559435
 nucleo=gambatte-f3b4deb6.js:872073
