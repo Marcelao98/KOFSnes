@@ -31,9 +31,13 @@ const [,, html, cue, bin, sfc] = process.argv;
   await p.keyboard.down('KeyX'); await p.waitForTimeout(200); L = await p.evaluate(() => window.__ps1); await p.keyboard.up('KeyX');
   conferir((L.ultimoPad & (1 << 8)) !== 0, `apertar A chega como o botão do libretro (${L.ultimoPad})`);
   // menu aberto = sem sinal
-  await p.tap('#ctl [data-b="menu"]'); await p.waitForTimeout(400);
+  await p.evaluate(() => document.querySelector('#ctl [data-b="menu"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, clientX: 1, clientY: 1 }))); await p.waitForTimeout(400);   // só o dedo encostando (o tap do Playwright manda um clique depois, que cai no menu já aberto)
   const a1 = await p.evaluate(() => window.__ps1.pads); await p.waitForTimeout(600); const a2 = await p.evaluate(() => window.__ps1.pads);
   conferir(a2 === a1, `menu aberto: o sinal para (${a1} → ${a2}), a tela nativa some`);
+  const menu = await p.evaluate(() => [...document.querySelectorAll('#rapido-lista li')].filter((li) => !li.hidden).map((li) => li.innerText.split('\n')[0]));
+  conferir(!menu.some((t) => /Filtro|Proporção|Reportar bug|Guardar esta música/.test(t)) && menu.some((t) => /Moldura/.test(t)), 'menu sem o que não funciona no PS1 nativo: ' + menu.join(' | '));
+  const botoes = await p.evaluate(() => ['rew', 'turbo', 'menu'].map((b) => getComputedStyle(document.querySelector(`#ctl [data-b="${b}"]`)).display));
+  conferir(botoes[0] === 'none' && botoes[1] === 'none' && botoes[2] !== 'none', 'controle sem rebobinar e turbo: ' + botoes);
   await p.keyboard.press('Escape'); await p.waitForTimeout(500);
   // savestate pela ponte
   const est = await p.evaluate(() => { const s = KOFnes.nucleo(); const u = s.serializar(); s.desserializar(u); return [u.length, window.__ps1.carregado]; });

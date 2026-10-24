@@ -248,3 +248,6 @@ body.canhoto #ctl [data-b="L2"] { --x: 87%; } body.canhoto #ctl [data-b="R2"] { 
   html.celular body.cel-jogo.canhoto[data-sis="ps1"] #ctl [data-b="L"] { --x: calc(100% - var(--u) * 10); } html.celular body.cel-jogo.canhoto[data-sis="ps1"] #ctl [data-b="L2"] { --x: calc(100% - var(--u) * 30); }
   html.celular body.cel-jogo.canhoto[data-sis="ps1"] #ctl [data-b="R"] { --x: calc(var(--u) * 10); } html.celular body.cel-jogo.canhoto[data-sis="ps1"] #ctl [data-b="R2"] { --x: calc(var(--u) * 30); }
 }
+
+/* PlayStation: sem rebobinar (o estado é grande demais); no nativo também sem turbo */
+html.celular body[data-sis="ps1"] #ctl .rew, html.celular body.ps1-nativo #ctl .turbo { display: none; }

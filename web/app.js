@@ -837,6 +837,7 @@ function jukeProxima(d) {
 function jukeFechar() { juke.tocando = false; if (juke.apu) juke.apu.fechar(); juke.apu = null; juke.atual = -1; ini = fim = 0; montarJuke(); }
 async function guardarMusica() {
   if (!snes) { avisar('abra um jogo pra guardar a música dele'); return; }
+  if (snes.sistema === 'ps1') { avisar('a jukebox ainda não guarda música de PlayStation', 3000); return; }
   try {
     const n = juke.lista.filter((f) => f.jogoId === jogoId).length + 1;
     const reg = { origem: 'jogo', titulo: `Faixa ${n}`, jogo: romNome, jogoId, quando: Date.now(), capa: foto(256) };
@@ -1896,7 +1897,8 @@ async function abrirBytes(nome, bytes, guardarNaBiblioteca, extras) {
   tamanhoTela(s.largura || 256, s.altura || 224); px.fill(0xFF000000);
   visualDoSistema(sis); ligaIni = performance.now();
   if (ler('moldPorSis') === '1') mudarMoldura(ler('moldura.' + sis) || KofMolduras.PADRAO_SIS[sis] || moldura, true);
-  document.body.dataset.sis = sis;   // o controle virtual e a interface mudam com o sistema (Game Boy e NES: só A, B, Start e Select)
+  document.body.dataset.sis = sis;
+  document.body.classList.toggle('ps1-nativo', !!s.nativo);   // celular: some o que o PS1 nativo não usa (turbo)   // o controle virtual e a interface mudam com o sistema (Game Boy e NES: só A, B, Start e Select)
   document.body.classList.toggle('so-ab', !!(SIS[sis] && SIS[sis].botoes && !SIS[sis].botoes.includes('X')));
   if (typeof rotularControle === 'function') rotularControle(sis);   // celular: nomes dos botões do console (Mega Drive A/B/C...)
   QUADRO_MS = 1000 / (s.fps || 60.0988);
@@ -2472,19 +2474,20 @@ setInterval(() => {
 // por cima do jogo, pausado; teclado ou controle, sem precisar do mouse
 let rapidoAberto = false, pausadoAntesRapido = false, selR = 0;
 const ciclar = (lista, atual, d) => lista[(lista.findIndex(([k]) => k === atual) + d + lista.length) % lista.length][0];
+const ehPs1 = () => !!(snes && snes.sistema === 'ps1'), nativo = () => !!(snes && snes.nativo);
 const ITENS_RAPIDO = [
-  { t: '▶ Continuar', f: () => fecharRapido() },
+  { t: '▶ Continuar', f: () => fecharRapido() },   // so: o item só aparece quando faz sentido (PS1 nativo: a imagem não passa pela página)
   { t: '💾 Salvar estado', f: () => { fecharRapido(); salvarEstado(); } },
   { t: '⟲ Carregar último estado', f: () => { fecharRapido(); carregarUltimo(); } },
-  { t: '🎵 Guardar esta música', f: () => { fecharRapido(); guardarMusica(); } },
-  { t: '🐞 Reportar bug', f: () => { fecharRapido(); abrirBug(); } },
+  { t: '🎵 Guardar esta música', so: () => !ehPs1(), f: () => { fecharRapido(); guardarMusica(); } },
+  { t: '🐞 Reportar bug', so: () => !nativo(), f: () => { fecharRapido(); abrirBug(); } },
   { t: '🗂 Estados salvos', f: () => { fecharRapido(); acao('estados'); } },
   { t: '☕ Biblioteca', f: () => { fecharRapido(); acao('biblioteca'); } },
   { t: '🎨 Tema', v: () => TODOS_TEMAS.find(([k]) => k === temaSalvo)[1], aj: (d) => tema(ciclar(TODOS_TEMAS, temaSalvo, d)), f: () => { fecharRapido(); acao('temas'); } },
-  { t: 'Filtro', v: () => (FILTROS.find(([k]) => k === filtro) || [0, 'Meu jeito'])[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, FILTROS.some(([k]) => k === filtro) ? filtro : 'original', d)) },
+  { t: 'Filtro', so: () => !nativo(), v: () => (FILTROS.find(([k]) => k === filtro) || [0, 'Meu jeito'])[1], aj: (d) => aplicarFiltro(ciclar(FILTROS, FILTROS.some(([k]) => k === filtro) ? filtro : 'original', d)) },
   { t: 'Cores do Game Boy', so: () => !!(snes && snes.sistema === 'gb'), v: () => PALETAS_GB.find(([k]) => k === paletaGb)[1], aj: (d) => mudarPaletaGb(ciclar(PALETAS_GB, paletaGb, d)) },
   { t: 'Cores do NES', so: () => !!(snes && snes.sistema === 'nes'), v: () => PALETAS_NES.find(([k]) => k === paletaNes)[1], aj: (d) => mudarPaletaNes(ciclar(PALETAS_NES, paletaNes, d)) },
-  { t: 'Proporção', v: () => nomeProporcao(proporcao), aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
+  { t: 'Proporção', so: () => !nativo(), v: () => nomeProporcao(proporcao), aj: (d) => mudarProporcao(ciclar(PROPORCOES, proporcao, d)) },
   { t: 'Moldura', v: () => MOLDURAS.find(([k]) => k === moldura)[1], aj: (d) => mudarMoldura(ciclar(MOLDURAS.filter(([k]) => k !== 'propria' || propria), moldura, d)) },
   { t: 'Volume', v: () => (mudo ? 'mudo' : volume + '%'), aj: (d) => mudarVolume(d * 10) },
   { t: '⛶ Tela cheia', f: () => acao('cheia') },
